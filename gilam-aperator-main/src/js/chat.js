@@ -744,7 +744,7 @@ const ChatManager = {
         if (window.L) {
           const miniMap = L.map(mapContainer, { zoomControl: false, dragging: false, scrollWheelZoom: false })
             .setView([lat, lng], 14);
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '', maxZoom: 19
           }).addTo(miniMap);
           L.marker([lat, lng]).addTo(miniMap);

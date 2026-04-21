@@ -202,9 +202,9 @@ const UI = {
         if (!mapInstance) {
           mapInstance = L.map('map-container', { zoomControl: true }).setView([41.2995, 69.2401], 12);
           
-          // Dark tile layer
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
+          // OpenStreetMap tiles
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
             maxZoom: 19,
           }).addTo(mapInstance);
 

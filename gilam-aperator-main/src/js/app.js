@@ -100,6 +100,7 @@ function startApp(user) {
     window.CRM.init();
     window.Settings.load();
     if (window.ChatManager) window.ChatManager.init();
+    if (window.DriverMap) window.DriverMap.init();
     window.__modulesStarted = true;
   }
 
