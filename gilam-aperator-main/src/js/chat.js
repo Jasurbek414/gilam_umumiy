@@ -744,8 +744,8 @@ const ChatManager = {
         if (window.L) {
           const miniMap = L.map(mapContainer, { zoomControl: false, dragging: false, scrollWheelZoom: false })
             .setView([lat, lng], 14);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '', maxZoom: 19
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '', maxZoom: 19, subdomains: 'abcd'
           }).addTo(miniMap);
           L.marker([lat, lng]).addTo(miniMap);
           mapContainer.addEventListener('click', () => window.open(googleUrl, '_blank'));

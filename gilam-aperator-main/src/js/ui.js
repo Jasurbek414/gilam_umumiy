@@ -202,10 +202,11 @@ const UI = {
         if (!mapInstance) {
           mapInstance = L.map('map-container', { zoomControl: true }).setView([41.2995, 69.2401], 12);
           
-          // OpenStreetMap tiles
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap',
+          // CARTO Voyager tiles (Electron-compatible)
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
             maxZoom: 19,
+            subdomains: 'abcd',
           }).addTo(mapInstance);
 
           // Click to place marker

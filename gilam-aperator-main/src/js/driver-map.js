@@ -48,16 +48,17 @@ const DriverMap = {
       attributionControl: true,
     }).setView([41.0, 69.5], 7);
 
-    // OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    // CARTO Voyager tiles (Electron-compatible, no Referer required)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
       maxZoom: 19,
+      subdomains: 'abcd',
     }).addTo(this.map);
 
     // Custom taxi icon
     this.taxiIcon = L.divIcon({
       className: 'dmap-taxi-icon',
-      html: '<span class="material-icons-round" style="font-size:28px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);">local_taxi</span>',
+      html: '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(99,102,241,0.5);"><span class="material-icons-round" style="font-size:20px;color:#fff;">local_taxi</span></div>',
       iconSize: [36, 36],
       iconAnchor: [18, 18],
     });
