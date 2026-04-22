@@ -7,3 +7,5 @@ b-err.log
 b-out.log
 test-notify.js
 build.log
+google-services.json
+google-services*.json
