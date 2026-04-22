@@ -20,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _tab = 0; // 0=Buyurtmalar, 1=Profil
   StreamSubscription<Position>? _locStream;
+  Timer? _locTimer;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     ChatService.instance.disconnect();
     _locStream?.cancel();
+    _locTimer?.cancel();
     super.dispose();
   }
 
@@ -61,22 +63,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         );
       }
 
-      // App ochilganida darhol joylashuvni aniqlash va backendga jo'natish (10 metr kutmasligi uchun)
-      try {
-        final initialPos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-        await apiRequest('/users/${widget.user['id']}', method: 'PUT', body: {
-          'currentLocation': '${initialPos.latitude},${initialPos.longitude}'
-        });
-      } catch (_) {}
+      // App ochilganida darhol joylashuvni aniqlash va backendga jo'natish
+      _sendCurrentLocation();
 
+      // Harakatga asoslangan yangilanish (10 metr)
       _locStream = Geolocator.getPositionStream(locationSettings: settings).listen((pos) {
-        try {
-          apiRequest('/users/${widget.user['id']}', method: 'PUT', body: {
-            'currentLocation': '${pos.latitude},${pos.longitude}'
-          });
-        } catch (_) {}
+        _sendLocationToBackend(pos.latitude, pos.longitude);
+      });
+
+      // Doimiy yangilanish — har 30 soniyada (haydovchi qimirlamasa ham)
+      _locTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        _sendCurrentLocation();
       });
     }
+  }
+
+  Future<void> _sendCurrentLocation() async {
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+      _sendLocationToBackend(pos.latitude, pos.longitude);
+    } catch (e) {
+      debugPrint('[Location] GPS olishda xatolik: $e');
+    }
+  }
+
+  void _sendLocationToBackend(double lat, double lng) {
+    apiRequest('/users/${widget.user['id']}', method: 'PUT', body: {
+      'currentLocation': '$lat,$lng'
+    }).catchError((e) {
+      debugPrint('[Location] Serverga yuborishda xatolik: $e');
+    });
   }
 
   @override
