@@ -142,40 +142,6 @@ $('login-form').addEventListener('submit', async (e) => {
   btn.innerHTML = 'Kirilmoqda...';
   $('login-error').style.display = 'none';
 
-  // 👉 VAQTINCHALIK KOMPYUTERDA KORISH UCHUN (TEST REJIMI)
-  if (phone === 'test' && password === 'test') {
-    token = 'test-token';
-    currentUser = { id: 'test1', fullName: 'Faqat Interfeys Testi', phone: '+998901234567', role: 'OPERATOR' };
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(currentUser));
-    
-    // Kampaniyalar va kontaktlar ishlamay qolmasligi uchun vaqtinchalik test ma'lumot qoshamiz:
-    campaigns = [
-      { id: 'cam1', name: 'Mijozlarga yordam', phoneNumber: '+998712000001', status: 'ACTIVE' },
-      { id: 'cam2', name: 'Shikoyatlar', phoneNumber: '+998712000002', status: 'ACTIVE' }
-    ];
-    
-    showToast(`Test Interfeys rejimiga xush kelibsiz!`, 'success');
-    
-    // fetch larni ozgartirib otirmaymiz, initApp o'zi ochilaveradi
-    showScreen('app');
-    updateUserInfo();
-    renderLines(); // Mock campaigns
-    
-    // Test oyna uchun mock qilish
-    const mockCalls = [
-      { direction: 'INCOMING', status: 'ANSWERED', callerPhone: '+998 90 123 45 67', createdAt: new Date(), durationSeconds: 120, customer: { fullName: 'Alijon Valiyev' } },
-      { direction: 'OUTGOING', status: 'ANSWERED', callerPhone: '+998 90 999 88 77', createdAt: new Date(Date.now() - 3600000), durationSeconds: 45, customer: { fullName: 'Salimaxon' } },
-      { direction: 'INCOMING', status: 'MISSED', callerPhone: '+998 94 555 44 33', createdAt: new Date(Date.now() - 7200000), durationSeconds: 0 },
-      { direction: 'INCOMING', status: 'ANSWERED', callerPhone: '+998 93 222 11 00', createdAt: new Date(Date.now() - 10000000), durationSeconds: 300, customer: { fullName: 'Gulruh Kamolova' } }
-    ];
-    renderCallHistory(mockCalls);
-    
-    btn.disabled = false;
-    btn.innerHTML = 'Kirish <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
-    return;
-  }
-  
   try {
     const data = await apiRequest('/auth/login', {
       method: 'POST',
