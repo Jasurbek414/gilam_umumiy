@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gilam-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gilam_saas
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gilam_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - gilam-network
+
+  gilam-api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gilam-api
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=gilam_saas
+      - JWT_SECRET=gilam-saas-jwt-secret-key-2026
+      - FCM_SERVER_KEY=${FCM_SERVER_KEY:-AIzaSyDgofVJlPKD5WWAZUtwrrFZpdnWMSXHaIA}
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
+      - FIREBASE_SERVICE_ACCOUNT_B64=${FIREBASE_SERVICE_ACCOUNT_B64:-}
+    volumes:
+      - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - gilam-network
+
+  gilam-frontend:
+    build:
+      context: ./frontend-app
+      dockerfile: Dockerfile
+    container_name: gilam-frontend
+    ports:
+      - "3001:3001"
+    environment:
+      - BACKEND_URL=http://gilam-api:3000
+    depends_on:
+      - gilam-api
+    restart: always
+    networks:
+      - gilam-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    command: tunnel --no-autoupdate run --token eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiYzk4ZmU3YmQtZDJhMi00MmFmLWI3YzItMTcwNWE1NGExMjQ3IiwicyI6Ik16WmpOVFU0TmpZdE5EaGhPUzAwTTJObExUaG1ZMlV0TmpneE56Y3lNVFUwTlRNME56Sm1ZVGcxT0dFdE1HSTJZaTAwTVRZM0xXSTRaamt0TnpjMVpHUm1Zemt4T1RSayJ9
+    restart: always
+    networks:
+      - gilam-network
+    depends_on:
+      - gilam-api
+      - gilam-frontend
+
+
+networks:
+  gilam-network:
+    name: gilam-network
+
+volumes:
+  pgdata:
