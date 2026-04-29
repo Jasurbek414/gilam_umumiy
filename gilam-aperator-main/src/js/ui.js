@@ -343,9 +343,11 @@ const UI = {
     
     this.activeCallSeconds = 0;
 
-    // Ringback tone boshlash (chaqirish paytida operator eshitsin)
-    if (statusLabel !== 'Kiruvchi suhbat') {
+    // Ringback tone boshlash (faqat chaqirilayotganda operator eshitsin)
+    if (statusLabel === 'Chaqirilmoqda...') {
       this.startRingbackTone();
+    } else {
+      this.stopRingbackTone();
     }
   },
 

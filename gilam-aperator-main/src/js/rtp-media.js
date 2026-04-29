@@ -89,6 +89,10 @@ class RtpMediaEngine {
   }
 
   start(localPort, remoteIp, remotePort) {
+    if (this.rtpSocket && this.remoteIp === remoteIp && this.remotePort === remotePort) {
+      console.log(`[RTP] Already running for ${remoteIp}:${remotePort}, ignoring restart.`);
+      return;
+    }
     this.stop();
     this.localPort = localPort;
     this.remoteIp = remoteIp;
@@ -189,6 +193,18 @@ class RtpMediaEngine {
         for (let i = 0; i < inputData.length; i++) {
           this.sendBuffer.push(inputData[i]);
         }
+        
+        let delay = 0;
+        while (this.sendBuffer.length >= 160) {
+          let chunk = new Float32Array(160);
+          for (let i = 0; i < 160; i++) {
+            chunk[i] = this.sendBuffer.shift();
+          }
+          setTimeout(() => {
+            if (this.rtpSocket) this._sendRtpPacket(chunk);
+          }, delay);
+          delay += 20;
+        }
       }
     };
 
@@ -201,50 +217,37 @@ class RtpMediaEngine {
 
     this.speakerAudio.srcObject = outDest.stream;
     this.speakerAudio.play().catch(e => console.error('[RTP] Playback failed:', e));
-
-    // Smooth network transmission (20ms)
-    this.sendInterval = setInterval(() => {
-      // Create silent 160-sample array if no mic or buffer depleted
-      let chunk = new Float32Array(160);
-      if (this.sendBuffer.length >= 160) {
-        for (let i = 0; i < 160; i++) {
-          chunk[i] = this.sendBuffer.shift();
-        }
-      } else if (micInputAvailable) {
-        // Buffer starvation, wait for next tick
-        return;
-      }
-      
-      const rtpPacket = Buffer.alloc(12 + 160);
-      
-      rtpPacket[0] = 0x80; // V=2
-      rtpPacket[1] = 0x00; // PT=0 (PCMU)
-      rtpPacket.writeUInt16BE(this.seq & 0xFFFF, 2); // Seq
-      rtpPacket.writeUInt32BE(this.ts >>> 0, 4); // TS
-      rtpPacket.writeUInt32BE(this.ssrc >>> 0, 8); // SSRC
-
-      for (let i = 0; i < 160; i++) {
-        let pcmInt = chunk[i] * 32767;
-        
-        // Mutening logic
-        if (this.isMuted || this.isHold) {
-          pcmInt = 0;
-        } else {
-          // Asl mic signali tahrir qilinmaydi, AGC orqali tekislanadi
-          if (pcmInt > 32767) pcmInt = 32767;
-          if (pcmInt < -32768) pcmInt = -32768;
-        }
-        
-        rtpPacket[12 + i] = ulawEncode[pcmInt & 0xFFFF];
-      }
-
-      if (this.rtpSocket && this.remoteIp && this.remotePort) {
-        this.rtpSocket.send(rtpPacket, 0, rtpPacket.length, this.remotePort, this.remoteIp);
-      }
-
-      this.seq++;
-      this.ts += 160;
-    }, 20); // Exactly every 20ms
+  }
+  
+  _sendRtpPacket(chunk) {
+    if (!this.rtpSocket) return;
+    
+    const rtpPacket = Buffer.alloc(12 + 160);
+    // RTP Header
+    rtpPacket[0] = 0x80;
+    rtpPacket[1] = 0x00; // Payload type 0 (PCMU)
+    rtpPacket.writeUInt16BE(this.seq, 2);
+    rtpPacket.writeUInt32BE(this.ts, 4);
+    rtpPacket.writeUInt32BE(this.ssrc, 8);
+    
+    let encodedPayload = Buffer.alloc(160);
+    for (let i = 0; i < 160; i++) {
+      let sample = chunk[i] * 32768;
+      if (sample > 32767) sample = 32767;
+      if (sample < -32768) sample = -32768;
+      encodedPayload[i] = ulawEncode[sample & 0xFFFF];
+    }
+    
+    if (this.isMuted || this.isHold) encodedPayload.fill(0xFF);
+    encodedPayload.copy(rtpPacket, 12);
+    
+    try {
+      this.rtpSocket.send(rtpPacket, 0, rtpPacket.length, this.remotePort, this.remoteIp);
+      this.seq = (this.seq + 1) % 65536;
+      this.ts = (this.ts + 160) % 4294967296;
+    } catch (e) {
+      console.warn('[RTP] Send error:', e);
+    }
   }
 
   setMute(isMuted) {

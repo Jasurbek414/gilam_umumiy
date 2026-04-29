@@ -277,24 +277,26 @@ class SipUdpEngine extends EventEmitter {
     this.emit('calling', { target: targetNumber });
   }
 
-  // ═══ HANGUP (BYE) ═════════════════════════════════════════════════════
+  // ═══ HANGUP (BYE / CANCEL) ═════════════════════════════════════════════════════
   hangup() {
     if (!this.currentCall) return;
     
     this.cseq++;
-    const branch = this._branch();
+    const isUnanswered = (this.currentCall.state === 'CALLING' || this.currentCall.state === 'RINGING_REMOTE');
+    const branch = isUnanswered ? this.currentCall.branch : this._branch();
+    const method = isUnanswered ? 'CANCEL' : 'BYE';
     
-    let msg = `BYE sip:${this.currentCall.targetExt}@${this.sipServer} SIP/2.0\r\n`;
+    let msg = `${method} sip:${this.currentCall.targetExt}@${this.sipServer} SIP/2.0\r\n`;
     msg += `Via: SIP/2.0/UDP ${this.localIp}:${this.localPort};rport;branch=${branch}\r\n`;
     msg += `Max-Forwards: 70\r\n`;
     msg += `From: "${this.displayName}" <sip:${this.extension}@${this.sipServer}>;tag=${this.currentCall.fromTag}\r\n`;
     msg += `To: <sip:${this.currentCall.targetExt}@${this.sipServer}>${this.currentCall.toTag ? ';tag=' + this.currentCall.toTag : ''}\r\n`;
     msg += `Call-ID: ${this.currentCall.callId}\r\n`;
-    msg += `CSeq: ${this.cseq} BYE\r\n`;
+    msg += `CSeq: ${isUnanswered ? this.currentCall.cseq : this.cseq} ${method}\r\n`;
     msg += `User-Agent: GilamOperator/2.0\r\n`;
     msg += `Content-Length: 0\r\n\r\n`;
 
-    console.log(`[SIP-UDP] --> BYE`);
+    console.log(`[SIP-UDP] --> ${method}`);
     this._send(msg);
     const lastCall = this.currentCall;
     this.currentCall = null;
@@ -452,16 +454,27 @@ class SipUdpEngine extends EventEmitter {
         console.log(`[SIP-UDP]    Trying...`);
       } else if (code === 180 || code === 183) {
         console.log(`[SIP-UDP]    Ringing...`);
+        let hasEarlyMedia = false;
         if (this.currentCall) {
           this.currentCall.state = 'RINGING_REMOTE';
           // Extract To tag
           const toTagMatch = data.match(/To:.*?;tag=([^\s;>]+)/i);
           if (toTagMatch) this.currentCall.toTag = toTagMatch[1];
+          
+          // Parse remote SDP for Early Media
+          const rtpPortMatch = data.match(/m=audio\s+(\d+)/i);
+          const rtpIpMatch = data.match(/c=IN\s+IP4\s+([0-9.]+)/i);
+          if (rtpPortMatch && rtpIpMatch) {
+            hasEarlyMedia = true;
+            this.mediaEngine.start(this.localPort + 2, rtpIpMatch[1], parseInt(rtpPortMatch[1]));
+          }
         }
-        this.emit('ringing', { target: this.currentCall?.targetExt });
+        this.emit('ringing', { target: this.currentCall?.targetExt, hasEarlyMedia });
       } else if (code === 200) {
         console.log(`[SIP-UDP]    Call answered!`);
+        let isAlreadyAnswered = false;
         if (this.currentCall) {
+          isAlreadyAnswered = this.currentCall.state === 'ANSWERED';
           this.currentCall.state = 'ANSWERED';
           const toTagMatch = data.match(/To:.*?;tag=([^\s;>]+)/i);
           if (toTagMatch) this.currentCall.toTag = toTagMatch[1];
@@ -478,8 +491,10 @@ class SipUdpEngine extends EventEmitter {
         const cseqMatchOk = data.match(/CSeq:\s*(\d+)/i);
         const ackCseq = cseqMatchOk ? cseqMatchOk[1] : this.cseq;
 
-        this._sendAck(ackCseq);
-        this.emit('callAnswered', { target: this.currentCall?.targetExt });
+        this._sendAck(ackCseq, data);
+        if (this.currentCall && !isAlreadyAnswered) {
+          this.emit('callAnswered', { target: this.currentCall.targetExt });
+        }
       } else if (code >= 400) {
         console.log(`[SIP-UDP]    Call failed: ${code} ${reason}`);
         
@@ -519,13 +534,31 @@ class SipUdpEngine extends EventEmitter {
       const fromMatch = data.match(/From:\s*(.*)/i);
       const toMatch = data.match(/To:\s*(.*)/i);
       const callIdMatch = data.match(/Call-ID:\s*(.*)/i);
-      const cseqMatch = data.match(/CSeq:\s*(\d+)\s+INVITE/i);
+      const incomingCallId = callIdMatch ? callIdMatch[1].trim() : '';
+      
+      // Check for re-INVITE (Session Timer / Hold)
+      if (this.currentCall && this.currentCall.callId === incomingCallId && this.currentCall.state === 'ANSWERED') {
+        const sdp = this._buildSdp();
+        let ok = `SIP/2.0 200 OK\r\n`;
+        ok += `Via: ${viaMatch ? viaMatch[1].trim() : ''}\r\n`;
+        ok += `From: ${fromMatch ? fromMatch[1].trim() : ''}\r\n`;
+        ok += `To: ${toMatch ? toMatch[1].trim() : ''}\r\n`;
+        ok += `Call-ID: ${incomingCallId}\r\n`;
+        ok += `CSeq: ${cseqMatch ? cseqMatch[1] : '1'} INVITE\r\n`;
+        ok += `Contact: <sip:${this.extension}@${this.localIp}:${this.localPort};transport=udp>\r\n`;
+        ok += `Content-Type: application/sdp\r\n`;
+        ok += `User-Agent: GilamOperator/2.0\r\n`;
+        ok += `Content-Length: ${Buffer.byteLength(sdp)}\r\n\r\n`;
+        ok += sdp;
+        this._send(ok);
+        return;
+      }
 
       let trying = `SIP/2.0 100 Trying\r\n`;
       trying += `Via: ${viaMatch ? viaMatch[1].trim() : ''}\r\n`;
       trying += `From: ${fromMatch ? fromMatch[1].trim() : ''}\r\n`;
       trying += `To: ${toMatch ? toMatch[1].trim() : ''}\r\n`;
-      trying += `Call-ID: ${callIdMatch ? callIdMatch[1].trim() : ''}\r\n`;
+      trying += `Call-ID: ${incomingCallId}\r\n`;
       trying += `CSeq: ${cseqMatch ? cseqMatch[1] : '1'} INVITE\r\n`;
       trying += `Content-Length: 0\r\n\r\n`;
       this._send(trying);
@@ -535,6 +568,7 @@ class SipUdpEngine extends EventEmitter {
       const callerDisplayMatch = data.match(/From:\s*"([^"]+)"/i);
       const rtpPortMatch = data.match(/m=audio\s+(\d+)/i);
       const rtpIpMatch = data.match(/c=IN\s+IP4\s+([0-9.]+)/i);
+      const fromTagMatch = data.match(/From:.*?;tag=([^\s;>]+)/i);
 
       this.currentCall = {
         callId: callIdMatch ? callIdMatch[1].trim() : '',
@@ -543,7 +577,8 @@ class SipUdpEngine extends EventEmitter {
         to: toMatch ? toMatch[1].trim() : '',
         via: viaMatch ? viaMatch[1].trim() : '',
         cseq: cseqMatch ? cseqMatch[1] : '1',
-        toTag: '',
+        fromTag: this.tag,
+        toTag: fromTagMatch ? fromTagMatch[1] : '',
         state: 'RINGING',
         direction: 'incoming',
         remoteIp: rtpIpMatch ? rtpIpMatch[1] : null,
@@ -640,7 +675,7 @@ class SipUdpEngine extends EventEmitter {
     this._send(msg);
   }
 
-  _sendAck(cseqOverride) {
+  _sendAck(cseqOverride, rawData) {
     if (!this.currentCall) return;
     
     // RFC 3261: CSeq number in ACK MUST match the INVITE CSeq!
@@ -648,11 +683,26 @@ class SipUdpEngine extends EventEmitter {
     
     const branch = this._branch();
     
-    let msg = `ACK sip:${this.currentCall.targetExt}@${this.sipServer} SIP/2.0\r\n`;
+    let toLine = `To: <sip:${this.currentCall.targetExt}@${this.sipServer}>${this.currentCall.toTag ? ';tag=' + this.currentCall.toTag : ''}\r\n`;
+    let fromLine = `From: "${this.displayName}" <sip:${this.extension}@${this.sipServer}>;tag=${this.currentCall.fromTag || this.tag}\r\n`;
+    let requestUri = `sip:${this.currentCall.targetExt}@${this.sipServer}`;
+    
+    if (rawData) {
+      const toMatch = rawData.match(/^To:\s*(.*)/mi);
+      if (toMatch) toLine = `To: ${toMatch[1].trim()}\r\n`;
+      
+      const fromMatch = rawData.match(/^From:\s*(.*)/mi);
+      if (fromMatch) fromLine = `From: ${fromMatch[1].trim()}\r\n`;
+      
+      const contactMatch = rawData.match(/^Contact:\s*<([^>]+)>/mi);
+      if (contactMatch) requestUri = contactMatch[1].trim();
+    }
+    
+    let msg = `ACK ${requestUri} SIP/2.0\r\n`;
     msg += `Via: SIP/2.0/UDP ${this.localIp}:${this.localPort};rport;branch=${branch}\r\n`;
     msg += `Max-Forwards: 70\r\n`;
-    msg += `From: "${this.displayName}" <sip:${this.extension}@${this.sipServer}>;tag=${this.currentCall.fromTag || this.tag}\r\n`;
-    msg += `To: <sip:${this.currentCall.targetExt}@${this.sipServer}>${this.currentCall.toTag ? ';tag=' + this.currentCall.toTag : ''}\r\n`;
+    msg += fromLine;
+    msg += toLine;
     msg += `Call-ID: ${this.currentCall.callId}\r\n`;
     msg += `CSeq: ${ackCseq} ACK\r\n`;
     msg += `User-Agent: GilamOperator/2.0\r\n`;

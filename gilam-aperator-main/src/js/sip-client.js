@@ -223,7 +223,16 @@ const SipClient = {
     engine.on('ringing', (data) => {
       console.log(`[SIP] Ringing: ${data.target}`);
       const label = Utils.$('call-status-label');
-      if (label) label.textContent = 'Jiringlayapti...';
+      if (label) {
+        if (data.hasEarlyMedia) {
+          label.textContent = 'Tarmoq xabari...';
+        } else {
+          label.textContent = 'Jiringlayapti...';
+        }
+      }
+      if (data.hasEarlyMedia && window.UI) {
+        window.UI.stopRingbackTone();
+      }
     });
 
     engine.on('callFailed', (data) => {
@@ -576,7 +585,11 @@ const SipClient = {
       if (!mixedStream) return;
 
       this.recordedChunks = [];
-      this.mediaRecorder = new window.MediaRecorder(mixedStream, { mimeType: 'audio/webm;codecs=opus' });
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!window.MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm';
+      }
+      this.mediaRecorder = new window.MediaRecorder(mixedStream, { mimeType });
 
       this.mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) this.recordedChunks.push(e.data);
