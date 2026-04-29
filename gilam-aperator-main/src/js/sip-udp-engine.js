@@ -223,12 +223,20 @@ class SipUdpEngine extends EventEmitter {
     }
     clearInterval(this.registerTimer);
     clearInterval(this.keepAliveTimer);
-    if (this.socket) {
-      try { this.socket.close(); } catch(e) {}
-      this.socket = null;
+    
+    // Allow socket to flush unregister packet before closing
+    setTimeout(() => {
+      if (this.socket) {
+        try { this.socket.close(); } catch(e) {}
+        this.socket = null;
+      }
+      this.emit('disconnected');
+    }, 100);
+    
+    if (this.mediaEngine) {
+      this.mediaEngine.stop();
     }
     this.isRegistered = false;
-    this.emit('disconnected');
   }
 
   // ═══ MAKE CALL (INVITE) ════════════════════════════════════════════════
