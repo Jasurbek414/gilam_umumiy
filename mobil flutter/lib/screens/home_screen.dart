@@ -8,6 +8,9 @@ import '../core/chat_service.dart';
 import 'orders_screen.dart';
 import 'chat_screen.dart';
 import 'profile_screen.dart';
+import 'manager/manager_dashboard.dart';
+import 'manager/manager_orders.dart';
+import 'manager/manager_staff.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -102,18 +105,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final user = widget.user;
     final isFac = user['appRole'] == 'FACILITY';
-    final role = isFac ? 'Sex xodimi' : 'Haydovchi';
+    final isManager = user['appRole'] == 'MANAGER';
+    final role = isManager ? 'Manager' : isFac ? 'Sex xodimi' : 'Haydovchi';
 
-    final pages = [
-      OrdersPage(user: user),
-      ProfileScreen(user: user, onLogout: widget.onLogout),
-    ];
+    final pages = isManager
+        ? [
+            ManagerDashboard(user: user),
+            ManagerOrders(user: user),
+            ManagerStaff(user: user),
+            ProfileScreen(user: user, onLogout: widget.onLogout),
+          ]
+        : [
+            OrdersPage(user: user),
+            ProfileScreen(user: user, onLogout: widget.onLogout),
+          ];
 
     return Scaffold(
       backgroundColor: kBackground,
-      appBar: _buildAppBar(role, isFac),
+      appBar: _buildAppBar(role, isFac || isManager),
       body: IndexedStack(index: _tab, children: pages),
-      bottomNavigationBar: _buildNav(),
+      bottomNavigationBar: isManager ? _buildManagerNav() : _buildNav(),
     );
   }
 
@@ -237,5 +248,71 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (navIdx == 0) return 0;
     if (navIdx == 2) return 1;
     return 0;
+  }
+
+  Widget _buildManagerNav() {
+    final items = [
+      (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
+      (Icons.list_alt_outlined, Icons.list_alt_rounded, 'Buyurtmalar'),
+      (Icons.people_outline_rounded, Icons.people_rounded, 'Xodimlar'),
+      (Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Operator'),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'Profil'),
+    ];
+    const int chatIdx = 3;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: kSurface,
+        border: Border(top: BorderSide(color: kSurface2, width: 1)),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 10, offset: const Offset(0, -2))],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: List.generate(items.length, (i) {
+              final isChat = i == chatIdx;
+              final tabIdx = i < chatIdx ? i : i - 1; // skip chat
+              final sel = !isChat && tabIdx == _tab;
+              final item = items[i];
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (isChat) {
+                      _openChat();
+                    } else {
+                      setState(() => _tab = tabIdx);
+                    }
+                  },
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: sel ? kPrimary.withAlpha(25) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        sel ? item.$2 : item.$1,
+                        color: isChat ? kPrimary.withAlpha(180) : (sel ? kPrimary : kTextMuted),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(item.$3, style: TextStyle(
+                      color: isChat ? kPrimary.withAlpha(180) : (sel ? kPrimary : kTextMuted),
+                      fontSize: 10,
+                      fontWeight: sel || isChat ? FontWeight.w700 : FontWeight.w500,
+                    )),
+                  ]),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
   }
 }

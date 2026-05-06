@@ -55,6 +55,9 @@ cp -f "$REPO/frontend-app/src/app/company/login/page.tsx" "$FRONT/src/app/compan
 cp -f "$REPO/frontend-app/src/lib/api.ts" "$FRONT/src/lib/api.ts"
 cp -f "$REPO/frontend-app/src/components/layout/Sidebar.tsx" "$FRONT/src/components/layout/Sidebar.tsx"
 cp -f "$REPO/frontend-app/src/components/layout/CompanySidebar.tsx" "$FRONT/src/components/layout/CompanySidebar.tsx"
+cp -f "$REPO/frontend-app/src/types/index.ts" "$FRONT/src/types/index.ts"
+cp -f "$REPO/frontend-app/src/app/admin/page.tsx" "$FRONT/src/app/admin/page.tsx"
+cp -f "$REPO/frontend-app/src/app/admin/users/page.tsx" "$FRONT/src/app/admin/users/page.tsx"
 echo "  ✓ Frontend fayllar ko'chirildi"
 
 echo ""

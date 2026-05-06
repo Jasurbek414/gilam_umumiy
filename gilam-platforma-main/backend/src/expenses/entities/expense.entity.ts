@@ -37,6 +37,16 @@ export class Expense {
   @Column({ type: 'uuid', nullable: true })
   userId: string;
 
+  /** Soft Delete: o'chirilgan deb belgilash */
+  @Column({ default: false })
+  isDeleted: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deletedAt: Date;
+
+  @Column({ type: 'uuid', nullable: true })
+  deletedBy: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

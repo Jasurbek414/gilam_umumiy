@@ -2,6 +2,8 @@ import { Controller, Get, Post, Patch, Body, Param, Delete, Query, UseGuards } f
 import { ExpensesService } from './expenses.service';
 import { Expense } from './entities/expense.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @Controller('expenses')
 @UseGuards(JwtAuthGuard)
@@ -9,8 +11,8 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  create(@Body() data: Partial<Expense>) {
-    return this.expensesService.create(data);
+  create(@Body() data: Partial<Expense>, @CurrentUser() user: User) {
+    return this.expensesService.create(data, user?.id);
   }
 
   @Get('company/:companyId')
@@ -28,12 +30,12 @@ export class ExpensesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.expensesService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.expensesService.remove(id, user?.id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: Partial<Expense>) {
-    return this.expensesService.update(id, data);
+  update(@Param('id') id: string, @Body() data: Partial<Expense>, @CurrentUser() user: User) {
+    return this.expensesService.update(id, data, user?.id);
   }
 }

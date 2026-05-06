@@ -17,6 +17,7 @@ import { GatewayModule } from './gateway/gateway.module';
 import { CallsModule } from './calls/calls.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ExpensesModule } from './expenses/expenses.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ExpensesModule } from './expenses/expenses.module';
     CallsModule,
     GatewayModule,
     ExpensesModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

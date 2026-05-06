@@ -159,7 +159,22 @@ export const expensesApi = {
     return request<any[]>(url);
   },
   create: (data: any) => request<any>('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => request<any>(`/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/expenses/${id}`, { method: 'DELETE' }),
+};
+
+// ===== AUDIT API =====
+export const auditApi = {
+  getByCompany: (companyId: string, entityType?: string, limit?: number) => {
+    let url = `/audit/company/${companyId}`;
+    const params = new URLSearchParams();
+    if (entityType) params.append('entityType', entityType);
+    if (limit) params.append('limit', String(limit));
+    if (params.toString()) url += `?${params.toString()}`;
+    return request<any[]>(url);
+  },
+  getByEntity: (entityType: string, entityId: string) =>
+    request<any[]>(`/audit/entity/${entityType}/${entityId}`),
 };
 
 // ===== ORDERS API =====

@@ -71,8 +71,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = userData['user'] as Map<String, dynamic>;
 
       final role = user['role'] as String? ?? '';
-      if (!['DRIVER', 'WASHER', 'FINISHER'].contains(role)) {
-        throw Exception('Bu ilova faqat Haydovchi va Sex xodimlari uchun!');
+      if (!['DRIVER', 'WASHER', 'FINISHER', 'MANAGER', 'WORKER'].contains(role)) {
+        throw Exception('Bu ilova faqat Haydovchi, Manager va Sex xodimlari uchun!');
       }
 
       final company = user['company'] as Map<String, dynamic>?;
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Role picker
                   _Tile(
                     icon: Icons.people,
-                    text: _appRole == 'DRIVER' ? 'Haydovchi (Yetkazib berish)' : "Sex xodimi (Yuvish/Quritish)",
+                    text: _appRole == 'DRIVER' ? 'Haydovchi (Yetkazib berish)' : _appRole == 'MANAGER' ? 'Manager (Nazorat)' : "Sex xodimi (Yuvish/Quritish)",
                     trailing: const Icon(Icons.keyboard_arrow_down, color: kTextMuted),
                     onTap: () => setState(() => _showRolePicker = true),
                   ),
@@ -370,6 +370,12 @@ class _RolePicker extends StatelessWidget {
             leading: const Icon(Icons.directions_car_outlined, color: kPrimary),
             title: const Text('Haydovchi (Yetkazish)', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
             onTap: () => onSelect('DRIVER'),
+          ),
+          const Divider(color: kSurface2, height: 0),
+          ListTile(
+            leading: const Icon(Icons.admin_panel_settings_outlined, color: kPrimary),
+            title: const Text('Manager (Nazorat)', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
+            onTap: () => onSelect('MANAGER'),
           ),
           const Divider(color: kSurface2, height: 0),
           ListTile(
