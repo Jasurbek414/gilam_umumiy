@@ -29,9 +29,9 @@ export class AuditService {
       entityType: input.entityType,
       entityId: input.entityId,
       action: input.action,
-      oldData: input.oldData || null,
-      newData: input.newData || null,
-      userId: input.userId || null,
+      oldData: input.oldData || undefined,
+      newData: input.newData || undefined,
+      userId: input.userId || undefined,
       companyId: input.companyId,
     });
     return this.auditLogRepository.save(entry);

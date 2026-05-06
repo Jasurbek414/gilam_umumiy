@@ -83,7 +83,7 @@ export class ExpensesService {
     // Soft delete
     expense.isDeleted = true;
     expense.deletedAt = new Date();
-    expense.deletedBy = userId || null;
+    expense.deletedBy = userId || undefined;
     await this.expenseRepository.save(expense);
   }
 

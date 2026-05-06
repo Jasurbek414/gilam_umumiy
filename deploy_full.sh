@@ -32,8 +32,9 @@ cp -f "$REPO/backend/src/users/dto/user.dto.ts" "$BACK/src/users/dto/user.dto.ts
 cp -f "$REPO/backend/src/users/users.service.ts" "$BACK/src/users/users.service.ts"
 cp -f "$REPO/backend/src/orders/orders.controller.ts" "$BACK/src/orders/orders.controller.ts"
 cp -f "$REPO/backend/src/app.module.ts" "$BACK/src/app.module.ts"
-cp -rf "$REPO/backend/src/audit" "$BACK/src/audit"
-cp -rf "$REPO/backend/src/expenses" "$BACK/src/expenses"
+mkdir -p "$BACK/src/audit" "$BACK/src/expenses"
+cp -rf "$REPO/backend/src/audit/." "$BACK/src/audit/"
+cp -rf "$REPO/backend/src/expenses/." "$BACK/src/expenses/"
 echo "  ✓ Backend fayllar ko'chirildi"
 
 echo ""
