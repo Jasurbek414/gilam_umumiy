@@ -29,6 +29,7 @@ echo "=== 3. Backend fayllarni yangilash ==="
 cp -f "$REPO/backend/src/users/entities/user.entity.ts" "$BACK/src/users/entities/user.entity.ts"
 cp -f "$REPO/backend/src/users/dto/user.dto.ts" "$BACK/src/users/dto/user.dto.ts"
 cp -f "$REPO/backend/src/users/users.service.ts" "$BACK/src/users/users.service.ts"
+cp -f "$REPO/backend/src/orders/orders.controller.ts" "$BACK/src/orders/orders.controller.ts"
 echo "  ✓ Backend fayllar ko'chirildi"
 
 echo ""
