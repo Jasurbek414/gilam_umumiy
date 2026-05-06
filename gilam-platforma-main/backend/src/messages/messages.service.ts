@@ -42,8 +42,16 @@ export class MessagesService {
          (m.sender_id = $1 OR m.recipient_id = $1)
          AND (
            m.sender_id = $2 OR m.recipient_id = $2
-           OR (s.role  IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.recipient_id = $1)
-           OR (r.role  IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.sender_id   = $1)
+           OR (
+             s.role IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') 
+             AND m.recipient_id = $1 
+             AND r.role NOT IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN')
+           )
+           OR (
+             r.role IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') 
+             AND m.sender_id = $1 
+             AND s.role NOT IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN')
+           )
          )
        ORDER BY m.created_at ASC`,
       [userId1, userId2]

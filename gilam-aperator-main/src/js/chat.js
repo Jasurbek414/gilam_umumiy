@@ -132,16 +132,15 @@ const ChatManager = {
       if (!ulist || !Array.isArray(ulist)) return;
 
       const myId = window.Api.config.currentUser?.id;
-      // Haydovchilar + sex hodimlarini (WASHER, FINISHER) ham ko'rsatish
-      const chatRoles = ['DRIVER', 'WASHER', 'FINISHER'];
-      const drivers = ulist.filter(u => chatRoles.includes(u.role) && u.id !== myId);
+      const chatRoles = ['DRIVER', 'WASHER', 'FINISHER', 'MANAGER', 'COMPANY_ADMIN', 'SUPER_ADMIN'];
+      const drivers = ulist.filter(u => chatRoles.includes(u.role) && u.id !== myId && u.role !== 'OPERATOR');
 
       let convUsers = [];
       try { convUsers = await window.Api.request('/messages/conversations') || []; } catch(_) {}
 
       const seen = new Set();
       const allUsers = [...drivers, ...convUsers].filter(u => {
-        if (!u || !u.id || seen.has(u.id) || u.id === myId) return false;
+        if (!u || !u.id || seen.has(u.id) || u.id === myId || u.role === 'OPERATOR') return false;
         seen.add(u.id); return true;
       });
 
@@ -168,8 +167,12 @@ const ChatManager = {
     const roleMap = {
       'DRIVER': 'Haydovchi',
       'WASHER': 'Sex xodimi',
+      'FINISHER': 'Sex xodimi',
       'OPERATOR': 'Operator',
-      'COORDINATOR': 'Koordinator'
+      'COORDINATOR': 'Koordinator',
+      'COMPANY_ADMIN': 'Manager',
+      'SUPER_ADMIN': 'Manager',
+      'MANAGER': 'Manager'
     };
     const roleName = roleMap[user.role] || 'Haydovchi';
 
@@ -203,8 +206,12 @@ const ChatManager = {
     const roleMap = {
       'DRIVER': 'Haydovchi',
       'WASHER': 'Sex xodimi',
+      'FINISHER': 'Sex xodimi',
       'OPERATOR': 'Operator',
-      'COORDINATOR': 'Koordinator'
+      'COORDINATOR': 'Koordinator',
+      'COMPANY_ADMIN': 'Manager',
+      'SUPER_ADMIN': 'Manager',
+      'MANAGER': 'Manager'
     };
     const roleName = user?.role ? (roleMap[user.role] || user.role) : 'Haydovchi';
 
