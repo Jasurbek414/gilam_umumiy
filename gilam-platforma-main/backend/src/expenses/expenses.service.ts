@@ -76,7 +76,7 @@ export class ExpensesService {
         type: expense.type,
         date: expense.date,
       },
-      userId: userId || null,
+      userId: userId || undefined,
       companyId: expense.companyId,
     });
 
@@ -111,7 +111,7 @@ export class ExpensesService {
         action: 'UPDATE',
         oldData,
         newData,
-        userId: userId || null,
+        userId: userId || undefined,
         companyId: expense.companyId,
       });
     }
