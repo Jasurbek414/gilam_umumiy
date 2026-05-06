@@ -92,9 +92,13 @@ Future<List<Map<String, dynamic>>> getCompanies() async {
     Uri.parse('$apiBase/public/companies'),
     headers: {'Accept': 'application/json'},
   );
-  if (!res.ok) throw Exception('Kompaniyalar yuklanmadi');
-  final data = jsonDecode(res.body) as List;
-  return data.cast<Map<String, dynamic>>();
+  if (!res.ok) throw Exception('Kompaniyalar yuklanmadi (Xato: ${res.statusCode})');
+  try {
+    final List<dynamic> data = jsonDecode(res.body);
+    return data.map((e) => Map<String, dynamic>.from(e)).toList();
+  } catch (e) {
+    throw Exception('API javobini oqishda xatolik: $e');
+  }
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

@@ -395,15 +395,18 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildEmpty(String msg, IconData icon) => Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: kSurface, shape: BoxShape.circle),
-        child: Icon(icon, size: 40, color: kTextMuted),
-      ),
-      const SizedBox(height: 16),
-      Text(msg, style: const TextStyle(color: kTextMuted, fontSize: 14, fontWeight: FontWeight.w600)),
-    ]),
+    child: SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: kSurface, shape: BoxShape.circle),
+          child: Icon(icon, size: 40, color: kTextMuted),
+        ),
+        const SizedBox(height: 16),
+        Text(msg, style: const TextStyle(color: kTextMuted, fontSize: 14, fontWeight: FontWeight.w600)),
+      ]),
+    ),
   );
 }
 

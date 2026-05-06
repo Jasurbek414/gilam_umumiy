@@ -136,10 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Role picker
                   _Tile(
                     icon: Icons.people,
-                    text: _appRole == 'DRIVER' ? 'Haydovchi (Yetkazib berish)' : _appRole == 'MANAGER' ? 'Manager (Nazorat)' : "Sex xodimi (Yuvish/Quritish)",
+                    text: _appRole == 'DRIVER' ? 'Haydovchi (Yetkazib berish)' : 'Manager (Nazorat)',
                     trailing: const Icon(Icons.keyboard_arrow_down, color: kTextMuted),
                     onTap: () => setState(() => _showRolePicker = true),
                   ),
@@ -376,12 +375,6 @@ class _RolePicker extends StatelessWidget {
             leading: const Icon(Icons.admin_panel_settings_outlined, color: kPrimary),
             title: const Text('Manager (Nazorat)', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
             onTap: () => onSelect('MANAGER'),
-          ),
-          const Divider(color: kSurface2, height: 0),
-          ListTile(
-            leading: const Icon(Icons.water_drop_outlined, color: kPrimary),
-            title: const Text('Sex Xodimi (Yuvish/Quritish)', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
-            onTap: () => onSelect('FACILITY'),
           ),
         ],
       ),

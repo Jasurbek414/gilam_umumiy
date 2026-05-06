@@ -87,7 +87,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
           // Stat cards grid
           GridView.count(
             crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.5,
+            mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.15,
             children: statCards.map((s) => Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

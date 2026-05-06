@@ -82,20 +82,18 @@ export class MessagesService {
 
   async getSupportContact(companyId?: string) {
     if (companyId) {
-      // OPERATOR avval, keyin COMPANY_ADMIN
       const support = await this.messageRepository.manager.query(
         `SELECT id, full_name as "fullName", role, phone FROM "users" 
-         WHERE company_id = $1 AND (role = 'OPERATOR' OR role = 'COMPANY_ADMIN') 
-         ORDER BY CASE role WHEN 'OPERATOR' THEN 1 WHEN 'COMPANY_ADMIN' THEN 2 ELSE 3 END
+         WHERE company_id = $1 AND role = 'OPERATOR' 
          LIMIT 1`,
         [companyId]
       );
       if (support && support.length > 0) return support[0];
     }
     
-    // Fallback: super admin
+    // Fallback: Any operator in the system
     const fallback = await this.messageRepository.manager.query(
-      `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE role = 'SUPER_ADMIN' LIMIT 1`
+      `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE role = 'OPERATOR' LIMIT 1`
     );
     return fallback && fallback.length > 0 ? fallback[0] : null;
   }
