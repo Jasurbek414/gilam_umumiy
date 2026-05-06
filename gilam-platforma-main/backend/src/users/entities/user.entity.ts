@@ -64,7 +64,7 @@ export class User {
   expoPushToken: string;
 
   @Column({ name: 'birth_date', type: 'date', nullable: true })
-  birthDate: Date;
+  birthDate: Date | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, default: 0 })
   salary: number;

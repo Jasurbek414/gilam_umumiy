@@ -82,7 +82,7 @@ export class OrdersController {
   ) {
     // If it's the master looking (no user injected correctly via decorator in simple setup or they are admin), fallback to all.
     // But since JWT guard gives us user, we can check role
-    if (user?.role === UserRole.WASHER || user?.role === UserRole.FINISHER) {
+    if (user?.role === UserRole.WORKER || user?.role === UserRole.MANAGER) {
        return this.ordersService.getWorkerCompletedOrders(companyId, user.id);
     }
     return this.ordersService.getFacilityCompletedOrders(companyId);
@@ -112,7 +112,7 @@ export class OrdersController {
 
   /**
    * Sex hodimi: o'lchab tekshirganidan keyin butun buyurtma summasini qo'lda kiritish.
-   * WASHER, FINISHER, COMPANY_ADMIN roli kerak.
+   * WORKER, MANAGER, COMPANY_ADMIN roli kerak.
    */
   @Patch(':id/total')
   updateTotal(
@@ -121,7 +121,7 @@ export class OrdersController {
     @CurrentUser() user: User,
   ) {
     const allowed = [
-      UserRole.WASHER, UserRole.FINISHER,
+      UserRole.WORKER, UserRole.MANAGER,
       UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN,
     ];
     if (!allowed.includes(user.role)) {
