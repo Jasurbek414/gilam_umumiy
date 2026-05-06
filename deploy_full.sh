@@ -25,11 +25,15 @@ sudo -u postgres psql -d gilam_saas -c "UPDATE users SET role = 'WORKER' WHERE r
 echo "  ✓ DB migratsiya bajarildi"
 
 echo ""
+echo ""
 echo "=== 3. Backend fayllarni yangilash ==="
 cp -f "$REPO/backend/src/users/entities/user.entity.ts" "$BACK/src/users/entities/user.entity.ts"
 cp -f "$REPO/backend/src/users/dto/user.dto.ts" "$BACK/src/users/dto/user.dto.ts"
 cp -f "$REPO/backend/src/users/users.service.ts" "$BACK/src/users/users.service.ts"
 cp -f "$REPO/backend/src/orders/orders.controller.ts" "$BACK/src/orders/orders.controller.ts"
+cp -f "$REPO/backend/src/app.module.ts" "$BACK/src/app.module.ts"
+cp -rf "$REPO/backend/src/audit" "$BACK/src/audit"
+cp -rf "$REPO/backend/src/expenses" "$BACK/src/expenses"
 echo "  ✓ Backend fayllar ko'chirildi"
 
 echo ""
@@ -49,6 +53,7 @@ cp -f "$REPO/frontend-app/src/app/company/layout.tsx" "$FRONT/src/app/company/la
 cp -f "$REPO/frontend-app/src/app/company/page.tsx" "$FRONT/src/app/company/page.tsx"
 cp -f "$REPO/frontend-app/src/app/company/orders/page.tsx" "$FRONT/src/app/company/orders/page.tsx"
 cp -f "$REPO/frontend-app/src/app/company/finance/page.tsx" "$FRONT/src/app/company/finance/page.tsx"
+cp -f "$REPO/frontend-app/src/app/company/finance/components.tsx" "$FRONT/src/app/company/finance/components.tsx"
 cp -f "$REPO/frontend-app/src/app/company/staff/page.tsx" "$FRONT/src/app/company/staff/page.tsx"
 mkdir -p "$FRONT/src/app/company/login"
 cp -f "$REPO/frontend-app/src/app/company/login/page.tsx" "$FRONT/src/app/company/login/page.tsx"
@@ -58,6 +63,7 @@ cp -f "$REPO/frontend-app/src/components/layout/CompanySidebar.tsx" "$FRONT/src/
 cp -f "$REPO/frontend-app/src/types/index.ts" "$FRONT/src/types/index.ts"
 cp -f "$REPO/frontend-app/src/app/admin/page.tsx" "$FRONT/src/app/admin/page.tsx"
 cp -f "$REPO/frontend-app/src/app/admin/users/page.tsx" "$FRONT/src/app/admin/users/page.tsx"
+cp -f "$REPO/frontend-app/package.json" "$FRONT/package.json"
 echo "  ✓ Frontend fayllar ko'chirildi"
 
 echo ""
