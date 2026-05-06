@@ -73,7 +73,7 @@ export function CategoryChart({ expenses }: { expenses: any[] }) {
       <h3 className="text-base font-bold text-slate-800 mb-4">🍩 Kategoriya bo'yicha</h3>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
-          <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}>
+          <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }: any) => `${name} ${(percent*100).toFixed(0)}%`}>
             {data.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
           </Pie>
           <Tooltip formatter={(v: number) => `${Number(v).toLocaleString()} so'm`} />
@@ -112,6 +112,18 @@ export function ExpenseRow({ exp, onEdit, onDelete }: { exp: any; onEdit: () => 
 // ── Audit Log Row ──
 export function AuditRow({ log }: { log: any }) {
   const actionLabels: any = { CREATE: '🟢 Yaratildi', UPDATE: '🟡 Tahrirlandi', DELETE: '🔴 O\'chirildi' };
+  
+  const formatData = (data: any) => {
+    if (!data) return null;
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="font-bold text-sm">{data.title || 'Nomsiz'} {data.type === 'INCOME' ? '(Kirim)' : data.type === 'EXPENSE' ? '(Xarajat)' : ''}</span>
+        <span className="font-black">{Number(data.amount || 0).toLocaleString()} so'm</span>
+        {data.comment && <span className="italic text-[10px] opacity-80">{data.comment}</span>}
+      </div>
+    );
+  };
+
   return (
     <tr className="hover:bg-slate-50/50 transition-colors">
       <td className="px-5 py-3">
@@ -119,13 +131,19 @@ export function AuditRow({ log }: { log: any }) {
           {actionLabels[log.action] || log.action}
         </span>
       </td>
-      <td className="px-5 py-3 text-sm text-slate-700 font-medium">{log.entityType}</td>
-      <td className="px-5 py-3 text-xs text-slate-500">
-        {log.oldData && <span className="line-through mr-2">{log.oldData.title || JSON.stringify(log.oldData).slice(0,40)}</span>}
-        {log.newData && <span className="text-emerald-600">{log.newData.title || JSON.stringify(log.newData).slice(0,40)}</span>}
+      <td className="px-5 py-3 text-sm text-slate-700 font-medium">{log.entityType === 'EXPENSE' ? 'Moliya' : log.entityType}</td>
+      <td className="px-5 py-3 text-xs text-slate-500 max-w-xs">
+        {log.action === 'UPDATE' && (
+          <div className="flex items-center gap-4">
+             <div className="p-2 bg-rose-50 text-rose-600 rounded-lg line-through opacity-70 w-full">{formatData(log.oldData)}</div>
+             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg w-full">{formatData(log.newData)}</div>
+          </div>
+        )}
+        {log.action === 'CREATE' && <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg inline-block min-w-[150px]">{formatData(log.newData)}</div>}
+        {log.action === 'DELETE' && <div className="p-2 bg-rose-50 text-rose-600 rounded-lg inline-block min-w-[150px]">{formatData(log.oldData)}</div>}
       </td>
-      <td className="px-5 py-3 text-xs text-slate-500">{log.user?.fullName || 'Tizim'}</td>
-      <td className="px-5 py-3 text-xs text-slate-400">{new Date(log.createdAt).toLocaleString('uz')}</td>
+      <td className="px-5 py-3 text-xs text-slate-500 font-semibold">{log.user?.fullName || 'Tizim'}</td>
+      <td className="px-5 py-3 text-xs text-slate-400 font-medium">{new Date(log.createdAt).toLocaleString('uz')}</td>
     </tr>
   );
 }

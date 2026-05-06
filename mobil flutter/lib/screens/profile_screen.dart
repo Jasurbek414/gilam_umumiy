@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (_editingId != null) {
         await updateExpense(_editingId!, {
           'title': _titleCtrl.text.trim(),
-          'amount': num.parse(_amountCtrl.text),
+          'amount': num.parse(_amountCtrl.text.replaceAll(RegExp(r'\s+'), '')),
           'type': _modalType,
           'comment': comment,
         });
@@ -110,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           'companyId': widget.user['companyId'],
           'userId': widget.user['id'],
           'title': _titleCtrl.text.trim(),
-          'amount': num.parse(_amountCtrl.text),
+          'amount': num.parse(_amountCtrl.text.replaceAll(RegExp(r'\s+'), '')),
           'type': _modalType,
           'category': 'Logistika',
           'comment': comment,
@@ -127,27 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _delete(String id, String title) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: kSurface,
-        title: const Text("O'chirish", style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w800)),
-        content: Text('"$title" ni o\'chirmoqchimisiz?', style: const TextStyle(color: kTextSecondary)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Bekor', style: TextStyle(color: kTextMuted))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("O'chirish"),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try { await deleteExpense(id); await _loadExpenses(); } catch (e) {
-      _snack(e.toString(), Colors.red.shade800);
-    }
+    // Funksiya o'chirib qo'yildi
   }
 
   Future<void> _confirmLogout() async {
@@ -351,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               (_, i) => _ExpenseCard(
                 exp: _expenses[i],
                 onTap: () => _openModal(_expenses[i]['type'] as String? ?? 'EXPENSE', _expenses[i]),
-                onDelete: () => _delete(_expenses[i]['id'] as String, _expenses[i]['title'] as String? ?? ''),
+                onDelete: () {}, // O'chirish o'chirildi
               ),
               childCount: _expenses.length,
             ),
@@ -472,11 +452,6 @@ class _ExpenseCard extends StatelessWidget {
           '${isIncome ? '+' : '-'} ${exp['amount']} so\'m',
           style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 13),
         ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: onDelete,
-          child: const Icon(Icons.delete_outline, size: 18, color: kTextMuted),
-        ),
       ]),
     );
   }
@@ -579,46 +554,48 @@ class _ExpenseModal extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                 border: Border(top: BorderSide(color: kSurface2)),
               ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 36, height: 4, decoration: BoxDecoration(color: kSurface2, borderRadius: BorderRadius.circular(2))),
-                const SizedBox(height: 18),
-                Row(children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(color: color.withAlpha(20), shape: BoxShape.circle),
-                    child: Icon(isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, color: color, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    editingId != null
-                        ? (isIncome ? 'Kirimni tahrirlash' : 'Xarajatni tahrirlash')
-                        : (isIncome ? 'Yangi Kirim' : 'Yangi Xarajat'),
-                    style: const TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.w800),
-                  ),
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(width: 36, height: 4, decoration: BoxDecoration(color: kSurface2, borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(height: 18),
+                  Row(children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(color: color.withAlpha(20), shape: BoxShape.circle),
+                      child: Icon(isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, color: color, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      editingId != null
+                          ? (isIncome ? 'Kirimni tahrirlash' : 'Xarajatni tahrirlash')
+                          : (isIncome ? 'Yangi Kirim' : 'Yangi Xarajat'),
+                      style: const TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.w800),
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
+                  _field('Nom', isIncome ? 'Misol: Mijozdan olindi' : "Misol: Yoqilg'i", titleCtrl),
+                  const SizedBox(height: 10),
+                  _field("Summa (so'm)", '250 000', amountCtrl, isNumber: true),
+                  const SizedBox(height: 10),
+                  _field('Izoh (ixtiyoriy)', 'Qo\'shimcha ma\'lumot...', commentCtrl, maxLines: 2),
+                  const SizedBox(height: 20),
+                  Row(children: [
+                    Expanded(child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: kSurface2, foregroundColor: kTextPrimary, minimumSize: const Size(0, 50)),
+                      onPressed: onClose,
+                      child: const Text('Bekor'),
+                    )),
+                    const SizedBox(width: 12),
+                    Expanded(flex: 2, child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: color, minimumSize: const Size(0, 50)),
+                      onPressed: saving ? null : onSave,
+                      child: saving
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Saqlash', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    )),
+                  ]),
                 ]),
-                const SizedBox(height: 20),
-                _field('Nom', isIncome ? 'Misol: Mijozdan olindi' : "Misol: Yoqilg'i", titleCtrl),
-                const SizedBox(height: 10),
-                _field("Summa (so'm)", '250 000', amountCtrl, isNumber: true),
-                const SizedBox(height: 10),
-                _field('Izoh (ixtiyoriy)', 'Qo\'shimcha ma\'lumot...', commentCtrl, maxLines: 2),
-                const SizedBox(height: 20),
-                Row(children: [
-                  Expanded(child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: kSurface2, foregroundColor: kTextPrimary, minimumSize: const Size(0, 50)),
-                    onPressed: onClose,
-                    child: const Text('Bekor'),
-                  )),
-                  const SizedBox(width: 12),
-                  Expanded(flex: 2, child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: color, minimumSize: const Size(0, 50)),
-                    onPressed: saving ? null : onSave,
-                    child: saving
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Saqlash', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                  )),
-                ]),
-              ]),
+              ),
             ),
           ),
         ),

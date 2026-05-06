@@ -51,19 +51,19 @@ Future<dynamic> apiRequest(
   switch (method.toUpperCase()) {
     case 'POST':
       res = await http.post(uri, headers: headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
     case 'PUT':
       res = await http.put(uri, headers: headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
     case 'PATCH':
       res = await http.patch(uri, headers: headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
     case 'DELETE':
       res = await http.delete(uri, headers: headers)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
     default:
       res = await http.get(uri, headers: headers)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
   }
 
   if (res.statusCode == 401) {

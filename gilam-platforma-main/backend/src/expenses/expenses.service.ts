@@ -22,7 +22,7 @@ export class ExpensesService {
         entityType: 'EXPENSE',
         entityId: saved.id,
         action: 'CREATE',
-        newData: { title: saved.title, amount: saved.amount, category: saved.category, comment: saved.comment },
+        newData: { title: saved.title, amount: saved.amount, category: saved.category, comment: saved.comment, type: saved.type },
         userId: userId || saved.userId,
         companyId: saved.companyId,
       });
