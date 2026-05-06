@@ -80,20 +80,25 @@ export class MessagesService {
     return results;
   }
 
-  async getSupportContact(companyId?: string) {
+  async getSupportContact(userId: string, companyId?: string) {
     if (companyId) {
       const support = await this.messageRepository.manager.query(
         `SELECT id, full_name as "fullName", role, phone FROM "users" 
-         WHERE company_id = $1 AND role = 'OPERATOR' 
+         WHERE company_id = $1 AND role IN ('OPERATOR', 'COMPANY_ADMIN', 'SUPER_ADMIN') AND id != $2
+         ORDER BY CASE WHEN role = 'OPERATOR' THEN 1 ELSE 2 END ASC
          LIMIT 1`,
-        [companyId]
+        [companyId, userId]
       );
       if (support && support.length > 0) return support[0];
     }
     
-    // Fallback: Any operator in the system
+    // Fallback: Any operator/admin in the system
     const fallback = await this.messageRepository.manager.query(
-      `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE role = 'OPERATOR' LIMIT 1`
+      `SELECT id, full_name as "fullName", role, phone FROM "users" 
+       WHERE role IN ('OPERATOR', 'COMPANY_ADMIN', 'SUPER_ADMIN') AND id != $1
+       ORDER BY CASE WHEN role = 'OPERATOR' THEN 1 ELSE 2 END ASC
+       LIMIT 1`,
+      [userId]
     );
     return fallback && fallback.length > 0 ? fallback[0] : null;
   }

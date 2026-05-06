@@ -41,7 +41,7 @@ export class MessagesController {
 
   @Get('support-contact')
   async getSupportContact(@Req() req: any) {
-    return await this.messagesService.getSupportContact(req.user?.companyId);
+    return await this.messagesService.getSupportContact(req.user.id, req.user?.companyId);
   }
 
   // Flutter ilovasi shu endpoint orqali xabar yuboradi (REST fallback)

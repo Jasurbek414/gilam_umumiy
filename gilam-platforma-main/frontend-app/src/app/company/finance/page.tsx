@@ -16,8 +16,13 @@ export default function CompanyFinancePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [period, setPeriod] = useState<'daily'|'weekly'|'monthly'>('daily');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const getLocalDateString = (d: Date = new Date()) => {
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+  };
+
+  const [startDate, setStartDate] = useState(getLocalDateString());
+  const [endDate, setEndDate] = useState(getLocalDateString());
 
   const [expenses, setExpenses] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -58,7 +63,7 @@ export default function CompanyFinancePage() {
   const loadAudit = async () => {
     try {
       const logs = await auditApi.getByCompany(user.company.id, 'EXPENSE', 100);
-      setAuditLogs(logs);
+      setAuditLogs(logs.filter((l: any) => l.action !== 'CREATE'));
     } catch(err) { console.error(err); }
   };
 
@@ -66,10 +71,10 @@ export default function CompanyFinancePage() {
 
   const handlePeriodChange = (p: 'daily'|'weekly'|'monthly') => {
     setPeriod(p);
-    const now = new Date(); setEndDate(now.toISOString().split('T')[0]);
-    if (p === 'daily') setStartDate(now.toISOString().split('T')[0]);
-    else if (p === 'weekly') { const d = new Date(); d.setDate(d.getDate()-7); setStartDate(d.toISOString().split('T')[0]); }
-    else { const d = new Date(); d.setMonth(d.getMonth()-1); setStartDate(d.toISOString().split('T')[0]); }
+    setEndDate(getLocalDateString());
+    if (p === 'daily') setStartDate(getLocalDateString());
+    else if (p === 'weekly') { const d = new Date(); d.setDate(d.getDate()-7); setStartDate(getLocalDateString(d)); }
+    else { const d = new Date(); d.setMonth(d.getMonth()-1); setStartDate(getLocalDateString(d)); }
   };
 
   // CRUD handlers
