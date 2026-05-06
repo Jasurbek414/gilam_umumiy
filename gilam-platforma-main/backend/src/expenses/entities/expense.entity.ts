@@ -45,7 +45,7 @@ export class Expense {
   deletedAt: Date;
 
   @Column({ type: 'uuid', nullable: true })
-  deletedBy: string;
+  deletedBy?: string;
 
   @CreateDateColumn()
   createdAt: Date;
