@@ -2,7 +2,7 @@
 // Bu fayl loyihadagi barcha entity'larning yagona va aniq typelari.
 // Backend entity'lar bilan 100% mos.
 
-export type UserRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'OPERATOR' | 'DRIVER' | 'WASHER' | 'FINISHER' | 'CUSTOMER';
+export type UserRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'OPERATOR' | 'DRIVER' | 'MANAGER' | 'WORKER' | 'CUSTOMER';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'OFFLINE' | 'DELETED';
 export type CompanyStatus = 'ACTIVE' | 'INACTIVE';
 export type OrderStatus = 'NEW' | 'DRIVER_ASSIGNED' | 'PICKED_UP' | 'AT_FACILITY' | 'WASHING' | 'DRYING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';

@@ -392,7 +392,8 @@ export default function CompanyDashboardPage() {
                const roleColor = 
                   u.role === 'DRIVER' ? 'amber' : 
                   u.role === 'OPERATOR' ? 'indigo' : 
-                  u.role === 'WASHER' ? 'emerald' : 'slate';
+                  u.role === 'MANAGER' ? 'violet' : 
+                  u.role === 'WORKER' ? 'emerald' : 'slate';
                const displayRole = u.role.replace('_', ' ');
 
                return (

@@ -137,8 +137,8 @@ export default function UsersPage() {
     COMPANY_ADMIN: 'Korxona Boshlig\'i',
     OPERATOR: 'Operator',
     DRIVER: 'Haydovchi',
-    WASHER: 'Yuvuvchi',
-    FINISHER: 'Dazmolchi',
+    MANAGER: 'Menejer',
+    WORKER: 'Oddiy Ishchi',
     CUSTOMER: 'Mijoz',
   };
 
@@ -421,8 +421,8 @@ export default function UsersPage() {
                    <option value="SUPER_ADMIN">Super Admin (Tizim)</option>
                    <option value="COMPANY_ADMIN">Ko'rxona Boshlig'i</option>
                    <option value="DRIVER">Haydovchi</option>
-                   <option value="WASHER">Yuvuvchi</option>
-                   <option value="FINISHER">Dazmolchi</option>
+                   <option value="MANAGER">Menejer</option>
+                   <option value="WORKER">Oddiy Ishchi</option>
                  </select>
                </div>
 

@@ -155,8 +155,8 @@ export default function AdminDashboard() {
                 COMPANY_ADMIN: 'bg-indigo-100 text-indigo-700',
                 OPERATOR: 'bg-blue-100 text-blue-700',
                 DRIVER: 'bg-amber-100 text-amber-700',
-                WASHER: 'bg-cyan-100 text-cyan-700',
-                FINISHER: 'bg-emerald-100 text-emerald-700',
+                MANAGER: 'bg-violet-100 text-violet-700',
+                WORKER: 'bg-emerald-100 text-emerald-700',
                 CUSTOMER: 'bg-slate-100 text-slate-700',
               };
               const roleLabels: Record<string, string> = {
@@ -164,8 +164,8 @@ export default function AdminDashboard() {
                 COMPANY_ADMIN: 'Korxona Boshlig\'i',
                 OPERATOR: 'Operator',
                 DRIVER: 'Haydovchi',
-                WASHER: 'Yuvuvchi',
-                FINISHER: 'Dazmolchi',
+                MANAGER: 'Menejer',
+                WORKER: 'Oddiy Ishchi',
                 CUSTOMER: 'Mijoz',
               };
               return (
