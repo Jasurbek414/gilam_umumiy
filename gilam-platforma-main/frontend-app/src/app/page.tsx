@@ -22,13 +22,13 @@ export default function CompanyLoginPage() {
       const result = await authApi.login(phone, password);
       const { role } = result.user;
 
-      if (role !== 'COMPANY_ADMIN') {
+      if (role !== 'COMPANY_ADMIN' && role !== 'MANAGER') {
         setError(
           role === 'SUPER_ADMIN'
             ? "Super Admin bu sahifadan kira olmaydi."
             : role === 'OPERATOR'
             ? "Operatorlar bu sahifadan kira olmaydi. Iltimos operator dasturidan kiring."
-            : "Bu akkaunt korxona admini emas."
+            : "Bu akkaunt korxona admini yoki menerjeri emas."
         );
         return;
       }

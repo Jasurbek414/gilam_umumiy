@@ -68,7 +68,8 @@ export class UsersService {
     }
 
     const salt = await bcrypt.genSalt(10);
-    const rawPassword = dto.password || '123456';
+    // WORKER rolidagi foydalanuvchilarga parol shart emas
+    const rawPassword = dto.password || (dto.role === 'WORKER' ? Math.random().toString(36) : '123456');
     const passwordHash = await bcrypt.hash(rawPassword, salt);
 
     const user = this.usersRepository.create({
@@ -78,6 +79,8 @@ export class UsersService {
       companyId: dto.companyId as any,
       status: UserStatus.ACTIVE,
       passwordHash,
+      birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+      salary: dto.salary || 0,
     });
 
     return this.usersRepository.save(user);
@@ -101,6 +104,13 @@ export class UsersService {
     if (dto.companyId !== undefined) {
       // @ts-ignore
       user.companyId = dto.companyId;
+    }
+
+    if (dto.birthDate !== undefined) {
+      user.birthDate = dto.birthDate ? new Date(dto.birthDate) : null;
+    }
+    if (dto.salary !== undefined) {
+      user.salary = dto.salary;
     }
 
     if (dto.currentLocation !== undefined) {

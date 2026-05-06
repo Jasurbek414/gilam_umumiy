@@ -125,7 +125,8 @@ export default function CompaniesPage() {
     COMPANY_ADMIN: 'Korxona Admin',
     OPERATOR: 'Operator',
     DRIVER: 'Haydovchi',
-    WASHER: 'Yuvuvchi',
+    MANAGER: 'Menejer',
+    WORKER: 'Oddiy Ishchi',
     CUSTOMER: 'Mijoz',
   };
 

@@ -15,8 +15,8 @@ export enum UserRole {
   OPERATOR = 'OPERATOR',
   COMPANY_ADMIN = 'COMPANY_ADMIN',
   DRIVER = 'DRIVER',
-  WASHER = 'WASHER',
-  FINISHER = 'FINISHER',
+  MANAGER = 'MANAGER',
+  WORKER = 'WORKER',
   CUSTOMER = 'CUSTOMER',
 }
 
@@ -62,6 +62,12 @@ export class User {
 
   @Column({ name: 'expo_push_token', nullable: true })
   expoPushToken: string;
+
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  birthDate: Date;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, default: 0 })
+  salary: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

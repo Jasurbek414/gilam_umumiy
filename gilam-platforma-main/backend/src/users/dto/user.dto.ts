@@ -24,13 +24,20 @@ export class CreateUserDto {
   @IsNotEmpty()
   phone: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  password: string;
+  password?: string;
 
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
+
+  @IsOptional()
+  salary?: number;
 }
 
 export class UpdateUserDto {
@@ -60,4 +67,11 @@ export class UpdateUserDto {
 
   @IsOptional()
   currentLocation?: any;
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
+
+  @IsOptional()
+  salary?: number;
 }
