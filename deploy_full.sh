@@ -71,6 +71,7 @@ echo "  ✓ Frontend fayllar ko'chirildi"
 echo ""
 echo "=== 6. Frontend build ==="
 cd "$FRONT"
+npm install
 npm run build
 echo "  ✓ Frontend build tayyor"
 
