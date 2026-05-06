@@ -20,7 +20,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
     }
     const user = getUser();
     if (!user || user.role !== 'COMPANY_ADMIN') {
-      setTimeout(() => router.replace('/company/login'), 0);
+      setTimeout(() => router.replace('/'), 0);
     } else {
       setAuthorized(true);
     }

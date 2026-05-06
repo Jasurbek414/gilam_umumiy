@@ -56,10 +56,14 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   if (res.status === 401) {
     removeToken();
     if (typeof window !== 'undefined') {
-      const isCompanyPage = window.location.pathname.startsWith('/company');
+      const path = window.location.pathname;
+      const isAdminPage = path.startsWith('/admin');
+      const isCompanyPage = path.startsWith('/company');
       
-      if (isCompanyPage) {
-        setTimeout(() => window.location.href = '/company/login', 0);
+      if (isAdminPage) {
+        setTimeout(() => window.location.href = '/spd', 0);
+      } else if (isCompanyPage) {
+        setTimeout(() => window.location.href = '/', 0);
       } else {
         setTimeout(() => window.location.href = '/', 0);
       }

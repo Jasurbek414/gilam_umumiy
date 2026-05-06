@@ -148,6 +148,15 @@ $('login-form').addEventListener('submit', async (e) => {
       body: JSON.stringify({ phone, password }),
     });
     
+    // Faqat OPERATOR roli bilan kirish mumkin
+    if (data.user.role !== 'OPERATOR') {
+      $('login-error').textContent = 'Bu dasturga faqat operatorlar kira oladi!';
+      $('login-error').style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Kirish <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+      return;
+    }
+
     token = data.access_token;
     currentUser = data.user;
     localStorage.setItem('token', token);

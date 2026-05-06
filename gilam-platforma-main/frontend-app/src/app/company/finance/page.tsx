@@ -33,7 +33,7 @@ export default function CompanyFinancePage() {
   useEffect(() => {
     const currentUser = getUser();
     if (!currentUser || !currentUser.company) {
-      setTimeout(() => router.push('/company/login'), 0);
+      setTimeout(() => router.push('/'), 0);
       return;
     }
     setUser(currentUser);

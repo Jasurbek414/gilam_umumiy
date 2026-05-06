@@ -47,7 +47,7 @@ export default function CompanySidebar() {
 
   const confirmLogout = () => {
     removeToken();
-    router.push('/company/login');
+    router.push('/');
   };
 
   return (

@@ -38,7 +38,7 @@ export default function Sidebar() {
 
   const confirmLogout = () => {
     removeToken();
-    router.push('/');
+    router.push('/spd');
   };
 
   return (

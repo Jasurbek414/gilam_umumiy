@@ -296,11 +296,11 @@ export default function CompaniesPage() {
                   <td className="py-5 px-6">
                     <div className="flex flex-col gap-1">
                       <span className="text-sm font-bold text-indigo-600 font-mono">
-                        /company/login
+                        / (Asosiy sahifa)
                       </span>
                       <button
                         onClick={() => {
-                          const url = `${window.location.origin}/company/login`;
+                          const url = `${window.location.origin}/`;
                           navigator.clipboard.writeText(url);
                           toast.success('Link nusxalandi!');
                         }}
