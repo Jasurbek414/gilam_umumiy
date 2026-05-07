@@ -17,9 +17,9 @@ export class AttendanceService {
     });
 
     if (existing) {
-      existing.status = data.status;
-      existing.calculatedSalary = data.calculatedSalary;
-      existing.comment = data.comment;
+      if (data.status !== undefined) existing.status = data.status;
+      if (data.calculatedSalary !== undefined) existing.calculatedSalary = data.calculatedSalary;
+      if (data.comment !== undefined) existing.comment = data.comment;
       return this.attendanceRepo.save(existing);
     }
     

@@ -240,3 +240,28 @@ export function getLoginPath(): string {
 export function setLoginPath(path: string) {
   localStorage.setItem('loginPath', path);
 }
+
+// ===== AUDIT API =====
+export const auditApi = {
+  getByCompany: (companyId: string, entityType?: string, limit?: number) => {
+    let url = `/audit/company/${companyId}?`;
+    if (entityType) url += `entityType=${entityType}&`;
+    if (limit) url += `limit=${limit}`;
+    return request<any[]>(url);
+  },
+};
+
+// ===== ATTENDANCE API =====
+export const attendanceApi = {
+  createOrUpdate: (data: any) =>
+    request<any>('/attendance', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getByCompany: (startDate: string, endDate: string) =>
+    request<any[]>(`/attendance/company?startDate=${startDate}&endDate=${endDate}`),
+  getByUser: (userId: string, startDate: string, endDate: string) =>
+    request<any[]>(`/attendance/user/${userId}?startDate=${startDate}&endDate=${endDate}`),
+  remove: (id: string) =>
+    request<void>(`/attendance/${id}`, { method: 'DELETE' }),
+};
