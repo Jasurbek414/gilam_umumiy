@@ -277,124 +277,131 @@ export default function SettingsPage() {
               {/* Services & Prices Settings */}
               {activeTab === 'services' && (
                 <div className="space-y-6">
-                  <div className="border-b border-slate-200 pb-4 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-800">Xizmatlar va Narxlar</h2>
-                      <p className="text-xs text-slate-500">Haydovchi va muassasa xodimlari tanlaydigan narxnoma</p>
+                  <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+                    <div className="relative flex items-center justify-between">
+                      <div>
+                        <h2 className="text-xl font-black text-white">Xizmatlar va Narxlar</h2>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Platformadagi xizmat turlarini boshqarish</p>
+                      </div>
+                      <button 
+                        onClick={handleSaveServices} 
+                        className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/30"
+                      >
+                        <MdSave className="text-lg" />
+                        Saqlash
+                      </button>
                     </div>
-                    <button 
-                      onClick={handleSaveServices} 
-                      className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
-                    >
-                      <MdSave className="text-lg" />
-                      Tasdiqlash
-                    </button>
                   </div>
 
-                  <div className="space-y-2">
-                    <AnimatePresence>
-                      {servicesList.length === 0 ? (
-                        <div className="p-6 text-center border border-dashed border-slate-300 rounded-lg text-slate-500 text-sm">
-                          Hozircha xizmatlar mavjud emas
-                        </div>
-                      ) : (
-                        <div className="border border-slate-200 rounded-lg overflow-hidden">
-                          <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
-                              <tr>
-                                <th className="px-4 py-2 w-1/2">Xizmat nomi</th>
-                                <th className="px-4 py-2 w-1/4">O'lchov</th>
-                                <th className="px-4 py-2 w-1/4 text-right">Narxi</th>
-                                <th className="px-2 py-2"></th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {servicesList.map(item => (
-                                <tr key={item.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                                  <td className="px-4 py-2">
-                                    <input
-                                      type="text"
-                                      className="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1.5 text-sm font-medium text-slate-800 outline-none transition-colors"
-                                      value={item.name}
-                                      placeholder="Xizmat nomi"
-                                      onChange={(e) => handleUpdateServiceField(item.id, 'name', e.target.value)}
-                                    />
-                                  </td>
-                                  <td className="px-4 py-2">
-                                    <select 
-                                      className="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1.5 text-sm font-medium text-slate-700 outline-none transition-colors cursor-pointer"
-                                      value={item.measurementUnit}
-                                      onChange={(e) => handleUpdateServiceField(item.id, 'measurementUnit', e.target.value)}
-                                    >
-                                      <option value="SQM">Kv.m</option>
-                                      <option value="PIECE">Dona</option>
-                                      <option value="KG">Kg</option>
-                                    </select>
-                                  </td>
-                                  <td className="px-4 py-2 relative">
-                                    <input 
-                                      type="number" 
-                                      className="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded pl-2 pr-10 py-1.5 text-right text-sm font-medium text-slate-800 outline-none transition-colors"
-                                      value={item.price}
-                                      onChange={(e) => handleUpdateServiceField(item.id, 'price', e.target.value)}
-                                    />
-                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">so'm</span>
-                                  </td>
-                                  <td className="px-2 py-2 text-right">
-                                    <button onClick={() => handleDeleteService(item.id)} className="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="O'chirish">
-                                      <MdDeleteOutline className="text-lg" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <div className="mt-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <h4 className="text-xs font-semibold text-slate-600 mb-3 uppercase">Yangi Xizmat Qo'shish</h4>
-                    <div className="flex flex-col md:flex-row gap-3 items-end">
-                      <div className="flex-1 w-full">
+                  {/* Add New Service Card */}
+                  <div className="bg-slate-50/50 border border-slate-200 rounded-2xl p-5">
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">➕ Yangi Xizmat Qo'shish</p>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                      <div className="md:col-span-5">
                         <input 
                           type="text" 
                           placeholder="Xizmat nomi (Masalan: Shohi gilam yuvish)"
-                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm font-medium text-slate-800"
+                          className="w-full px-4 py-3 bg-white rounded-xl border border-slate-200 focus:border-blue-500 outline-none text-sm font-bold text-slate-800 shadow-sm transition-all"
                           value={newService.name}
                           onChange={e => setNewService({...newService, name: e.target.value})}
                         />
                       </div>
-                      <div className="w-full md:w-32">
+                      <div className="md:col-span-3">
                         <select 
-                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm font-medium text-slate-800 cursor-pointer"
+                          className="w-full px-4 py-3 bg-white rounded-xl border border-slate-200 focus:border-blue-500 outline-none text-sm font-bold text-slate-800 shadow-sm transition-all cursor-pointer"
                           value={newService.unit}
                           onChange={e => setNewService({...newService, unit: e.target.value})}
                         >
-                          <option value="SQM">Kv.m</option>
-                          <option value="PIECE">Dona</option>
-                          <option value="KG">Kg</option>
+                          <option value="SQM">Kv.m (Kvadrat metr)</option>
+                          <option value="PIECE">Dona (Soni)</option>
+                          <option value="KG">Kg (Kilogram)</option>
                         </select>
                       </div>
-                      <div className="w-full md:w-40 relative">
-                        <input 
-                          type="number" 
-                          placeholder="Narxi"
-                          className="w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm font-medium text-slate-800"
-                          value={newService.price}
-                          onChange={e => setNewService({...newService, price: e.target.value})}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">so'm</span>
+                      <div className="md:col-span-4 relative flex gap-2">
+                        <div className="relative flex-1">
+                          <input 
+                            type="number" 
+                            placeholder="Narxi"
+                            className="w-full pl-4 pr-12 py-3 bg-white rounded-xl border border-slate-200 focus:border-blue-500 outline-none text-sm font-bold text-slate-800 shadow-sm transition-all"
+                            value={newService.price}
+                            onChange={e => setNewService({...newService, price: e.target.value})}
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-wider">so'm</span>
+                        </div>
+                        <button 
+                          onClick={handleAddService} 
+                          className="px-4 bg-emerald-100 text-emerald-700 rounded-xl text-2xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                        >
+                           <MdAddCircle />
+                        </button>
                       </div>
-                      <button 
-                        onClick={handleAddService} 
-                        className="h-[42px] px-5 w-full md:w-auto bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors flex justify-center items-center gap-1"
-                      >
-                         <MdAddCircle className="text-base" />
-                         Qo'shish
-                      </button>
                     </div>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+                    <AnimatePresence>
+                      {servicesList.length === 0 ? (
+                        <div className="p-10 text-center flex flex-col items-center">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 text-2xl mb-3 border border-slate-100">📋</div>
+                          <p className="text-sm font-bold text-slate-600">Hozircha xizmatlar qo'shilmagan</p>
+                          <p className="text-xs text-slate-400 mt-1">Yuqoridagi formadan xizmat qo'shing</p>
+                        </div>
+                      ) : (
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              <th className="px-5 py-3">Xizmat nomi</th>
+                              <th className="px-5 py-3">O'lchov</th>
+                              <th className="px-5 py-3 text-right">Narxi</th>
+                              <th className="px-3 py-3 w-[60px]"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {servicesList.map(item => (
+                              <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
+                                <td className="px-5 py-2.5">
+                                  <input
+                                    type="text"
+                                    className="w-full bg-transparent border-b border-transparent hover:border-slate-200 focus:border-blue-500 px-1 py-1 text-sm font-bold text-slate-800 outline-none transition-all"
+                                    value={item.name}
+                                    placeholder="Xizmat nomi"
+                                    onChange={(e) => handleUpdateServiceField(item.id, 'name', e.target.value)}
+                                  />
+                                </td>
+                                <td className="px-5 py-2.5">
+                                  <select 
+                                    className="w-full bg-transparent border-b border-transparent hover:border-slate-200 focus:border-blue-500 px-1 py-1 text-xs font-bold text-slate-600 outline-none transition-all cursor-pointer"
+                                    value={item.measurementUnit}
+                                    onChange={(e) => handleUpdateServiceField(item.id, 'measurementUnit', e.target.value)}
+                                  >
+                                    <option value="SQM">Kv.m</option>
+                                    <option value="PIECE">Dona</option>
+                                    <option value="KG">Kg</option>
+                                  </select>
+                                </td>
+                                <td className="px-5 py-2.5 relative">
+                                  <div className="flex items-center justify-end">
+                                    <input 
+                                      type="number" 
+                                      className="w-[120px] bg-transparent border-b border-transparent hover:border-slate-200 focus:border-emerald-500 px-1 py-1 text-right text-sm font-black text-slate-800 outline-none transition-all"
+                                      value={item.price}
+                                      onChange={(e) => handleUpdateServiceField(item.id, 'price', e.target.value)}
+                                    />
+                                    <span className="text-[10px] font-bold text-slate-400 ml-2 uppercase">so'm</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2.5 text-right">
+                                  <button onClick={() => handleDeleteService(item.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 opacity-0 group-hover:opacity-100 hover:text-white hover:bg-rose-500 transition-all">
+                                    <MdDeleteOutline className="text-lg" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               )}
