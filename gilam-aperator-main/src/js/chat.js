@@ -132,7 +132,7 @@ const ChatManager = {
       if (!ulist || !Array.isArray(ulist)) return;
 
       const myId = window.Api.config.currentUser?.id;
-      const chatRoles = ['DRIVER', 'WASHER', 'FINISHER', 'MANAGER', 'COMPANY_ADMIN', 'SUPER_ADMIN'];
+      const chatRoles = ['DRIVER', 'WASHER', 'FINISHER'];
       const drivers = ulist.filter(u => chatRoles.includes(u.role) && u.id !== myId && u.role !== 'OPERATOR');
 
       let convUsers = [];

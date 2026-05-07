@@ -449,14 +449,27 @@ const Settings = (() => {
   // KESH TOZALASH
   // ───────────────────────────────────────────────────────
   function clearCache() {
-    if (!confirm('Haqiqatan ham barcha saqlangan ma\'lumotlarni o\'chirasizmi?')) return;
+    if (!confirm("Haqiqatan ham keshni tozalashni xohlaysizmi? (Yozuvlar, mijozlar va tizim ma'lumotlari saqlanib qoladi)")) return;
 
     try {
+      const preserveKeys = [
+        'call_recordings', 'smsHistory', 'sip_accounts', 'sip_account',
+        'gilam-last-dialed', 'orders', 'token', 'user', 'gilam-operator-settings', 'authToken', 'gilam-user'
+      ];
+      const savedData = {};
+      preserveKeys.forEach(key => {
+        savedData[key] = localStorage.getItem(key);
+      });
+
       localStorage.clear();
       sessionStorage.clear();
-      _settings = { ...DEFAULTS };
+
+      preserveKeys.forEach(key => {
+        if (savedData[key]) localStorage.setItem(key, savedData[key]);
+      });
+
       _applyToUI();
-      Utils.showToast('Kesh tozalandi. Dastur qayta yuklanadi...', 'success');
+      Utils.showToast('Kesh tozalandi (Yozuvlar saqlanib qoldi). Dastur qayta yuklanadi...', 'success');
       setTimeout(() => {
         window.location.reload();
       }, 1500);

@@ -14,6 +14,7 @@ const UI = {
     this.renderDialerLines();
     this.renderCampLinesTab();
     this.renderCallHistory('all');
+    this.renderAudioRecordings();
     this.loadCampaignDropdown();
   },
 
@@ -92,6 +93,15 @@ const UI = {
       const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
       this.renderCallHistory(activeFilter);
       Utils.showToast('Tarix yangilandi', 'info');
+    });
+
+    Utils.$('btn-refresh-recordings')?.addEventListener('click', () => {
+      this.renderAudioRecordings();
+      Utils.showToast('Audio yozuvlar yangilandi', 'info');
+    });
+
+    Utils.$('recordings-search')?.addEventListener('input', (e) => {
+      this.renderAudioRecordings(e.target.value);
     });
   },
 
@@ -614,10 +624,10 @@ const UI = {
       } catch(e) {}
     }
     
-    // Local Filter (agar backend ulana olmasa fallback ishlaydi)
+    // Local Filter (har doim ishlaydi, backend qanaqa javob qaytarishidan qat'iy nazar)
     let filtered = history;
-    if (filter !== 'all' && (!window.Api || !window.Api.config.token)) {
-      filtered = history.filter(h => h.type === filter || (!h.type && filter === 'INCOMING')); // fallback
+    if (filter !== 'all') {
+      filtered = history.filter(h => h.type === filter || (!h.type && filter === 'INCOMING'));
     }
 
     const emptyHtml = `<div class="empty-state">
@@ -705,9 +715,6 @@ const UI = {
             <button class="btn-icon history-call-btn" onclick="document.getElementById('dial-number').value='${call.target}'; window.UI.switchTab('dialer');" title="Qong'iroq qilish">
               <span class="material-icons-round">call</span>
             </button>
-            <button class="btn-icon" onclick="window.UI.deleteCallRecord('${call.id}')" title="O'chirish">
-              <span class="material-icons-round" style="color: var(--danger)">delete_outline</span>
-            </button>
           </div>
         `;
         list.appendChild(div);
@@ -753,6 +760,83 @@ const UI = {
     } else {
       Utils.showToast('Audio yozuv topilmadi', 'warning');
     }
+  },
+
+  renderAudioRecordings(searchQuery = '') {
+    const list = Utils.$('recordings-list');
+    if (!list) return;
+
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem('call_recordings')) || [];
+    } catch(e) {}
+
+    // Faqat audio yozuvi borlarni filtrlash
+    let recordings = history.filter(call => call.data);
+
+    // Qidiruv bo'yicha filtrlash (raqam yoki sana)
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      recordings = recordings.filter(call => 
+        (call.target && call.target.toLowerCase().includes(q)) || 
+        (call.date && call.date.toLowerCase().includes(q))
+      );
+    }
+
+    if (recordings.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <span class="material-icons-round">library_music</span>
+        <p>Hozircha audio yozuvlar yo'q</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = '';
+    
+    recordings.forEach((call) => {
+      const date = new Date(call.date);
+      let timeStr = '', dateStr = '';
+      try {
+        timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        dateStr = date.toLocaleDateString();
+      } catch(e) {
+        timeStr = call.date.split(' ')[1] || '';
+        dateStr = call.date.split(' ')[0] || call.date;
+      }
+      
+      const durStr = call.duration || '00:00';
+      
+      let contactName = call.target || "Noma'lum";
+      let initials = '#';
+      if (window.CRM && window.CRM.allContacts) {
+        const found = window.CRM.allContacts.find(c => c.phone1 === call.target || c.phone2 === call.target);
+        if (found) {
+          contactName = found.fullName || call.target;
+          initials = contactName.charAt(0).toUpperCase();
+        }
+      }
+
+      const div = document.createElement('div');
+      div.className = 'history-card';
+      div.innerHTML = `
+        <div class="hc-avatar" style="background: var(--accent); color: white;">
+          <span class="material-icons-round">mic</span>
+        </div>
+        <div class="hc-details">
+          <h4>${contactName} <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(${call.target})</span></h4>
+          <p>${dateStr} • ${timeStr}</p>
+        </div>
+        <div class="hc-duration">
+          <span class="dur-badge" style="background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.3);">${durStr}</span>
+        </div>
+        <div class="hc-actions">
+          <button class="btn-icon" onclick="window.UI.playRecording('${call.id}')" title="Eshitish" style="color: var(--success);">
+            <span class="material-icons-round">play_circle_filled</span>
+          </button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
   },
 
   setActiveLine(ext) {

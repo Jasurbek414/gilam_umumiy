@@ -1043,7 +1043,7 @@ class _ItemRowState extends State<_ItemRow> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(service?['name'] ?? 'Xizmat turi', style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700, fontSize: 15)),
-              Text('${item['quantity']} ${service?['measurementUnit'] ?? 'kv.m'}', style: const TextStyle(color: kTextMuted, fontSize: 12)),
+              Text('${item['quantity']} ${service?['measurementUnit'] ?? 'kv.m'} • ${service?['price'] ?? 0} so\'m', style: const TextStyle(color: kTextMuted, fontSize: 12)),
             ],
           )),
           if (!widget.isFacility)

@@ -183,45 +183,34 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      <div className="relative overflow-hidden rounded-3xl bg-white p-8 border border-slate-100 shadow-sm">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full blur-3xl opacity-70 -translate-y-1/2 translate-x-1/2"></div>
-        <h1 className="relative z-10 text-3xl font-black text-slate-800 tracking-tight">
-          Korxona Sozlamalari
-        </h1>
-        <p className="relative z-10 text-slate-500 mt-2 font-medium">Platforma imkoniyatlarini va tariflarini o'zingizga moslashtiring</p>
+    <div className="max-w-5xl mx-auto space-y-6 pb-10">
+      <div className="bg-white px-6 py-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Korxona Sozlamalari
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Platforma sozlamalari va tariflarni boshqarish</p>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Modern Tab Bar Sidebar */}
-        <div className="w-full lg:w-72 flex flex-col gap-3">
+        {/* Compact Sidebar */}
+        <div className="w-full lg:w-64 flex flex-col gap-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             
             return (
-              <motion.button
+              <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative w-full flex items-center gap-4 px-6 py-4 rounded-3xl font-bold transition-colors ${
-                  isActive ? 'text-white' : 'text-slate-500 hover:bg-white hover:shadow-sm'
+                className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  isActive ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
-                whileHover={{ scale: isActive ? 1 : 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                {isActive && (
-                  <motion.div 
-                    layoutId="activeTabBackground"
-                    className={`absolute inset-0 bg-gradient-to-r ${tab.color} rounded-3xl shadow-lg`}
-                    initial={false}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-                <div className={`relative z-10 p-2 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100'}`}>
-                  <Icon className="text-xl" />
-                </div>
-                <span className="relative z-10 text-sm tracking-wide">{tab.name}</span>
-              </motion.button>
+                <Icon className="text-lg" />
+                <span className="text-sm">{tab.name}</span>
+              </button>
             )
           })}
         </div>
@@ -231,57 +220,55 @@ export default function SettingsPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 15, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -15, scale: 0.98 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 min-h-[500px]"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 min-h-[400px]"
             >
               
               {/* Profile Settings */}
               {activeTab === 'profile' && (
-                <div className="space-y-8">
-                  <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-500/30">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 border-b border-slate-200 pb-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xl font-bold border border-slate-200">
                       {formData.fullName.charAt(0) || 'U'}
                     </div>
                     <div>
-                      <h2 className="text-xl font-black text-slate-800">Shaxsiy Ma'lumotlar</h2>
-                      <p className="text-sm font-medium text-slate-400">Admin panelga kiruvchi xodim profili</p>
+                      <h2 className="text-lg font-bold text-slate-800">Shaxsiy Ma'lumotlar</h2>
+                      <p className="text-xs text-slate-500">Admin panelga kiruvchi xodim profili</p>
                     </div>
                   </div>
 
-                  <form onSubmit={handleSaveProfile} className="space-y-6 max-w-xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Ism va Familiya</label>
+                  <form onSubmit={handleSaveProfile} className="space-y-5 max-w-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-600 uppercase">Ism va Familiya</label>
                         <input 
-                          className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800 transition-all focus:bg-white focus:shadow-lg focus:shadow-blue-500/10"
+                          className="w-full px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-sm font-medium text-slate-800 transition-colors"
                           value={formData.fullName}
                           placeholder="F.I.Sh"
                           onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Telefon Raqam</label>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-600 uppercase">Telefon Raqam</label>
                         <input 
-                          className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800 transition-all focus:bg-white focus:shadow-lg focus:shadow-blue-500/10"
+                          className="w-full px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-sm font-medium text-slate-800 transition-colors"
                           value={formData.phone}
                           placeholder="+998..."
                           onChange={(e) => setFormData({...formData, phone: e.target.value})}
                         />
                       </div>
                     </div>
-                    <div className="pt-4">
-                      <motion.button 
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.95 }}
+                    <div className="pt-2">
+                      <button 
                         type="submit" 
-                        className="flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-slate-900/20 hover:bg-black transition-all"
+                        className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors"
                       >
-                        <MdSave className="text-xl text-blue-400" />
-                        O'zgarishlarni Saqlash
-                      </motion.button>
+                        <MdSave className="text-lg" />
+                        Saqlash
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -289,96 +276,99 @@ export default function SettingsPage() {
 
               {/* Services & Prices Settings */}
               {activeTab === 'services' && (
-                <div className="space-y-8">
-                  <div className="border-b border-slate-100 pb-6 flex items-center justify-between">
+                <div className="space-y-6">
+                  <div className="border-b border-slate-200 pb-4 flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-black text-slate-800">Xizmatlar va Narxlar</h2>
-                      <p className="text-sm font-medium text-slate-400">Haydovchi va muassasa xodimlari tanlaydigan narxnoma</p>
+                      <h2 className="text-lg font-bold text-slate-800">Xizmatlar va Narxlar</h2>
+                      <p className="text-xs text-slate-500">Haydovchi va muassasa xodimlari tanlaydigan narxnoma</p>
                     </div>
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button 
                       onClick={handleSaveServices} 
-                      className="flex items-center gap-2 bg-fuchsia-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-fuchsia-500/30"
+                      className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
                     >
+                      <MdSave className="text-lg" />
                       Tasdiqlash
-                    </motion.button>
+                    </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <AnimatePresence>
                       {servicesList.length === 0 ? (
-                        <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 font-medium">
+                        <div className="p-6 text-center border border-dashed border-slate-300 rounded-lg text-slate-500 text-sm">
                           Hozircha xizmatlar mavjud emas
                         </div>
-                      ) : servicesList.map(item => (
-                        <motion.div 
-                          key={item.id} 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-fuchsia-200 hover:shadow-md transition-all group"
-                        >
-                          <div className="flex-1 w-full relative">
-                            <input
-                              type="text"
-                              className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-lg border border-transparent focus:border-slate-200 px-3 py-2 text-sm font-bold text-slate-800 outline-none transition-all"
-                              value={item.name}
-                              placeholder="Xizmat nomi"
-                              onChange={(e) => handleUpdateServiceField(item.id, 'name', e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <div className="w-28">
-                              <select 
-                                className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-lg border border-transparent focus:border-slate-200 text-xs font-black text-slate-600 outline-none px-2 py-2.5 transition-all text-center"
-                                value={item.measurementUnit}
-                                onChange={(e) => handleUpdateServiceField(item.id, 'measurementUnit', e.target.value)}
-                              >
-                                <option value="SQM">Kv.m</option>
-                                <option value="PIECE">Dona</option>
-                                <option value="KG">Kg</option>
-                              </select>
-                            </div>
-
-                            <div className="relative w-32">
-                              <input 
-                                type="number" 
-                                className="w-full pl-3 pr-12 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-lg border border-transparent focus:border-slate-200 text-right font-black text-slate-800 outline-none focus:border-fuchsia-500 transition-all text-sm"
-                                value={item.price}
-                                onChange={(e) => handleUpdateServiceField(item.id, 'price', e.target.value)}
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase pointer-events-none">so'm</span>
-                            </div>
-
-                            <button onClick={() => handleDeleteService(item.id)} className="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-40 group-hover:opacity-100 shrink-0" title="O'chirish">
-                              <MdDeleteOutline className="text-lg" />
-                            </button>
-                          </div>
-                        </motion.div>
-                      ))}
+                      ) : (
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                          <table className="w-full text-left border-collapse">
+                            <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
+                              <tr>
+                                <th className="px-4 py-2 w-1/2">Xizmat nomi</th>
+                                <th className="px-4 py-2 w-1/4">O'lchov</th>
+                                <th className="px-4 py-2 w-1/4 text-right">Narxi</th>
+                                <th className="px-2 py-2"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {servicesList.map(item => (
+                                <tr key={item.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                                  <td className="px-4 py-2">
+                                    <input
+                                      type="text"
+                                      className="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1.5 text-sm font-medium text-slate-800 outline-none transition-colors"
+                                      value={item.name}
+                                      placeholder="Xizmat nomi"
+                                      onChange={(e) => handleUpdateServiceField(item.id, 'name', e.target.value)}
+                                    />
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <select 
+                                      className="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1.5 text-sm font-medium text-slate-700 outline-none transition-colors cursor-pointer"
+                                      value={item.measurementUnit}
+                                      onChange={(e) => handleUpdateServiceField(item.id, 'measurementUnit', e.target.value)}
+                                    >
+                                      <option value="SQM">Kv.m</option>
+                                      <option value="PIECE">Dona</option>
+                                      <option value="KG">Kg</option>
+                                    </select>
+                                  </td>
+                                  <td className="px-4 py-2 relative">
+                                    <input 
+                                      type="number" 
+                                      className="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded pl-2 pr-10 py-1.5 text-right text-sm font-medium text-slate-800 outline-none transition-colors"
+                                      value={item.price}
+                                      onChange={(e) => handleUpdateServiceField(item.id, 'price', e.target.value)}
+                                    />
+                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">so'm</span>
+                                  </td>
+                                  <td className="px-2 py-2 text-right">
+                                    <button onClick={() => handleDeleteService(item.id)} className="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="O'chirish">
+                                      <MdDeleteOutline className="text-lg" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </AnimatePresence>
                   </div>
 
-                  <div className="mt-8 bg-slate-50 p-6 rounded-[2rem] border border-slate-100 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-2 h-full bg-fuchsia-500"></div>
-                    <h4 className="text-sm font-black text-slate-800 mb-5 ml-2 uppercase tracking-wide">Yangi Xizmat Qo'shish</h4>
-                    <div className="flex flex-col md:flex-row gap-4 items-end ml-2">
-                      <div className="flex-1 space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Xizmat nomi</label>
+                  <div className="mt-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h4 className="text-xs font-semibold text-slate-600 mb-3 uppercase">Yangi Xizmat Qo'shish</h4>
+                    <div className="flex flex-col md:flex-row gap-3 items-end">
+                      <div className="flex-1 w-full">
                         <input 
                           type="text" 
-                          placeholder="Shohi gilam yuvish..."
-                          className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-fuchsia-500 outline-none font-bold text-slate-800 transition-all bg-white"
+                          placeholder="Xizmat nomi (Masalan: Shohi gilam yuvish)"
+                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm font-medium text-slate-800"
                           value={newService.name}
                           onChange={e => setNewService({...newService, name: e.target.value})}
                         />
                       </div>
-                      <div className="w-32 space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">O'lchov formati</label>
+                      <div className="w-full md:w-32">
                         <select 
-                          className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-fuchsia-500 outline-none font-bold text-slate-800 transition-all bg-white"
+                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm font-medium text-slate-800 cursor-pointer"
                           value={newService.unit}
                           onChange={e => setNewService({...newService, unit: e.target.value})}
                         >
@@ -387,25 +377,23 @@ export default function SettingsPage() {
                           <option value="KG">Kg</option>
                         </select>
                       </div>
-                      <div className="w-40 space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Narxi (so'm)</label>
+                      <div className="w-full md:w-40 relative">
                         <input 
                           type="number" 
-                          placeholder="0"
-                          className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-fuchsia-500 outline-none font-bold text-slate-800 transition-all bg-white"
+                          placeholder="Narxi"
+                          className="w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm font-medium text-slate-800"
                           value={newService.price}
                           onChange={e => setNewService({...newService, price: e.target.value})}
                         />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">so'm</span>
                       </div>
-                      <motion.button 
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.95 }}
+                      <button 
                         onClick={handleAddService} 
-                        className="h-[56px] px-6 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all flex items-center gap-2"
+                        className="h-[42px] px-5 w-full md:w-auto bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors flex justify-center items-center gap-1"
                       >
-                         <MdAddCircle className="text-xl text-fuchsia-400" />
+                         <MdAddCircle className="text-base" />
                          Qo'shish
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -413,59 +401,58 @@ export default function SettingsPage() {
 
               {/* Security Settings */}
               {activeTab === 'security' && (
-                <div className="space-y-8 max-w-2xl">
-                  <div className="border-b border-slate-100 pb-6">
-                    <h2 className="text-xl font-black text-slate-800">Xavfsizlik va Kirish</h2>
-                    <p className="text-sm font-medium text-slate-400">Parolni o'zgartirish va 2F autentifikatsiya sozlamalari</p>
+                <div className="space-y-6 max-w-lg">
+                  <div className="border-b border-slate-200 pb-4">
+                    <h2 className="text-lg font-bold text-slate-800">Xavfsizlik va Kirish</h2>
+                    <p className="text-xs text-slate-500">Parolni o'zgartirish va 2F autentifikatsiya sozlamalari</p>
                   </div>
 
-                  <form className="space-y-6 bg-slate-50 p-8 rounded-[2rem] border border-slate-100" onSubmit={handleSavePassword}>
-                    <div>
-                      <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2"><MdLock className="text-teal-500 text-xl" /> Parolni yangilash</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Joriy Parol (Ixtiyoriy)</label>
+                  <form className="space-y-5 bg-slate-50 p-5 rounded-xl border border-slate-200" onSubmit={handleSavePassword}>
+                    <h4 className="font-semibold text-slate-700 text-sm flex items-center gap-2 border-b border-slate-200 pb-2 mb-4">
+                      <MdLock className="text-slate-500" /> Parolni yangilash
+                    </h4>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase">Joriy Parol (Ixtiyoriy)</label>
                       <input 
                         type="password"
                         placeholder="••••••••"
                         value={passwords.currentPassword}
                         onChange={e => setPasswords({...passwords, currentPassword: e.target.value})}
-                        className="w-full px-5 py-4 bg-white rounded-2xl border border-slate-200 focus:border-teal-500 outline-none font-bold text-slate-800"
+                        className="w-full px-3 py-2 bg-white rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm text-slate-800"
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Yangi Parol</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-600 uppercase">Yangi Parol</label>
                         <input 
                           required
                           type="password"
                           placeholder="••••••••"
                           value={passwords.newPassword}
                           onChange={e => setPasswords({...passwords, newPassword: e.target.value})}
-                          className="w-full px-5 py-4 bg-white rounded-2xl border border-slate-200 focus:border-teal-500 outline-none font-bold text-slate-800"
+                          className="w-full px-3 py-2 bg-white rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm text-slate-800"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Parolni Tasdiqlang</label>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-600 uppercase">Tasdiqlash</label>
                         <input 
                           required
                           type="password"
                           placeholder="••••••••"
                           value={passwords.confirmPassword}
                           onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})}
-                          className="w-full px-5 py-4 bg-white rounded-2xl border border-slate-200 focus:border-teal-500 outline-none font-bold text-slate-800"
+                          className="w-full px-3 py-2 bg-white rounded-lg border border-slate-300 focus:border-blue-500 outline-none text-sm text-slate-800"
                         />
                       </div>
                     </div>
-                    <div className="pt-4">
-                      <motion.button 
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.95 }}
+                    <div className="pt-2">
+                      <button 
                         type="submit" 
-                        className="bg-slate-900 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-slate-900/20"
+                        className="bg-slate-900 text-white font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-slate-800 transition-colors"
                       >
                         Parolni Saqlash
-                      </motion.button>
+                      </button>
                     </div>
                   </form>
 
@@ -493,47 +480,44 @@ export default function SettingsPage() {
 
               {/* Notifications Settings */}
               {activeTab === 'notifications' && (
-                <div className="space-y-8 max-w-2xl">
-                  <div className="border-b border-slate-100 pb-6 flex items-center justify-between">
+                <div className="space-y-6 max-w-lg">
+                  <div className="border-b border-slate-200 pb-4 flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-black text-slate-800">Bildirishnomalar</h2>
-                      <p className="text-sm font-medium text-slate-400">Tizim xabarlari va push-navbatlar qanday ishlashini sozlang</p>
+                      <h2 className="text-lg font-bold text-slate-800">Bildirishnomalar</h2>
+                      <p className="text-xs text-slate-500">Tizim xabarlari va ogohlantirishlar sozlamalari</p>
                     </div>
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button 
                       onClick={handleSavePreferences} 
-                      className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-amber-500/30"
+                      className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
                     >
                       <MdSave className="text-lg" /> Saqlash
-                    </motion.button>
+                    </button>
                   </div>
 
-                  <div className="grid gap-4">
+                  <div className="space-y-3">
                     {[
                       { key: 'newOrders', title: "Yangi buyurtmalar", desc: "Sizga yangi buyurtma kelganda qo'ng'iroq va yozuv chiqadi" },
                       { key: 'payments', title: "Kirim To'lovlari", desc: "Mijoz xisobni yopganida darxol ma'lumot olish" },
-                      { key: 'driverActivity', title: "Haydovchilar manzili", desc: "Haydovchi doimiy lokatsiyasini poylab turish (Batareya va resurs olishi mumkin)" },
+                      { key: 'driverActivity', title: "Haydovchilar manzili", desc: "Haydovchi doimiy lokatsiyasini poylab turish" },
                       { key: 'systemVars', title: "Tizim xabarlari", desc: "Platforma yangilanishlari va ogohlantirishlar" },
                     ].map((notif, i) => (
-                      <div key={i} className="flex items-center justify-between p-6 bg-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:border-amber-100 hover:shadow-md transition-all group">
+                      <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-200 transition-colors">
                         <div className="mr-4">
-                          <p className="text-[15px] font-black text-slate-800">{notif.title}</p>
-                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-1 leading-relaxed">{notif.desc}</p>
+                          <p className="text-sm font-bold text-slate-800">{notif.title}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{notif.desc}</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <label className="relative inline-flex items-center cursor-pointer">
                           <input 
                             type="checkbox" 
                             className="sr-only peer" 
                             checked={(notifications as any)[notif.key]} 
                             onChange={(e) => setNotifications({...notifications, [notif.key]: e.target.checked})} 
                           />
-                          <div className="w-14 h-8 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:shadow-sm after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-amber-500"></div>
+                          <div className="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                       </div>
                     ))}
                   </div>
-
                 </div>
               )}
             </motion.div>

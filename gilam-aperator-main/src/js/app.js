@@ -69,6 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const user = await window.Api.login(phone, password);
+      
+      if (user.role !== 'OPERATOR') {
+        window.Api.logout();
+        throw new Error('Dasturga faqat Operator kira oladi');
+      }
+
       Utils.showToast(`Xush kelibsiz, ${user.fullName || user.phone}!`, 'success');
       startApp(user);
     } catch (err) {
@@ -82,8 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ═══ CHECK EXISTING LOGIN ═════════════════════════════════════════════
   if (window.Api.config.token && window.Api.config.currentUser) {
-    console.log('[App] Existing session found, auto-login');
-    startApp(window.Api.config.currentUser);
+    if (window.Api.config.currentUser.role === 'OPERATOR') {
+      console.log('[App] Existing session found, auto-login');
+      startApp(window.Api.config.currentUser);
+    } else {
+      window.Api.logout();
+      window.UI.showScreen('login');
+    }
   } else {
     window.UI.showScreen('login');
   }

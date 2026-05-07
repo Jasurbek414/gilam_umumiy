@@ -417,14 +417,11 @@ class SipUdpEngine extends EventEmitter {
         this.isRegistered = true;
         this.emit('registered');
         
-        // Auto re-register every 300 seconds
+        // Auto re-register every 50 seconds (PBX default is usually 60s or 120s)
         clearInterval(this.registerTimer);
         this.registerTimer = setInterval(() => {
-          this.cseq = 0;
-          this.callId = this._callId();
-          this.tag = this._tag();
           this._register();
-        }, 280000);
+        }, 50000);
 
         // NAT Keep-Alive (every 20s to keep UDP port open for incoming calls)
         clearInterval(this.keepAliveTimer);
@@ -542,6 +539,7 @@ class SipUdpEngine extends EventEmitter {
       const fromMatch = data.match(/From:\s*(.*)/i);
       const toMatch = data.match(/To:\s*(.*)/i);
       const callIdMatch = data.match(/Call-ID:\s*(.*)/i);
+      const cseqMatch = data.match(/CSeq:\s*(\d+)/i);
       const incomingCallId = callIdMatch ? callIdMatch[1].trim() : '';
       
       // Check for re-INVITE (Session Timer / Hold)
