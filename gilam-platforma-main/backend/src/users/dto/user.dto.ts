@@ -38,6 +38,13 @@ export class CreateUserDto {
 
   @IsOptional()
   salary?: number;
+
+  @IsOptional()
+  @IsString()
+  workSchedule?: string;
+
+  @IsOptional()
+  lunchBreakMinutes?: number;
 }
 
 export class UpdateUserDto {
@@ -74,4 +81,11 @@ export class UpdateUserDto {
 
   @IsOptional()
   salary?: number;
+
+  @IsOptional()
+  @IsString()
+  workSchedule?: string;
+
+  @IsOptional()
+  lunchBreakMinutes?: number;
 }

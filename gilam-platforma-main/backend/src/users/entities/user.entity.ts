@@ -69,6 +69,12 @@ export class User {
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, default: 0 })
   salary: number;
 
+  @Column({ name: 'work_schedule', type: 'varchar', length: 20, nullable: true, default: 'MONTHLY' })
+  workSchedule: string;
+
+  @Column({ name: 'lunch_break_minutes', type: 'int', nullable: true, default: 60 })
+  lunchBreakMinutes: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

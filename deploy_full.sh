@@ -19,6 +19,14 @@ sudo -u postgres psql -d gilam_saas -c "ALTER TYPE users_role_enum ADD VALUE IF 
 # Yangi ustunlar
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;" 2>/dev/null || echo "  birth_date allaqachon mavjud"
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS salary DECIMAL(12,2) DEFAULT 0;" 2>/dev/null || echo "  salary allaqachon mavjud"
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS work_schedule VARCHAR(20) DEFAULT 'MONTHLY';" 2>/dev/null || echo "  work_schedule allaqachon mavjud"
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS lunch_break_minutes INT DEFAULT 60;" 2>/dev/null || echo "  lunch_break_minutes allaqachon mavjud"
+# Attendance yangi ustunlari
+sudo -u postgres psql -d gilam_saas -c "ALTER TYPE attendancestatus ADD VALUE IF NOT EXISTS 'HOURLY';" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TYPE attendance_status_enum ADD VALUE IF NOT EXISTS 'HOURLY';" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS start_time TIME;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS end_time TIME;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS worked_hours DECIMAL(5,2) DEFAULT 0;" 2>/dev/null || true
 # Eski rollarni yangilarga o'tkazish
 sudo -u postgres psql -d gilam_saas -c "UPDATE users SET role = 'WORKER' WHERE role = 'WASHER';" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "UPDATE users SET role = 'WORKER' WHERE role = 'FINISHER';" 2>/dev/null || true

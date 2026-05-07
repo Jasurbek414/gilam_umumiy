@@ -6,7 +6,7 @@ import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { StatCard, RevenueChart, CategoryChart, ExpenseRow, AuditRow } from './components';
+import { StatCard, RevenueChart, CategoryChart, ExpenseRow, AuditRow, StaffProfileModal, DetailDrawer } from './components';
 
 type Tab = 'dashboard' | 'expenses' | 'history' | 'attendance';
 
@@ -36,6 +36,8 @@ export default function CompanyFinancePage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedExp, setSelectedExp] = useState<any>(null);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [detailType, setDetailType] = useState<string|null>(null);
 
   const [expenseSearch, setExpenseSearch] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('ALL');
@@ -109,9 +111,18 @@ export default function CompanyFinancePage() {
   const openEdit = (exp: any) => { setSelectedExp(exp); setForm({ title: exp.title, amount: String(exp.amount), category: exp.category, comment: exp.comment||'' }); setIsEditOpen(true); };
   const openDelete = (exp: any) => { setSelectedExp(exp); setIsDeleteOpen(true); };
 
-  const handleAttendanceChange = async (userId: string, date: string, status: string, calculatedSalary: number, comment: string = '') => {
+  const handleAttendanceChange = async (userId: string, date: string, status: string, calculatedSalary: number, comment: string = '', startTime?: string, endTime?: string) => {
     try {
-      await attendanceApi.createOrUpdate({ userId, date, status, calculatedSalary, comment });
+      let workedHours = 0;
+      if (startTime && endTime) {
+        const [sh,sm] = startTime.split(':').map(Number);
+        const [eh,em] = endTime.split(':').map(Number);
+        const member = staff.find((s:any) => s.id === userId);
+        const lunch = (member?.lunchBreakMinutes || 60) / 60;
+        workedHours = Math.max(0, (eh + em/60) - (sh + sm/60) - lunch);
+        workedHours = Math.round(workedHours * 100) / 100;
+      }
+      await attendanceApi.createOrUpdate({ userId, date, status, calculatedSalary, comment, startTime, endTime, workedHours });
       toast.success("Davomat saqlandi ✅");
       const a = await attendanceApi.getByCompany(startDate, endDate);
       setAttendances(a);
@@ -139,10 +150,10 @@ export default function CompanyFinancePage() {
   ];
 
   const stats = [
-    { title:'Tushum', value: totalRevenue, icon: MdAttachMoney, color:'emerald', up:true, trend:'Tasdiqlangan' },
-    { title:'Kutilayotgan', value: expectedRevenue, icon: MdTrendingUp, color:'blue', up:true, trend:'Jarayonda' },
-    { title:'Xarajatlar', value: totalExpenses, icon: MdTrendingDown, color:'rose', up:false, trend:'Chiqim' },
-    { title:'Sof Foyda', value: totalRevenue-totalExpenses, icon: MdLibraryBooks, color:'amber', up: totalRevenue-totalExpenses>=0, trend: totalRevenue-totalExpenses>=0?'Foyda':'Zarar' },
+    { title:'Tushum', value: totalRevenue, icon: MdAttachMoney, color:'emerald', up:true, trend:'Tasdiqlangan', detail:'revenue' },
+    { title:'Kutilayotgan', value: expectedRevenue, icon: MdTrendingUp, color:'blue', up:true, trend:'Jarayonda', detail:'expected' },
+    { title:'Xarajatlar', value: totalExpenses, icon: MdTrendingDown, color:'rose', up:false, trend:'Chiqim', detail:'expenses' },
+    { title:'Sof Foyda', value: totalRevenue-totalExpenses, icon: MdLibraryBooks, color:'amber', up: totalRevenue-totalExpenses>=0, trend: totalRevenue-totalExpenses>=0?'Foyda':'Zarar', detail:'profit' },
   ];
 
   const categories = ['Logistika','Ish haqi','Ijara','Kommunal','Mijozga pul qaytarish','Boshqa'];
@@ -220,7 +231,7 @@ export default function CompanyFinancePage() {
       {activeTab === 'dashboard' && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {stats.map((s,i) => <StatCard key={i} {...s} />)}
+            {stats.map((s,i) => <StatCard key={i} {...s} onClick={() => setDetailType(s.detail)} />)}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <RevenueChart orders={filteredOrders} expenses={expenses} />
@@ -259,99 +270,50 @@ export default function CompanyFinancePage() {
         </div>
       )}
 
-      {/* Attendance & Salary Tab */}
+      {/* Attendance & Salary Tab — Staff Table */}
       {activeTab === 'attendance' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><MdTrendingUp className="text-emerald-500" /> Davomat va Xodimlar Oyligi</h2>
-              <p className="text-xs text-slate-500 mt-1">Tanlangan sana oralig'idagi davomat va hisoblangan maoshlar</p>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">👥 Xodimlar va Ish Haqi</h2>
+              <p className="text-xs text-slate-500 mt-1">Xodim ustiga bosib profilni va davomat kalendarini ko'ring</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-slate-400 uppercase">Jami Ish Haqi</p>
-              <p className="text-xl font-black text-slate-800">{attendances.reduce((a,att) => a+Number(att.calculatedSalary||0), 0).toLocaleString()} so'm</p>
+              <p className="text-xl font-black text-emerald-600">{attendances.reduce((a: number,att: any) => a+Number(att.calculatedSalary||0), 0).toLocaleString()} so'm</p>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead><tr className="text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50 border-b border-slate-100">
-                <th className="px-5 py-3">Xodim</th><th className="px-5 py-3">Roli</th><th className="px-5 py-3">Sana</th><th className="px-5 py-3">Holat</th><th className="px-5 py-3">Hisoblangan Maosh</th><th className="px-5 py-3">Saqlash</th>
+              <thead><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100">
+                <th className="px-5 py-3">Xodim</th><th className="px-5 py-3">Roli</th><th className="px-5 py-3">Ish rejimi</th><th className="px-5 py-3">Oylik</th><th className="px-5 py-3">Ishlagan</th><th className="px-5 py-3 text-right">Hisoblangan</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {staff.map(member => {
-                  // Only show active employees
-                  if (member.status !== 'ACTIVE') return null;
-                  
-                  // For daily period, we show inputs. For weekly/monthly we just show aggregated data per user?
-                  // User wants "kunlik soatlik toliq hisobotni shakllantirish mumkin bolsin, malumotni manager davomadi orqali ham shakllantirish imkoniyati bolsin"
-                  // We'll show a row for each employee for the current `startDate`.
-                  // If startDate != endDate, we show aggregate. If startDate == endDate, we show form.
-                  const isSingleDay = startDate === endDate;
-                  const userAtts = attendances.filter(a => a.userId === member.id);
-                  const totalSal = userAtts.reduce((sum, a) => sum + Number(a.calculatedSalary), 0);
-                  const todayAtt = userAtts.find(a => a.date.startsWith(startDate));
-                  
+                {staff.filter((m: any) => m.status === 'ACTIVE').map((member: any) => {
+                  const userAtts = attendances.filter((a: any) => a.userId === member.id);
+                  const totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
+                  const presentDays = userAtts.filter((a: any) => ['PRESENT','HOURLY'].includes(a.status)).length;
+                  const scheduleLabel: any = { MONTHLY:'📅 Oylik', WEEKLY:'📆 Haftalik', DAILY:'📋 Kunlik', HOURLY:'⏰ Soatlik' };
+                  const roleColors: any = { DRIVER:'bg-blue-100 text-blue-700', MANAGER:'bg-purple-100 text-purple-700', WORKER:'bg-emerald-100 text-emerald-700', OPERATOR:'bg-amber-100 text-amber-700', COMPANY_ADMIN:'bg-slate-200 text-slate-700' };
                   return (
-                    <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-5 py-4"><p className="text-sm font-bold text-slate-800">{member.fullName}</p><p className="text-xs text-slate-500">{member.phone}</p></td>
-                      <td className="px-5 py-4"><span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black">{member.role}</span></td>
-                      {isSingleDay ? (
-                        <>
-                          <td className="px-5 py-4 text-sm font-medium text-slate-600">{startDate}</td>
-                          <td className="px-5 py-4">
-                            <select 
-                              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
-                              defaultValue={todayAtt?.status || 'PRESENT'}
-                              id={`status-${member.id}`}
-                            >
-                              <option value="PRESENT">✅ Keldi</option>
-                              <option value="HALF_DAY">⏱ Yarim kun / Soatlik</option>
-                              <option value="ABSENT">❌ Kelmadi</option>
-                            </select>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="relative w-32">
-                              <input 
-                                id={`salary-${member.id}`}
-                                type="number" 
-                                className="w-full pl-3 pr-10 py-1.5 bg-white border border-slate-200 rounded-lg text-right text-sm font-bold outline-none focus:border-emerald-500"
-                                defaultValue={todayAtt?.calculatedSalary ?? member.salary ?? 0}
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">so'm</span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <button 
-                              onClick={() => {
-                                const st = (document.getElementById(`status-${member.id}`) as HTMLSelectElement).value;
-                                const sal = Number((document.getElementById(`salary-${member.id}`) as HTMLInputElement).value);
-                                handleAttendanceChange(member.id, startDate, st, sal);
-                              }}
-                              className="px-4 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-bold transition-all"
-                            >
-                              Saqlash
-                            </button>
-                          </td>
-                        </>
-                      ) : (
-                        <td colSpan={4} className="px-5 py-4">
-                          <div className="flex justify-between items-center">
-                            <p className="text-xs text-slate-500">{userAtts.length} kun ishlagan</p>
-                            <p className="text-sm font-black text-emerald-600">{totalSal.toLocaleString()} so'm</p>
-                          </div>
-                        </td>
-                      )}
+                    <tr key={member.id} onClick={() => setSelectedMember(member)} className="hover:bg-blue-50/50 transition-colors cursor-pointer group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-sm font-black">{member.fullName?.[0]?.toUpperCase()}</div>
+                          <div><p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{member.fullName}</p><p className="text-[11px] text-slate-400">{member.phone}</p></div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4"><span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${roleColors[member.role] || 'bg-slate-100 text-slate-600'}`}>{member.role}</span></td>
+                      <td className="px-5 py-4 text-xs font-bold text-slate-600">{scheduleLabel[member.workSchedule] || '📅 Oylik'}</td>
+                      <td className="px-5 py-4 text-sm font-bold text-slate-700">{Number(member.salary || 0).toLocaleString()}</td>
+                      <td className="px-5 py-4"><span className="text-sm font-black text-emerald-600">{presentDays}</span><span className="text-xs text-slate-400 ml-1">kun</span></td>
+                      <td className="px-5 py-4 text-right text-sm font-black text-blue-600">{totalSal.toLocaleString()} so'm</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          {startDate !== endDate && (
-            <div className="p-4 bg-amber-50 border-t border-amber-100 text-amber-700 text-xs font-medium text-center">
-              💡 Davomat belgilash uchun yuqoridan qidiruvni <b>"KUNLIK"</b> ga o'tkazing. Haftalik va Oylik rejimda faqat hisobot ko'rsatiladi.
-            </div>
-          )}
         </div>
       )}
 
@@ -410,6 +372,54 @@ export default function CompanyFinancePage() {
           </div>
         </div>
       </Modal>
+
+      {/* Staff Profile Modal */}
+      <StaffProfileModal
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        member={selectedMember}
+        attendances={attendances}
+        startDate={startDate}
+        endDate={endDate}
+        onSaveAttendance={handleAttendanceChange}
+      />
+
+      {/* Detail Drawer for stat cards */}
+      <DetailDrawer isOpen={detailType === 'revenue'} onClose={() => setDetailType(null)} title="Tushum Tahlili" icon="💰" color="from-emerald-500 to-teal-500">
+        <div className="space-y-3">
+          {filteredOrders.filter(o => ['DELIVERED','COMPLETED'].includes(o.status)).map((o: any) => (
+            <div key={o.id} className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+              <div><p className="text-sm font-bold text-slate-800">#{o.id?.substring(0,8)}</p><p className="text-xs text-slate-400">{new Date(o.createdAt).toLocaleDateString()}</p></div>
+              <span className="text-sm font-black text-emerald-600">{Number(o.totalAmount || 0).toLocaleString()} so'm</span>
+            </div>
+          ))}
+          {filteredOrders.filter(o => ['DELIVERED','COMPLETED'].includes(o.status)).length === 0 && <p className="text-center text-slate-400 py-8">Hozircha tushum yo'q</p>}
+        </div>
+      </DetailDrawer>
+
+      <DetailDrawer isOpen={detailType === 'expenses'} onClose={() => setDetailType(null)} title="Xarajatlar Tahlili" icon="📊" color="from-rose-500 to-pink-500">
+        <div className="space-y-3">
+          {expenses.filter(e => e.type !== 'INCOME').map((e: any) => (
+            <div key={e.id} className="flex justify-between items-center p-3 bg-rose-50 rounded-xl border border-rose-100">
+              <div><p className="text-sm font-bold text-slate-800">{e.title}</p><p className="text-xs text-slate-400">{e.category} · {e.date}</p></div>
+              <span className="text-sm font-black text-rose-600">-{Number(e.amount).toLocaleString()} so'm</span>
+            </div>
+          ))}
+        </div>
+      </DetailDrawer>
+
+      <DetailDrawer isOpen={detailType === 'profit'} onClose={() => setDetailType(null)} title="Sof Foyda Tahlili" icon="📈" color="from-amber-500 to-orange-500">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-center"><p className="text-xl font-black text-emerald-600">{totalRevenue.toLocaleString()}</p><p className="text-[10px] font-bold text-emerald-600 uppercase mt-1">Jami Tushum</p></div>
+            <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-center"><p className="text-xl font-black text-rose-600">{totalExpenses.toLocaleString()}</p><p className="text-[10px] font-bold text-rose-600 uppercase mt-1">Jami Xarajat</p></div>
+          </div>
+          <div className={`p-4 rounded-xl border text-center ${totalRevenue - totalExpenses >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+            <p className={`text-2xl font-black ${totalRevenue - totalExpenses >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{(totalRevenue - totalExpenses).toLocaleString()} so'm</p>
+            <p className="text-xs font-bold text-slate-500 mt-1">{totalRevenue - totalExpenses >= 0 ? '✅ Foyda' : '⚠️ Zarar'}</p>
+          </div>
+        </div>
+      </DetailDrawer>
     </div>
   );
 }

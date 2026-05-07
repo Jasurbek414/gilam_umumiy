@@ -20,6 +20,9 @@ export class AttendanceService {
       if (data.status !== undefined) existing.status = data.status;
       if (data.calculatedSalary !== undefined) existing.calculatedSalary = data.calculatedSalary;
       if (data.comment !== undefined) existing.comment = data.comment;
+      if (data.startTime !== undefined) existing.startTime = data.startTime;
+      if (data.endTime !== undefined) existing.endTime = data.endTime;
+      if (data.workedHours !== undefined) existing.workedHours = data.workedHours;
       return this.attendanceRepo.save(existing);
     }
     
