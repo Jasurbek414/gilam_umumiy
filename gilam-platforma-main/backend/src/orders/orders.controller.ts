@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   Patch,
@@ -91,6 +92,15 @@ export class OrdersController {
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.ordersService.findOne(id);
+  }
+
+  @Put(':id')
+  updateOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateData: any,
+    @CurrentUser() user: User,
+  ) {
+    return this.ordersService.updateOrder(id, updateData);
   }
 
   @Patch(':id/status')

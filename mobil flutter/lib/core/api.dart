@@ -158,6 +158,18 @@ Future<void> updateOrderTotal(String orderId, num totalAmount) async {
   await apiRequest('/orders/$orderId/total', method: 'PATCH', body: {'totalAmount': totalAmount});
 }
 
+Future<Map<String, dynamic>> updateOrder(String orderId, Map<String, dynamic> data) async {
+  return await apiRequest('/orders/$orderId', method: 'PUT', body: data) as Map<String, dynamic>;
+}
+
+Future<List<dynamic>> getCompanyServices(String companyId) async {
+  return (await apiRequest('/services/company/$companyId') as List?) ?? [];
+}
+
+Future<List<dynamic>> getCompanyCustomers(String companyId) async {
+  return (await apiRequest('/customers/company/$companyId') as List?) ?? [];
+}
+
 // ─── Facility Stages ──────────────────────────────────────────────────────────
 Future<List<dynamic>> getFacilityStages(String companyId) async {
   return (await apiRequest('/facility-stages/company/$companyId') as List?) ?? [];

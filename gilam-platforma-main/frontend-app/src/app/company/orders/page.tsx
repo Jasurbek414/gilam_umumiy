@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint, MdVisibility, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall, MdSend, MdMyLocation, MdOpenInNew } from 'react-icons/md';
+import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint, MdVisibility, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall, MdSend, MdMyLocation, MdOpenInNew, MdEdit } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,7 @@ export default function CompanyOrdersPage() {
   const [viewOrder, setViewOrder] = useState<any>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [sendingLocation, setSendingLocation] = useState(false);
   const [locationInput, setLocationInput] = useState('');
@@ -84,6 +85,7 @@ export default function CompanyOrdersPage() {
   }
 
   const handleOpenModal = () => {
+    setEditingOrder(null);
     setFormData({
       customerId: '',
       notes: '',
@@ -93,6 +95,25 @@ export default function CompanyOrdersPage() {
     setShowAddService(false);
     setCustomerForm({ fullName: '', phone1: '', phone2: '', address: '' });
     setServiceForm({ name: '', measurementUnit: 'SQM', price: '' });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (order: any) => {
+    setEditingOrder(order);
+    setFormData({
+      customerId: order.customer?.id || order.customerId || '',
+      notes: order.notes || '',
+      items: order.items?.map((it: any) => ({
+        serviceId: it.service?.id || it.serviceId || '',
+        width: it.width || '',
+        length: it.length || '',
+        quantity: it.quantity || 1,
+        notes: it.notes || '',
+      })) || [{ serviceId: '', width: '', length: '', quantity: 1, notes: '' }]
+    });
+    setShowAddCustomer(false);
+    setShowAddService(false);
+    setViewOrder(null);
     setIsModalOpen(true);
   };
 
@@ -178,13 +199,23 @@ export default function CompanyOrdersPage() {
 
     setSaving(true);
     try {
-      await ordersApi.create({
-        customerId: formData.customerId,
-        notes: formData.notes || undefined,
-        items: formattedItems,
-      });
-      toast.success('Buyurtma muvaffaqiyatli saqlandi!');
+      if (editingOrder) {
+        await ordersApi.update(editingOrder.id, {
+          customerId: formData.customerId,
+          notes: formData.notes || undefined,
+          items: formattedItems,
+        });
+        toast.success('Buyurtma muvaffaqiyatli tahrirlandi! ✏️');
+      } else {
+        await ordersApi.create({
+          customerId: formData.customerId,
+          notes: formData.notes || undefined,
+          items: formattedItems,
+        });
+        toast.success('Buyurtma muvaffaqiyatli saqlandi!');
+      }
       setIsModalOpen(false);
+      setEditingOrder(null);
       await loadData(user.company.id);
     } catch (err: any) {
       toast.error('Xatolik: ' + err.message);
@@ -463,10 +494,17 @@ export default function CompanyOrdersPage() {
                   <td className="py-5 px-6 text-right whitespace-nowrap">
                     <button 
                       onClick={() => setViewOrder(order)}
-                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm mr-2"
+                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm mr-1"
                       title="Batafsil ko'rish"
                     >
                       <MdVisibility className="text-xl" />
+                    </button>
+                    <button 
+                      onClick={() => handleOpenEdit(order)}
+                      className="p-2.5 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white transition-all shadow-sm mr-1"
+                      title="Tahrirlash"
+                    >
+                      <MdEdit className="text-xl" />
                     </button>
                     <button 
                       onClick={() => handlePrint(order)}
@@ -490,7 +528,7 @@ export default function CompanyOrdersPage() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Yangi Buyurtma Qo'shish">
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingOrder(null); }} title={editingOrder ? `Buyurtmani Tahrirlash #${editingOrder.id.substring(0,8)}` : "Yangi Buyurtma Qo'shish"}>
         <form onSubmit={handleCreateOrder} className="space-y-5">
 
           {/* === MIJOZ TANLASH === */}
@@ -733,7 +771,7 @@ export default function CompanyOrdersPage() {
               type="submit"
               className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
             >
-              {saving ? 'Saqlanmoqda...' : 'Tasdiqlash'}
+              {saving ? 'Saqlanmoqda...' : editingOrder ? '✏️ Yangilash' : 'Tasdiqlash'}
             </button>
           </div>
         </form>
@@ -845,7 +883,15 @@ export default function CompanyOrdersPage() {
                  </table>
                  <div className="p-5 flex justify-between items-center border-t border-slate-200 bg-white rounded-b-2xl">
                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Jami To'lov:</span>
-                    <span className="text-xl font-black text-blue-600">{Number(viewOrder.totalAmount).toLocaleString()} so'm</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-black text-blue-600">{Number(viewOrder.totalAmount).toLocaleString()} so'm</span>
+                      <button
+                        onClick={() => handleOpenEdit(viewOrder)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white rounded-xl text-xs font-bold transition-all"
+                      >
+                        <MdEdit className="text-base" /> Tahrirlash
+                      </button>
+                    </div>
                  </div>
               </div>
 

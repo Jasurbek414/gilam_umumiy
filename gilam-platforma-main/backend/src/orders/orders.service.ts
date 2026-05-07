@@ -496,6 +496,63 @@ export class OrdersService {
   }
 
   /**
+   * Buyurtmani to'liq tahrirlash: mijoz, izoh, xizmatlar (items) ni yangilash.
+   */
+  async updateOrder(id: string, updateData: any) {
+    const order = await this.findOne(id);
+    
+    // Update basic fields
+    if (updateData.customerId) order.customerId = updateData.customerId;
+    if (updateData.notes !== undefined) order.notes = updateData.notes;
+    
+    // If items are provided, rebuild them
+    if (updateData.items && Array.isArray(updateData.items)) {
+      // Remove old items
+      await this.orderItemRepository.delete({ orderId: id });
+      
+      // Create new items
+      const serviceIds = updateData.items.map((i: any) => i.serviceId);
+      const services = await this.serviceRepository.findBy({ id: In(serviceIds) });
+      const serviceMap = new Map(services.map(s => [s.id, s]));
+      
+      let totalAmount = 0;
+      const newItems: OrderItem[] = [];
+      
+      for (const itemDto of updateData.items) {
+        const service = serviceMap.get(itemDto.serviceId);
+        if (!service) continue;
+        
+        const quantity = itemDto.width && itemDto.length 
+          ? Math.round(Number(itemDto.width) * Number(itemDto.length) * 100) / 100
+          : Number(itemDto.quantity) || 1;
+        
+        const totalPrice = this.calculateItemPrice(
+          { width: itemDto.width, length: itemDto.length, quantity: itemDto.quantity || 1 },
+          service,
+        );
+        
+        const item = this.orderItemRepository.create({
+          orderId: id,
+          serviceId: itemDto.serviceId,
+          width: itemDto.width ? Number(itemDto.width) : undefined,
+          length: itemDto.length ? Number(itemDto.length) : undefined,
+          quantity,
+          totalPrice,
+          notes: itemDto.notes,
+        });
+        
+        newItems.push(item);
+        totalAmount += totalPrice;
+      }
+      
+      await this.orderItemRepository.save(newItems);
+      order.totalAmount = totalAmount;
+    }
+    
+    return this.orderRepository.save(order);
+  }
+
+  /**
    * Sex hodimi o'lchovlardan keyin butun buyurtma summasini qo'lda belgilaydi.
    * Bu metod totalAmount ni to'g'ridan-to'g'ri yozadi va
    * company notification yaratadi.

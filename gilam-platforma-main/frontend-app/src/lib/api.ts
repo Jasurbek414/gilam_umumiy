@@ -185,6 +185,7 @@ export const ordersApi = {
   getDriverOrders: (driverId: string) => request<Order[]>(`/orders/driver/${driverId}`),
   getOne: (id: string) => request<Order>(`/orders/${id}`),
   create: (data: any) => request<Order>('/orders', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => request<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   updateStatus: (id: string, data: { status: string; driverId?: string }) => request<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
   /** Operator: tayinlangan haydovchiga mijoz lokatsiyasini push orqali yuborish */
   sendLocationToDriver: (id: string) => request<{ success: boolean }>(`/orders/${id}/send-location`, { method: 'POST' }),

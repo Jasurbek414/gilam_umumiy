@@ -100,7 +100,7 @@ export default function Topbar() {
   };
 
   return (
-    <div className="flex items-center justify-between w-full h-[84px] bg-slate-50/80 backdrop-blur-md px-6 lg:px-8 border-b border-slate-200/60 sticky top-0 z-[10000] gap-3">
+    <div className="flex items-center justify-between w-full h-[84px] bg-slate-50/80 backdrop-blur-md px-6 lg:px-8 border-b border-slate-200/60 sticky top-0 z-40 gap-3">
       {/* Global Search functionality */}
       <div className="hidden md:flex items-center bg-slate-50 hover:bg-slate-100 focus-within:bg-white focus-within:hover:bg-white rounded-2xl px-5 py-3.5 flex-1 max-w-lg border border-transparent focus-within:border-blue-500/50 focus-within:shadow-[0_8px_30px_-12px_rgba(59,130,246,0.25)] transition-all group">
         <MdSearch className="text-slate-400 group-focus-within:text-blue-500 text-xl flex-shrink-0 transition-colors" />
