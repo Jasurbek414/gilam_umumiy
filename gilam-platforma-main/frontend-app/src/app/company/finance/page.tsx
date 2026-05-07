@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { MdAttachMoney, MdTrendingUp, MdTrendingDown, MdLibraryBooks, MdAdd, MdFilterList, MdHistory } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { getUser, ordersApi, expensesApi, auditApi } from '@/lib/api';
+import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { StatCard, RevenueChart, CategoryChart, ExpenseRow, AuditRow } from './components';
 
-type Tab = 'dashboard' | 'expenses' | 'history';
+type Tab = 'dashboard' | 'expenses' | 'history' | 'attendance';
 
 export default function CompanyFinancePage() {
   const router = useRouter();
@@ -27,6 +27,8 @@ export default function CompanyFinancePage() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [attendances, setAttendances] = useState<any[]>([]);
 
   // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -51,11 +53,13 @@ export default function CompanyFinancePage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [o, e] = await Promise.all([
+      const [o, e, s, a] = await Promise.all([
         ordersApi.getByCompany(user.company.id),
         expensesApi.getByCompany(user.company.id, startDate, endDate),
+        usersApi.getByCompany(user.company.id),
+        attendanceApi.getByCompany(startDate, endDate)
       ]);
-      setOrders(o); setExpenses(e);
+      setOrders(o); setExpenses(e); setStaff(s); setAttendances(a);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -105,11 +109,20 @@ export default function CompanyFinancePage() {
   const openEdit = (exp: any) => { setSelectedExp(exp); setForm({ title: exp.title, amount: String(exp.amount), category: exp.category, comment: exp.comment||'' }); setIsEditOpen(true); };
   const openDelete = (exp: any) => { setSelectedExp(exp); setIsDeleteOpen(true); };
 
+  const handleAttendanceChange = async (userId: string, date: string, status: string, calculatedSalary: number, comment: string = '') => {
+    try {
+      await attendanceApi.createOrUpdate({ userId, date, status, calculatedSalary, comment });
+      toast.success("Davomat saqlandi ✅");
+      const a = await attendanceApi.getByCompany(startDate, endDate);
+      setAttendances(a);
+    } catch(err: any) { toast.error(err.message); }
+  };
+
   // Calculations
   const pStart = new Date(startDate); const pEnd = new Date(endDate); pEnd.setHours(23,59,59,999);
   const filteredOrders = orders.filter(o => { const c = new Date(o.createdAt); return c >= pStart && c <= pEnd; });
   const totalIncomes = expenses.filter(e => e.type==='INCOME').reduce((a,e) => a+Number(e.amount||0), 0);
-  const totalExpenses = expenses.filter(e => e.type!=='INCOME').reduce((a,e) => a+Number(e.amount||0), 0);
+  const totalExpenses = expenses.filter(e => e.type!=='INCOME').reduce((a,e) => a+Number(e.amount||0), 0) + attendances.reduce((a,att) => a+Number(att.calculatedSalary||0), 0);
   const totalRevenue = filteredOrders.filter(o => ['DELIVERED','COMPLETED'].includes(o.status)).reduce((a,o) => a+Number(o.totalAmount||0), 0) + totalIncomes;
   const expectedRevenue = filteredOrders.filter(o => !['DELIVERED','COMPLETED','CANCELLED'].includes(o.status)).reduce((a,o) => a+Number(o.totalAmount||0), 0);
 
@@ -121,6 +134,7 @@ export default function CompanyFinancePage() {
   const tabs = [
     { key: 'dashboard' as Tab, label: '📊 Dashboard', icon: MdTrendingUp },
     { key: 'expenses' as Tab, label: '📋 Xarajatlar', icon: MdLibraryBooks },
+    { key: 'attendance' as Tab, label: '👥 Xodimlar Oyligi', icon: MdTrendingUp },
     { key: 'history' as Tab, label: '📜 Tarix', icon: MdHistory },
   ];
 
@@ -242,6 +256,102 @@ export default function CompanyFinancePage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Attendance & Salary Tab */}
+      {activeTab === 'attendance' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><MdTrendingUp className="text-emerald-500" /> Davomat va Xodimlar Oyligi</h2>
+              <p className="text-xs text-slate-500 mt-1">Tanlangan sana oralig'idagi davomat va hisoblangan maoshlar</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold text-slate-400 uppercase">Jami Ish Haqi</p>
+              <p className="text-xl font-black text-slate-800">{attendances.reduce((a,att) => a+Number(att.calculatedSalary||0), 0).toLocaleString()} so'm</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead><tr className="text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50 border-b border-slate-100">
+                <th className="px-5 py-3">Xodim</th><th className="px-5 py-3">Roli</th><th className="px-5 py-3">Sana</th><th className="px-5 py-3">Holat</th><th className="px-5 py-3">Hisoblangan Maosh</th><th className="px-5 py-3">Saqlash</th>
+              </tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {staff.map(member => {
+                  // Only show active employees
+                  if (member.status !== 'ACTIVE') return null;
+                  
+                  // For daily period, we show inputs. For weekly/monthly we just show aggregated data per user?
+                  // User wants "kunlik soatlik toliq hisobotni shakllantirish mumkin bolsin, malumotni manager davomadi orqali ham shakllantirish imkoniyati bolsin"
+                  // We'll show a row for each employee for the current `startDate`.
+                  // If startDate != endDate, we show aggregate. If startDate == endDate, we show form.
+                  const isSingleDay = startDate === endDate;
+                  const userAtts = attendances.filter(a => a.userId === member.id);
+                  const totalSal = userAtts.reduce((sum, a) => sum + Number(a.calculatedSalary), 0);
+                  const todayAtt = userAtts.find(a => a.date.startsWith(startDate));
+                  
+                  return (
+                    <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-5 py-4"><p className="text-sm font-bold text-slate-800">{member.fullName}</p><p className="text-xs text-slate-500">{member.phone}</p></td>
+                      <td className="px-5 py-4"><span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black">{member.role}</span></td>
+                      {isSingleDay ? (
+                        <>
+                          <td className="px-5 py-4 text-sm font-medium text-slate-600">{startDate}</td>
+                          <td className="px-5 py-4">
+                            <select 
+                              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                              defaultValue={todayAtt?.status || 'PRESENT'}
+                              id={`status-${member.id}`}
+                            >
+                              <option value="PRESENT">✅ Keldi</option>
+                              <option value="HALF_DAY">⏱ Yarim kun / Soatlik</option>
+                              <option value="ABSENT">❌ Kelmadi</option>
+                            </select>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="relative w-32">
+                              <input 
+                                id={`salary-${member.id}`}
+                                type="number" 
+                                className="w-full pl-3 pr-10 py-1.5 bg-white border border-slate-200 rounded-lg text-right text-sm font-bold outline-none focus:border-emerald-500"
+                                defaultValue={todayAtt?.calculatedSalary ?? member.salary ?? 0}
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">so'm</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <button 
+                              onClick={() => {
+                                const st = (document.getElementById(`status-${member.id}`) as HTMLSelectElement).value;
+                                const sal = Number((document.getElementById(`salary-${member.id}`) as HTMLInputElement).value);
+                                handleAttendanceChange(member.id, startDate, st, sal);
+                              }}
+                              className="px-4 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-bold transition-all"
+                            >
+                              Saqlash
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <td colSpan={4} className="px-5 py-4">
+                          <div className="flex justify-between items-center">
+                            <p className="text-xs text-slate-500">{userAtts.length} kun ishlagan</p>
+                            <p className="text-sm font-black text-emerald-600">{totalSal.toLocaleString()} so'm</p>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {startDate !== endDate && (
+            <div className="p-4 bg-amber-50 border-t border-amber-100 text-amber-700 text-xs font-medium text-center">
+              💡 Davomat belgilash uchun yuqoridan qidiruvni <b>"KUNLIK"</b> ga o'tkazing. Haftalik va Oylik rejimda faqat hisobot ko'rsatiladi.
+            </div>
+          )}
         </div>
       )}
 
