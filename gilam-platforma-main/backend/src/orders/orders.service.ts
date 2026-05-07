@@ -534,11 +534,10 @@ export class OrdersService {
         const item = this.orderItemRepository.create({
           orderId: id,
           serviceId: itemDto.serviceId,
-          width: itemDto.width ? Number(itemDto.width) : undefined,
-          length: itemDto.length ? Number(itemDto.length) : undefined,
+          width: itemDto.width ? Number(itemDto.width) : (null as any),
+          length: itemDto.length ? Number(itemDto.length) : (null as any),
           quantity,
           totalPrice,
-          notes: itemDto.notes,
         });
         
         newItems.push(item);
