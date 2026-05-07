@@ -57,6 +57,8 @@ cp -f "$REPO/frontend-app/src/app/company/orders/page.tsx" "$FRONT/src/app/compa
 cp -f "$REPO/frontend-app/src/app/company/finance/page.tsx" "$FRONT/src/app/company/finance/page.tsx"
 cp -f "$REPO/frontend-app/src/app/company/finance/components.tsx" "$FRONT/src/app/company/finance/components.tsx"
 cp -f "$REPO/frontend-app/src/app/company/staff/page.tsx" "$FRONT/src/app/company/staff/page.tsx"
+mkdir -p "$FRONT/src/app/company/settings"
+cp -f "$REPO/frontend-app/src/app/company/settings/page.tsx" "$FRONT/src/app/company/settings/page.tsx"
 mkdir -p "$FRONT/src/app/company/login"
 cp -f "$REPO/frontend-app/src/app/company/login/page.tsx" "$FRONT/src/app/company/login/page.tsx"
 cp -f "$REPO/frontend-app/src/lib/api.ts" "$FRONT/src/lib/api.ts"
