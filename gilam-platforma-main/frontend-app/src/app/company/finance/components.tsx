@@ -163,7 +163,7 @@ export function DetailDrawer({ isOpen, onClose, title, icon, color, children }: 
 }
 
 // ── Staff Profile Modal ──
-export function StaffProfileModal({ isOpen, onClose, member, attendances, startDate, endDate, onSaveAttendance }: any) {
+export function StaffProfileModal({ isOpen, onClose, member, attendances, startDate, endDate, onSaveAttendance, onUpdateUser }: any) {
   if (!isOpen || !member) return null;
   
   const userAtts = attendances.filter((a: any) => a.userId === member.id);
@@ -173,8 +173,6 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const totalSalary = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
   const totalHours = userAtts.reduce((sum: number, a: any) => sum + Number(a.workedHours || 0), 0);
   
-  const schedule = member.workSchedule || 'MONTHLY';
-  const scheduleLabels: any = { MONTHLY: '📅 Oylik', WEEKLY: '📆 Haftalik', DAILY: '📋 Kunlik', HOURLY: '⏰ Soatlik' };
   const roleColors: any = {
     DRIVER: 'bg-blue-100 text-blue-700', MANAGER: 'bg-purple-100 text-purple-700',
     WORKER: 'bg-emerald-100 text-emerald-700', OPERATOR: 'bg-amber-100 text-amber-700',
@@ -188,6 +186,16 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     days.push(d.toISOString().split('T')[0]);
   }
+
+  const handleSaveProfile = () => {
+    const ws = (document.getElementById('prof-schedule') as HTMLSelectElement)?.value;
+    const sal = Number((document.getElementById('prof-salary') as HTMLInputElement)?.value || 0);
+    const lunch = Number((document.getElementById('prof-lunch') as HTMLInputElement)?.value || 60);
+    if (onUpdateUser) onUpdateUser(member.id, { workSchedule: ws, salary: sal, lunchBreakMinutes: lunch });
+  };
+
+  // Read current schedule from the DOM select (or member default)
+  const schedule = member.workSchedule || 'MONTHLY';
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -231,42 +239,71 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
             </div>
           </div>
 
-          {/* Info Row */}
-          <div className="flex flex-wrap gap-3 text-xs">
-            <div className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
-              <span className="text-slate-400 font-bold">Ish rejimi:</span> <span className="font-black text-slate-700">{scheduleLabels[schedule]}</span>
+          {/* ═══ Editable Profile Section ═══ */}
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">⚙️ Ish Tartibi va Oylik Sozlamalari</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Work Schedule */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ish Rejimi</label>
+                <select
+                  id="prof-schedule"
+                  defaultValue={schedule}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="MONTHLY">📅 Oylik</option>
+                  <option value="WEEKLY">📆 Haftalik</option>
+                  <option value="DAILY">📋 Kunlik</option>
+                  <option value="HOURLY">⏰ Soatlik</option>
+                </select>
+              </div>
+              {/* Salary */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Oylik / Stavka (so'm)</label>
+                <input
+                  id="prof-salary"
+                  type="number"
+                  defaultValue={member.salary || 0}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-emerald-500"
+                  placeholder="1500000"
+                />
+              </div>
+              {/* Lunch Break */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Abet vaqti (daqiqa)</label>
+                <input
+                  id="prof-lunch"
+                  type="number"
+                  defaultValue={member.lunchBreakMinutes || 60}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500"
+                  placeholder="60"
+                />
+              </div>
             </div>
-            <div className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
-              <span className="text-slate-400 font-bold">Oylik:</span> <span className="font-black text-slate-700">{Number(member.salary || 0).toLocaleString()} so'm</span>
-            </div>
-            {schedule === 'HOURLY' && (
-              <>
-                <div className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 font-bold">Jami soat:</span> <span className="font-black text-slate-700">{totalHours.toFixed(1)} soat</span>
-                </div>
-                <div className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 font-bold">Abet:</span> <span className="font-black text-slate-700">{member.lunchBreakMinutes || 60} daqiqa</span>
-                </div>
-              </>
+            <button
+              onClick={handleSaveProfile}
+              className="mt-4 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/20"
+            >
+              💾 Profilni Saqlash
+            </button>
+            {schedule === 'HOURLY' && totalHours > 0 && (
+              <span className="ml-4 text-xs font-bold text-slate-500">📊 Jami: {totalHours.toFixed(1)} soat ishlagan</span>
             )}
           </div>
 
           {/* Calendar */}
           <div>
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Davomat Kalendari</h4>
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">📅 Davomat Kalendari</h4>
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
                     <th className="px-3 py-2 text-left">Sana</th>
                     <th className="px-3 py-2 text-left">Holat</th>
-                    {schedule === 'HOURLY' && <>
-                      <th className="px-3 py-2">Boshlash</th>
-                      <th className="px-3 py-2">Tugash</th>
-                      <th className="px-3 py-2">Soat</th>
-                    </>}
+                    <th className="px-3 py-2">Boshlash</th>
+                    <th className="px-3 py-2">Tugash</th>
                     <th className="px-3 py-2 text-right">Maosh</th>
-                    <th className="px-3 py-2 w-20"></th>
+                    <th className="px-3 py-2 w-16"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -274,7 +311,6 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                     const att = userAtts.find((a: any) => a.date?.startsWith(day));
                     const dayOfWeek = new Date(day).toLocaleDateString('uz-UZ', { weekday: 'short' });
                     const isToday = day === new Date().toISOString().split('T')[0];
-
                     return (
                       <tr key={day} className={`transition-colors ${isToday ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
                         <td className="px-3 py-2.5">
@@ -293,15 +329,12 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                             <option value="ABSENT">❌ Kelmadi</option>
                           </select>
                         </td>
-                        {schedule === 'HOURLY' && <>
-                          <td className="px-3 py-2.5 text-center">
-                            <input id={`att-start-${member.id}-${day}`} type="time" defaultValue={att?.startTime || '09:00'} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none w-24 text-center" />
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <input id={`att-end-${member.id}-${day}`} type="time" defaultValue={att?.endTime || '18:00'} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none w-24 text-center" />
-                          </td>
-                          <td className="px-3 py-2.5 text-center text-xs font-black text-slate-600">{att?.workedHours || '—'}</td>
-                        </>}
+                        <td className="px-3 py-2.5 text-center">
+                          <input id={`att-start-${member.id}-${day}`} type="time" defaultValue={att?.startTime || '09:00'} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none w-24 text-center" />
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <input id={`att-end-${member.id}-${day}`} type="time" defaultValue={att?.endTime || '18:00'} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none w-24 text-center" />
+                        </td>
                         <td className="px-3 py-2.5 text-right">
                           <input
                             id={`att-salary-${member.id}-${day}`}
@@ -336,3 +369,4 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     </div>
   );
 }
+

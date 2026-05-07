@@ -129,6 +129,14 @@ export default function CompanyFinancePage() {
     } catch(err: any) { toast.error(err.message); }
   };
 
+  const handleUpdateUser = async (userId: string, data: any) => {
+    try {
+      await usersApi.update(userId, data);
+      toast.success('Xodim profili saqlandi ✅');
+      await loadData();
+    } catch(err: any) { toast.error(err.message); }
+  };
+
   // Calculations
   const pStart = new Date(startDate); const pEnd = new Date(endDate); pEnd.setHours(23,59,59,999);
   const filteredOrders = orders.filter(o => { const c = new Date(o.createdAt); return c >= pStart && c <= pEnd; });
@@ -382,6 +390,7 @@ export default function CompanyFinancePage() {
         startDate={startDate}
         endDate={endDate}
         onSaveAttendance={handleAttendanceChange}
+        onUpdateUser={handleUpdateUser}
       />
 
       {/* Detail Drawer for stat cards */}
