@@ -4,7 +4,9 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  IsNumber,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { UserRole, UserStatus } from '../entities/user.entity';
 
 export class CreateUserDto {
@@ -80,6 +82,8 @@ export class UpdateUserDto {
   birthDate?: string;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   salary?: number;
 
   @IsOptional()
@@ -87,5 +91,7 @@ export class UpdateUserDto {
   workSchedule?: string;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   lunchBreakMinutes?: number;
 }

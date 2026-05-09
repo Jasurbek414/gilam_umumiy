@@ -111,13 +111,18 @@ export class UsersController {
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: User,
   ) {
-    // Ensure the updated user belongs to the same company
-    return this.usersService.update(id, dto);
+    console.log(`[Users] PUT /${id} body:`, JSON.stringify(dto));
+    try {
+      return await this.usersService.update(id, dto);
+    } catch (e) {
+      console.error(`[Users] PUT /${id} ERROR:`, e.message, e.stack);
+      throw e;
+    }
   }
 
   @Delete(':id')
