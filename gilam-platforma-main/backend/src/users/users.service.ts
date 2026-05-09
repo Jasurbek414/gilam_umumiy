@@ -112,6 +112,12 @@ export class UsersService {
     if (dto.salary !== undefined) {
       user.salary = dto.salary;
     }
+    if (dto.workSchedule !== undefined) {
+      user.workSchedule = dto.workSchedule as any;
+    }
+    if (dto.lunchBreakMinutes !== undefined) {
+      user.lunchBreakMinutes = dto.lunchBreakMinutes;
+    }
 
     if (dto.currentLocation !== undefined) {
       let newLat: number | null = null;
