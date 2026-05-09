@@ -278,50 +278,100 @@ export default function CompanyFinancePage() {
         </div>
       )}
 
-      {/* Attendance & Salary Tab — Staff Table */}
+      {/* Attendance & Salary Tab — Animated Staff Cards */}
       {activeTab === 'attendance' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">👥 Xodimlar va Ish Haqi</h2>
-              <p className="text-xs text-slate-500 mt-1">Xodim ustiga bosib profilni va davomat kalendarini ko'ring</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold text-slate-400 uppercase">Jami Ish Haqi</p>
-              <p className="text-xl font-black text-emerald-600">{attendances.reduce((a: number,att: any) => a+Number(att.calculatedSalary||0), 0).toLocaleString()} so'm</p>
+        <div className="space-y-5">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+            <div className="relative flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight">👥 Xodimlar va Ish Haqi</h2>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Xodim ustiga bosib profilni oching</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Jami Ish Haqi</p>
+                <p className="text-2xl font-black text-emerald-400">{attendances.reduce((a: number, att: any) => a + Number(att.calculatedSalary || 0), 0).toLocaleString()} <span className="text-sm text-emerald-400/60">so'm</span></p>
+              </div>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100">
-                <th className="px-5 py-3">Xodim</th><th className="px-5 py-3">Roli</th><th className="px-5 py-3">Ish rejimi</th><th className="px-5 py-3">Oylik</th><th className="px-5 py-3">Ishlagan</th><th className="px-5 py-3 text-right">Hisoblangan</th>
-              </tr></thead>
-              <tbody className="divide-y divide-slate-100">
-                {staff.filter((m: any) => m.status === 'ACTIVE').map((member: any) => {
-                  const userAtts = attendances.filter((a: any) => a.userId === member.id);
-                  const totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
-                  const presentDays = userAtts.filter((a: any) => ['PRESENT','HOURLY'].includes(a.status)).length;
-                  const scheduleLabel: any = { MONTHLY:'📅 Oylik', WEEKLY:'📆 Haftalik', DAILY:'📋 Kunlik', HOURLY:'⏰ Soatlik' };
-                  const roleColors: any = { DRIVER:'bg-blue-100 text-blue-700', MANAGER:'bg-purple-100 text-purple-700', WORKER:'bg-emerald-100 text-emerald-700', OPERATOR:'bg-amber-100 text-amber-700', COMPANY_ADMIN:'bg-slate-200 text-slate-700' };
-                  return (
-                    <tr key={member.id} onClick={() => setSelectedMember(member)} className="hover:bg-blue-50/50 transition-colors cursor-pointer group">
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-sm font-black">{member.fullName?.[0]?.toUpperCase()}</div>
-                          <div><p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{member.fullName}</p><p className="text-[11px] text-slate-400">{member.phone}</p></div>
+
+          {/* Staff Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {staff.filter((m: any) => m.status === 'ACTIVE').map((member: any, idx: number) => {
+              const userAtts = attendances.filter((a: any) => a.userId === member.id);
+              const totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
+              const presentDays = userAtts.filter((a: any) => ['PRESENT', 'HOURLY'].includes(a.status)).length;
+              const absentDays = userAtts.filter((a: any) => a.status === 'ABSENT').length;
+              const scheduleIcons: any = { MONTHLY: '📅', WEEKLY: '📆', DAILY: '📋', HOURLY: '⏰' };
+              const scheduleLabels: any = { MONTHLY: 'Oylik', WEEKLY: 'Haftalik', DAILY: 'Kunlik', HOURLY: 'Soatlik' };
+              const roleGradients: any = {
+                DRIVER: 'from-blue-500 to-cyan-500', MANAGER: 'from-purple-500 to-fuchsia-500',
+                WORKER: 'from-emerald-500 to-teal-500', OPERATOR: 'from-amber-500 to-orange-500',
+                COMPANY_ADMIN: 'from-slate-600 to-slate-800',
+              };
+              const roleLabels: any = { DRIVER: 'Haydovchi', MANAGER: 'Menejer', WORKER: 'Ishchi', OPERATOR: 'Operator', COMPANY_ADMIN: 'Admin' };
+
+              return (
+                <div
+                  key={member.id}
+                  onClick={() => setSelectedMember(member)}
+                  className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+                  style={{ animationDelay: `${idx * 60}ms`, animation: 'fadeSlideUp 0.4s ease-out both' }}
+                >
+                  {/* Gradient top bar */}
+                  <div className={`h-1.5 bg-gradient-to-r ${roleGradients[member.role] || 'from-slate-400 to-slate-600'}`} />
+
+                  <div className="p-4">
+                    {/* Name & Avatar */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${roleGradients[member.role] || 'from-slate-500 to-slate-700'} flex items-center justify-center text-white text-base font-black shadow-lg`}>
+                        {member.fullName?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-slate-800 truncate group-hover:text-blue-600 transition-colors">{member.fullName}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-slate-400">{roleLabels[member.role] || member.role}</span>
+                          <span className="text-[10px] text-slate-300">·</span>
+                          <span className="text-[10px] font-bold text-slate-400">{member.phone}</span>
                         </div>
-                      </td>
-                      <td className="px-5 py-4"><span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${roleColors[member.role] || 'bg-slate-100 text-slate-600'}`}>{member.role}</span></td>
-                      <td className="px-5 py-4 text-xs font-bold text-slate-600">{scheduleLabel[member.workSchedule] || '📅 Oylik'}</td>
-                      <td className="px-5 py-4 text-sm font-bold text-slate-700">{Number(member.salary || 0).toLocaleString()}</td>
-                      <td className="px-5 py-4"><span className="text-sm font-black text-emerald-600">{presentDays}</span><span className="text-xs text-slate-400 ml-1">kun</span></td>
-                      <td className="px-5 py-4 text-right text-sm font-black text-blue-600">{totalSal.toLocaleString()} so'm</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+
+                    {/* Schedule badge */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-slate-600">
+                        {scheduleIcons[member.workSchedule]} {scheduleLabels[member.workSchedule] || 'Oylik'}
+                      </span>
+                      <span className="px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg text-[10px] font-black text-blue-600">
+                        {Number(member.salary || 0).toLocaleString()} so'm
+                      </span>
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-emerald-50 rounded-lg px-2 py-2 text-center">
+                        <p className="text-base font-black text-emerald-600">{presentDays}</p>
+                        <p className="text-[8px] font-bold text-emerald-500 uppercase">Kelgan</p>
+                      </div>
+                      <div className="bg-rose-50 rounded-lg px-2 py-2 text-center">
+                        <p className="text-base font-black text-rose-500">{absentDays}</p>
+                        <p className="text-[8px] font-bold text-rose-400 uppercase">Kelmagan</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg px-2 py-2 text-center">
+                        <p className="text-base font-black text-blue-600">{totalSal > 0 ? `${(totalSal / 1000).toFixed(0)}k` : '0'}</p>
+                        <p className="text-[8px] font-bold text-blue-400 uppercase">Maosh</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
+          {/* Animation keyframes */}
+          <style>{`@keyframes fadeSlideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`}</style>
         </div>
       )}
 

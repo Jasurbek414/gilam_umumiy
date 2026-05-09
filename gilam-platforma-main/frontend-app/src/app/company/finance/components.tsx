@@ -165,162 +165,158 @@ export function DetailDrawer({ isOpen, onClose, title, icon, color, children }: 
 // ── Staff Profile Modal ──
 export function StaffProfileModal({ isOpen, onClose, member, attendances, startDate, endDate, onSaveAttendance, onUpdateUser }: any) {
   if (!isOpen || !member) return null;
-  
+
   const userAtts = attendances.filter((a: any) => a.userId === member.id);
   const totalDays = userAtts.filter((a: any) => a.status === 'PRESENT' || a.status === 'HOURLY').length;
   const halfDays = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
   const absentDays = userAtts.filter((a: any) => a.status === 'ABSENT').length;
   const totalSalary = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
   const totalHours = userAtts.reduce((sum: number, a: any) => sum + Number(a.workedHours || 0), 0);
-  
+
   const schedule = member.workSchedule || 'MONTHLY';
   const salary = Number(member.salary || 0);
   const lunchMin = Number(member.lunchBreakMinutes || 60);
-
   const roleLabels: any = { DRIVER: 'Haydovchi', MANAGER: 'Menejer', WORKER: 'Ishchi', OPERATOR: 'Operator', COMPANY_ADMIN: 'Admin' };
-  const scheduleLabels: any = { MONTHLY: 'Oylik', WEEKLY: 'Haftalik', DAILY: 'Kunlik', HOURLY: 'Soatlik' };
 
-  // Generate calendar days
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = new Date(startDate); const end = new Date(endDate);
   const days: string[] = [];
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    days.push(d.toISOString().split('T')[0]);
-  }
-  const totalPeriodDays = days.length || 1;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) days.push(d.toISOString().split('T')[0]);
 
-  // Auto-calculate salary for a given status and hours
+  const schedules = [
+    { key: 'HOURLY', icon: '⏰', label: 'Soatlik', desc: 'Soatiga hisoblash', color: 'from-orange-500 to-amber-500', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600' },
+    { key: 'DAILY', icon: '📋', label: 'Kunlik', desc: 'Har kun alohida', color: 'from-blue-500 to-cyan-500', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600' },
+    { key: 'WEEKLY', icon: '📆', label: 'Haftalik', desc: 'Hafta bo\'yicha', color: 'from-purple-500 to-fuchsia-500', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600' },
+    { key: 'MONTHLY', icon: '📅', label: 'Oylik', desc: 'Oy bo\'yicha belgilangan', color: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-600' },
+  ];
+
   const calcDaySalary = (status: string, hours: number) => {
     if (status === 'ABSENT') return 0;
-    if (schedule === 'MONTHLY') {
-      if (status === 'HALF_DAY') return Math.round(salary / 30 / 2);
-      return Math.round(salary / 30);
-    }
-    if (schedule === 'WEEKLY') {
-      if (status === 'HALF_DAY') return Math.round(salary / 6 / 2);
-      return Math.round(salary / 6);
-    }
-    if (schedule === 'DAILY') {
-      if (status === 'HALF_DAY') return Math.round(salary / 2);
-      return salary;
-    }
-    if (schedule === 'HOURLY') {
-      return Math.round(salary * hours);
-    }
+    if (schedule === 'MONTHLY') return status === 'HALF_DAY' ? Math.round(salary / 30 / 2) : Math.round(salary / 30);
+    if (schedule === 'WEEKLY') return status === 'HALF_DAY' ? Math.round(salary / 6 / 2) : Math.round(salary / 6);
+    if (schedule === 'DAILY') return status === 'HALF_DAY' ? Math.round(salary / 2) : salary;
+    if (schedule === 'HOURLY') return Math.round(salary * hours);
     return 0;
   };
 
-  const handleSaveProfile = () => {
-    const ws = (document.getElementById('prf-ws') as HTMLSelectElement)?.value;
-    const sal = Number((document.getElementById('prf-sal') as HTMLInputElement)?.value || 0);
-    const lunch = Number((document.getElementById('prf-lunch') as HTMLInputElement)?.value || 60);
+  const handleScheduleChange = (ws: string) => {
+    const sal = Number((document.getElementById('prf-sal') as HTMLInputElement)?.value || salary);
+    const lunch = Number((document.getElementById('prf-lunch') as HTMLInputElement)?.value || lunchMin);
     if (onUpdateUser) onUpdateUser(member.id, { workSchedule: ws, salary: sal, lunchBreakMinutes: lunch });
   };
 
-  // When status/time changes, auto-update salary field
+  const handleSaveProfile = () => {
+    const sal = Number((document.getElementById('prf-sal') as HTMLInputElement)?.value || 0);
+    const lunch = Number((document.getElementById('prf-lunch') as HTMLInputElement)?.value || 60);
+    if (onUpdateUser) onUpdateUser(member.id, { workSchedule: schedule, salary: sal, lunchBreakMinutes: lunch });
+  };
+
   const autoCalc = (day: string) => {
     const statusEl = document.getElementById(`d-st-${member.id}-${day}`) as HTMLSelectElement;
     const startEl = document.getElementById(`d-s-${member.id}-${day}`) as HTMLInputElement;
     const endEl = document.getElementById(`d-e-${member.id}-${day}`) as HTMLInputElement;
     const salEl = document.getElementById(`d-sal-${member.id}-${day}`) as HTMLInputElement;
     if (!statusEl || !salEl) return;
-
-    const st = statusEl.value;
     let hours = 0;
     if (startEl?.value && endEl?.value) {
       const [sh, sm] = startEl.value.split(':').map(Number);
       const [eh, em] = endEl.value.split(':').map(Number);
       hours = Math.max(0, (eh + em / 60) - (sh + sm / 60) - (lunchMin / 60));
-      hours = Math.round(hours * 100) / 100;
     }
-    salEl.value = String(calcDaySalary(st, hours));
+    salEl.value = String(calcDaySalary(statusEl.value, hours));
   };
+
+  const activeSchedule = schedules.find(s => s.key === schedule) || schedules[3];
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-[780px] bg-white rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} style={{animation:'fadeIn .2s ease'}} />
+      <div className="relative w-full max-w-[820px] bg-white rounded-2xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden" style={{animation:'modalSlide .3s ease'}}>
 
-        {/* ── Header ── */}
-        <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center text-white text-lg font-black tracking-tight">
-            {member.fullName?.[0]?.toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-bold text-white truncate">{member.fullName}</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="px-2 py-0.5 bg-white/15 rounded text-[10px] font-bold text-white/80">{roleLabels[member.role] || member.role}</span>
-              <span className="text-[11px] text-white/50">{member.phone}</span>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+          <div className="px-6 py-5 relative flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white text-xl font-black border border-white/10 shadow-lg">
+              {member.fullName?.[0]?.toUpperCase()}
             </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-black text-white truncate">{member.fullName}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="px-2.5 py-0.5 bg-white/15 rounded-md text-[10px] font-black text-white/80">{roleLabels[member.role] || member.role}</span>
+                <span className="text-[11px] text-white/40">{member.phone}</span>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/50 hover:text-white text-lg transition-all">✕</button>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/60 hover:text-white text-lg transition-colors">✕</button>
-        </div>
 
-        {/* ── Content ── */}
-        <div className="flex-1 overflow-y-auto">
-
-          {/* Stats */}
-          <div className="grid grid-cols-4 border-b border-slate-100">
+          {/* Stats inside header */}
+          <div className="grid grid-cols-4 border-t border-white/10">
             {[
-              { v: totalDays, l: 'Kelgan', c: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { v: halfDays, l: 'Yarim kun', c: 'text-amber-600', bg: 'bg-amber-50' },
-              { v: absentDays, l: 'Kelmagan', c: 'text-rose-600', bg: 'bg-rose-50' },
-              { v: totalSalary.toLocaleString(), l: 'Jami maosh', c: 'text-blue-600', bg: 'bg-blue-50' },
+              { v: totalDays, l: 'Kelgan', c: 'text-emerald-400' },
+              { v: halfDays, l: 'Yarim', c: 'text-amber-400' },
+              { v: absentDays, l: 'Kelmagan', c: 'text-rose-400' },
+              { v: totalSalary.toLocaleString(), l: 'Jami maosh', c: 'text-blue-400' },
             ].map((s, i) => (
-              <div key={i} className={`${s.bg} px-4 py-3 text-center border-r border-white last:border-0`}>
-                <p className={`text-xl font-black ${s.c}`}>{s.v}</p>
-                <p className={`text-[9px] font-bold ${s.c} uppercase mt-0.5 tracking-wider`}>{s.l}</p>
+              <div key={i} className="px-4 py-3 text-center border-r border-white/5 last:border-0">
+                <p className={`text-lg font-black ${s.c}`}>{s.v}</p>
+                <p className="text-[8px] font-bold text-white/30 uppercase tracking-widest">{s.l}</p>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Profile Settings */}
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Schedule Selection Cards */}
+          <div className="px-5 py-4 border-b border-slate-100">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">⚙️ Ish Tartibi</p>
-              <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[11px] font-bold hover:bg-slate-700 transition-colors">
-                💾 Saqlash
-              </button>
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">⚙️ Ish Tartibi — Birini tanlang</p>
+              <button onClick={handleSaveProfile} className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[11px] font-bold hover:bg-slate-700 transition-all shadow-md">💾 Saqlash</button>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Rejim</label>
-                <select id="prf-ws" defaultValue={schedule} className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-blue-500">
-                  <option value="MONTHLY">📅 Oylik</option>
-                  <option value="WEEKLY">📆 Haftalik</option>
-                  <option value="DAILY">📋 Kunlik</option>
-                  <option value="HOURLY">⏰ Soatlik</option>
-                </select>
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {schedules.map((s) => {
+                const isActive = schedule === s.key;
+                return (
+                  <button key={s.key} onClick={() => handleScheduleChange(s.key)}
+                    className={`relative p-3 rounded-xl border-2 transition-all duration-300 text-center group ${isActive ? `${s.border} ${s.bg} shadow-md scale-[1.02]` : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm'}`}
+                  >
+                    {isActive && <div className={`absolute top-1.5 right-1.5 w-5 h-5 bg-gradient-to-br ${s.color} rounded-full flex items-center justify-center`}><span className="text-white text-[9px] font-black">✓</span></div>}
+                    <div className="text-2xl mb-1">{s.icon}</div>
+                    <p className={`text-xs font-black ${isActive ? s.text : 'text-slate-600'}`}>{s.label}</p>
+                    <p className="text-[9px] text-slate-400 mt-0.5">{s.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Salary & Lunch inputs only for active schedule */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`p-3 rounded-xl ${activeSchedule.bg} border ${activeSchedule.border}`}>
+                <label className={`text-[9px] font-black ${activeSchedule.text} uppercase block mb-1`}>{schedule === 'HOURLY' ? 'Soatlik stavka' : schedule === 'DAILY' ? 'Kunlik stavka' : schedule === 'WEEKLY' ? 'Haftalik' : 'Oylik maosh'} (so'm)</label>
+                <input id="prf-sal" type="number" defaultValue={salary} className="w-full px-3 py-2 bg-white rounded-lg text-sm font-black text-slate-800 outline-none border border-transparent focus:border-blue-400" />
               </div>
-              <div>
-                <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">{schedule === 'HOURLY' ? 'Soatlik stavka' : schedule === 'DAILY' ? 'Kunlik' : 'Oylik'} (so'm)</label>
-                <input id="prf-sal" type="number" defaultValue={salary} className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-emerald-500" />
-              </div>
-              <div>
-                <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Abet (daqiqa)</label>
-                <input id="prf-lunch" type="number" defaultValue={lunchMin} className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-blue-500" />
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Abet vaqti (daqiqa)</label>
+                <input id="prf-lunch" type="number" defaultValue={lunchMin} className="w-full px-3 py-2 bg-white rounded-lg text-sm font-black text-slate-800 outline-none border border-transparent focus:border-blue-400" />
               </div>
             </div>
             {schedule === 'HOURLY' && totalHours > 0 && (
-              <p className="text-[11px] text-slate-500 mt-2">📊 Jami <b>{totalHours.toFixed(1)}</b> soat ishlagan · <b>{totalSalary.toLocaleString()}</b> so'm</p>
+              <p className="text-[11px] text-slate-500 mt-2">📊 Jami <b>{totalHours.toFixed(1)}</b> soat · <b>{totalSalary.toLocaleString()}</b> so'm</p>
             )}
           </div>
 
           {/* Calendar Table */}
           <div className="px-5 py-4">
-            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">📅 Davomat ({scheduleLabels[schedule]} rejim · {days.length} kun)</p>
+            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">📅 Davomat ({activeSchedule.label} rejim · {days.length} kun)</p>
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                    <th className="px-3 py-2 text-left w-[120px]">Sana</th>
-                    <th className="px-2 py-2 text-left w-[110px]">Holat</th>
-                    <th className="px-2 py-2 text-center w-[80px]">Keldi</th>
-                    <th className="px-2 py-2 text-center w-[80px]">Ketdi</th>
-                    <th className="px-2 py-2 text-right w-[100px]">Maosh</th>
-                    <th className="px-2 py-2 w-[40px]"></th>
-                  </tr>
-                </thead>
+                <thead><tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left w-[110px]">Sana</th>
+                  <th className="px-2 py-2 text-left w-[100px]">Holat</th>
+                  <th className="px-2 py-2 text-center w-[72px]">Keldi</th>
+                  <th className="px-2 py-2 text-center w-[72px]">Ketdi</th>
+                  <th className="px-2 py-2 text-right w-[90px]">Maosh</th>
+                  <th className="px-2 py-2 w-[36px]"></th>
+                </tr></thead>
                 <tbody>
                   {days.map((day, idx) => {
                     const att = userAtts.find((a: any) => a.date?.startsWith(day));
@@ -328,66 +324,14 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                     const isToday = day === new Date().toISOString().split('T')[0];
                     const isSun = new Date(day).getDay() === 0;
                     const defSalary = att?.calculatedSalary ?? calcDaySalary(att?.status || 'PRESENT', 0);
-
                     return (
                       <tr key={day} className={`border-t border-slate-100 ${isToday ? 'bg-blue-50/60' : isSun ? 'bg-rose-50/30' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/40 transition-colors`}>
-                        <td className="px-3 py-1.5">
-                          <span className={`text-[11px] font-bold ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>{day.slice(5)}</span>
-                          <span className={`text-[9px] ml-1 font-bold ${isSun ? 'text-rose-400' : 'text-slate-400'}`}>{wd}</span>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <select
-                            id={`d-st-${member.id}-${day}`}
-                            defaultValue={att?.status || 'PRESENT'}
-                            onChange={() => autoCalc(day)}
-                            className="w-full px-1.5 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold outline-none focus:border-blue-500"
-                          >
-                            <option value="PRESENT">✅ Keldi</option>
-                            <option value="HALF_DAY">⏱ Yarim</option>
-                            <option value="HOURLY">⏰ Soat</option>
-                            <option value="ABSENT">❌ Yo'q</option>
-                          </select>
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <input
-                            id={`d-s-${member.id}-${day}`}
-                            type="time"
-                            defaultValue={att?.startTime || '09:00'}
-                            onChange={() => autoCalc(day)}
-                            className="w-[72px] px-1 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold text-center outline-none focus:border-blue-500"
-                          />
-                        </td>
-                        <td className="px-2 py-1.5 text-center">
-                          <input
-                            id={`d-e-${member.id}-${day}`}
-                            type="time"
-                            defaultValue={att?.endTime || '18:00'}
-                            onChange={() => autoCalc(day)}
-                            className="w-[72px] px-1 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold text-center outline-none focus:border-blue-500"
-                          />
-                        </td>
-                        <td className="px-2 py-1.5 text-right">
-                          <input
-                            id={`d-sal-${member.id}-${day}`}
-                            type="number"
-                            defaultValue={defSalary}
-                            className="w-[90px] px-1.5 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold text-right outline-none focus:border-emerald-500"
-                          />
-                        </td>
-                        <td className="px-1 py-1.5">
-                          <button
-                            onClick={() => {
-                              const st = (document.getElementById(`d-st-${member.id}-${day}`) as HTMLSelectElement)?.value;
-                              const sal = Number((document.getElementById(`d-sal-${member.id}-${day}`) as HTMLInputElement)?.value || 0);
-                              const s = (document.getElementById(`d-s-${member.id}-${day}`) as HTMLInputElement)?.value;
-                              const e = (document.getElementById(`d-e-${member.id}-${day}`) as HTMLInputElement)?.value;
-                              onSaveAttendance(member.id, day, st, sal, '', s, e);
-                            }}
-                            className="w-7 h-7 flex items-center justify-center bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-[11px] transition-all"
-                          >
-                            ✓
-                          </button>
-                        </td>
+                        <td className="px-3 py-1.5"><span className={`text-[11px] font-bold ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>{day.slice(5)}</span><span className={`text-[9px] ml-1 font-bold ${isSun ? 'text-rose-400' : 'text-slate-400'}`}>{wd}</span></td>
+                        <td className="px-2 py-1.5"><select id={`d-st-${member.id}-${day}`} defaultValue={att?.status || 'PRESENT'} onChange={() => autoCalc(day)} className="w-full px-1 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold outline-none"><option value="PRESENT">✅ Keldi</option><option value="HALF_DAY">⏱ Yarim</option><option value="HOURLY">⏰ Soat</option><option value="ABSENT">❌ Yo'q</option></select></td>
+                        <td className="px-2 py-1.5 text-center"><input id={`d-s-${member.id}-${day}`} type="time" defaultValue={att?.startTime || '09:00'} onChange={() => autoCalc(day)} className="w-[68px] px-1 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold text-center outline-none" /></td>
+                        <td className="px-2 py-1.5 text-center"><input id={`d-e-${member.id}-${day}`} type="time" defaultValue={att?.endTime || '18:00'} onChange={() => autoCalc(day)} className="w-[68px] px-1 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold text-center outline-none" /></td>
+                        <td className="px-2 py-1.5 text-right"><input id={`d-sal-${member.id}-${day}`} type="number" defaultValue={defSalary} className="w-[80px] px-1 py-1 bg-white border border-slate-200 rounded text-[11px] font-bold text-right outline-none" /></td>
+                        <td className="px-1 py-1.5"><button onClick={() => { const st=(document.getElementById(`d-st-${member.id}-${day}`) as HTMLSelectElement)?.value; const sal=Number((document.getElementById(`d-sal-${member.id}-${day}`) as HTMLInputElement)?.value||0); const s=(document.getElementById(`d-s-${member.id}-${day}`) as HTMLInputElement)?.value; const e=(document.getElementById(`d-e-${member.id}-${day}`) as HTMLInputElement)?.value; onSaveAttendance(member.id,day,st,sal,'',s,e); }} className="w-7 h-7 flex items-center justify-center bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-[11px] transition-all">✓</button></td>
                       </tr>
                     );
                   })}
@@ -397,6 +341,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
           </div>
         </div>
       </div>
+      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes modalSlide{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
     </div>
   );
 }
