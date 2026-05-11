@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { MdAttachMoney, MdTrendingUp, MdTrendingDown, MdLibraryBooks, MdAdd, MdFilterList, MdHistory, MdSync } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi } from '@/lib/api';
+import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi, customersApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { StatCard, RevenueChart, CategoryChart, ExpenseRow, AuditRow, StaffProfileModal, DetailDrawer } from './components';
 
@@ -100,16 +100,16 @@ export default function CompanyFinancePage() {
   const handleSyncGSheets = async () => {
     try {
       setIsSyncing(true);
-      // Barcha xarajatlarni va xodimlarni olish
-      const [allExpenses, allStaff] = await Promise.all([
+      const [allExpenses, allStaff, allCustomers] = await Promise.all([
         expensesApi.getByCompany(user.company.id),
         usersApi.getByCompany(user.company.id),
+        customersApi.getByCompany(user.company.id),
       ]);
 
       const res = await fetch('/gsheets-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staff: allStaff, expenses: allExpenses })
+        body: JSON.stringify({ staff: allStaff, expenses: allExpenses, customers: allCustomers })
       });
       const data = await res.json();
       if (data.success) {
