@@ -193,7 +193,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const roleLabels: any = { DRIVER:'Haydovchi', MANAGER:'Menejer', WORKER:'Ishchi', OPERATOR:'Operator', COMPANY_ADMIN:'Admin' };
 
   // Generate full month calendar
-  const now = new Date();
+  const now = startDate ? new Date(startDate) : new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -217,13 +217,18 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   ];
   const salaryLabel: any = { HOURLY:'Soatlik stavka', DAILY:'Kunlik stavka', WEEKLY:'Haftalik maosh', MONTHLY:'Oylik maosh' };
 
-  const calcDaySalary = (status: string, hours: number, schedule: string, salary: number) => {
+  const calcDaySalary = (dateStr: string | null, status: string, hours: number, schedule: string, salary: number) => {
     if (status === 'ABSENT') return 0;
-    if (schedule === 'MONTHLY') return status === 'HALF_DAY' ? Math.round(salary / 30 / 2) : Math.round(salary / 30);
-    if (schedule === 'WEEKLY') return status === 'HALF_DAY' ? Math.round(salary / 6 / 2) : Math.round(salary / 6);
-    if (schedule === 'DAILY') return status === 'HALF_DAY' ? Math.round(salary / 2) : salary;
+    const targetDate = dateStr ? new Date(dateStr) : new Date();
+    const currentDaysInMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+    
+    let baseDaySal = 0;
+    if (schedule === 'MONTHLY') baseDaySal = salary / currentDaysInMonth;
+    else if (schedule === 'WEEKLY') baseDaySal = salary / 6; // 6 ish kuni deb faraz qilinadi
+    else if (schedule === 'DAILY') baseDaySal = salary;
+    
     if (schedule === 'HOURLY') return Math.round(salary * hours);
-    return 0;
+    return status === 'HALF_DAY' ? Math.round(baseDaySal / 2) : Math.round(baseDaySal);
   };
 
   const handleScheduleSelect = (key: string) => {
@@ -241,7 +246,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     setDayStart(att?.startTime || '09:00');
     setDayEnd(att?.endTime || '18:00');
     const hrs = att?.workedHours || 0;
-    setDaySal(att?.calculatedSalary ?? calcDaySalary(att?.status || 'PRESENT', hrs, ws, sal));
+    setDaySal(att?.calculatedSalary ?? calcDaySalary(day, att?.status || 'PRESENT', hrs, ws, sal));
   };
 
   const recalcDay = (status: string, s: string, e: string) => {
@@ -251,7 +256,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
       const [eh, em] = e.split(':').map(Number);
       hours = Math.max(0, (eh + em / 60) - (sh + sm / 60) - (lunch / 60));
     }
-    setDaySal(calcDaySalary(status, hours, ws, sal));
+    setDaySal(calcDaySalary(editDay, status, hours, ws, sal));
   };
 
   const saveDay = () => {
@@ -305,6 +310,22 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
           ))}
         </div>
 
+        {/* Quick Actions for Salary */}
+        <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+           <div className="flex items-center gap-3">
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-600 shadow-sm transition-all">
+                 <span className="text-blue-500 text-lg">💸</span> Avans berish
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-emerald-300 hover:text-emerald-600 shadow-sm transition-all">
+                 <span className="text-emerald-500 text-lg">💰</span> Oylik to'lash
+              </button>
+           </div>
+           <div className="text-right">
+              <p className="text-[10px] font-black text-slate-400 uppercase">Qoldiq haqdorlik</p>
+              <p className="text-base font-black text-slate-800">{totalSalary.toLocaleString()} <span className="text-xs text-slate-500">so'm</span></p>
+           </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto">
           {/* Schedule Cards */}
           <div className="px-5 py-4 border-b border-slate-100">
@@ -332,7 +353,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
               </div>
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Abet vaqti (daqiqa)</label>
-                <input type="number" value={lunch} onChange={e => setLunch(Number(e.target.value))} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-800 outline-none focus:border-blue-400" />
+                <input type="number" value={lunch} onChange={e => setLunch(Number(e.target.value))} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-800 outline-none focus:border-blue-400 transition-all" />
               </div>
             </div>
           </div>
