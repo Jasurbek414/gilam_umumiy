@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { MdTrendingUp, MdTrendingDown, MdEdit, MdDelete, MdHistory, MdOpenInNew, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
 import toast from 'react-hot-toast';
-import { expensesApi } from '@/lib/api';
+import { expensesApi, attendanceApi } from '@/lib/api';
 
 // ── Stat Card (Clickable) ──
 export function StatCard({ title, value, icon: Icon, color, trend, up, onClick }: any) {
