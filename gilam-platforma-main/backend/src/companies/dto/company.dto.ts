@@ -37,4 +37,7 @@ export class UpdateCompanyDto {
   @IsOptional()
   @IsString()
   subscriptionEndDate?: string;
+
+  @IsOptional()
+  settings?: any;
 }

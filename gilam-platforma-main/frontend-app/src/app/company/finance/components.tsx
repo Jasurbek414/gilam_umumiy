@@ -407,16 +407,18 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                   const isToday = day === todayStr;
                   const isSun = new Date(day).getDay() === 0;
                   const status = att?.status;
+                  const isGlobalRestDay = !status && globalRestDay !== '' && new Date(day).getDay() === Number(globalRestDay);
+                  const displayStatus = status || (isGlobalRestDay ? 'REST_DAY' : null);
                   const daySalary = att?.calculatedSalary || 0;
                   
-                  const bgClass = status ? (statusColors[status] || 'bg-white text-slate-600 border-slate-100') : 'bg-white text-slate-600 border-slate-100';
+                  const bgClass = displayStatus ? (statusColors[displayStatus] || 'bg-white text-slate-600 border-slate-100') : 'bg-white text-slate-600 border-slate-100';
 
                   return (
                     <div key={day} onClick={() => openDay(day)} className={`border-b border-r border-slate-100 h-[72px] p-2 cursor-pointer transition-all hover:brightness-95 group relative ${bgClass}`}>
                       <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold ${isToday ? 'bg-slate-800 text-white w-6 h-6 rounded-full flex items-center justify-center' : isSun && !status ? 'text-rose-400' : ''}`}>{dayNum}</span>
+                        <span className={`text-xs font-bold ${isToday ? 'bg-slate-800 text-white w-6 h-6 rounded-full flex items-center justify-center' : (isSun || isGlobalRestDay) && !status ? 'text-rose-400' : ''}`}>{dayNum}</span>
                       </div>
-                      {status && <p className="text-[9px] font-bold mt-1 leading-tight truncate">{statusLabels[status]?.slice(2) || status}</p>}
+                      {displayStatus && <p className="text-[9px] font-bold mt-1 leading-tight truncate">{statusLabels[displayStatus]?.slice(2) || displayStatus}</p>}
                       {daySalary > 0 && <p className="text-[10px] font-black mt-0.5 opacity-80">{(daySalary / 1000).toFixed(0)}k</p>}
                     </div>
                   );

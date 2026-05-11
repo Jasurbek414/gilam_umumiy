@@ -46,13 +46,23 @@ export default function CompanyFinancePage() {
   const [historyAction, setHistoryAction] = useState('ALL');
   const [historyEntity, setHistoryEntity] = useState('ALL');
 
+  const [globalRestDay, setGlobalRestDay] = useState<string>('');
+
   const [form, setForm] = useState({ title: '', amount: '', category: 'Logistika', comment: '' });
 
   useEffect(() => {
     const u = getUser();
     if (!u?.company) { setTimeout(() => router.push('/'), 0); return; }
     setUser(u);
+    
+    const savedGlobalRestDay = localStorage.getItem('globalRestDay');
+    if (savedGlobalRestDay) setGlobalRestDay(savedGlobalRestDay);
   }, []);
+
+  const handleGlobalRestDayChange = (val: string) => {
+    setGlobalRestDay(val);
+    localStorage.setItem('globalRestDay', val);
+  };
 
   useEffect(() => { if (user?.company?.id) loadData(); }, [startDate, endDate, user]);
 
@@ -286,9 +296,24 @@ export default function CompanyFinancePage() {
       {activeTab === 'attendance' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-white to-slate-50">
-            <div>
-              <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">👥 Xodimlar va Ish Haqi</h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">Xodim ustiga bosib profilni oching · <b>{staff.filter((m:any)=>m.status==='ACTIVE').length}</b> faol xodim</p>
+            <div className="flex items-center gap-6">
+              <div>
+                <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">👥 Xodimlar va Ish Haqi</h2>
+                <p className="text-[11px] text-slate-400 mt-0.5">Xodim ustiga bosib profilni oching · <b>{staff.filter((m:any)=>m.status==='ACTIVE').length}</b> faol xodim</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl flex items-center gap-2 shadow-sm">
+                 <span className="text-xs font-bold text-slate-500">🛌 Dam olish kuni:</span>
+                 <select value={globalRestDay} onChange={e => handleGlobalRestDayChange(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:border-blue-300">
+                   <option value="">Belgilanmagan</option>
+                   <option value="1">Dushanba</option>
+                   <option value="2">Seshanba</option>
+                   <option value="3">Chorshanba</option>
+                   <option value="4">Payshanba</option>
+                   <option value="5">Juma</option>
+                   <option value="6">Shanba</option>
+                   <option value="0">Yakshanba</option>
+                 </select>
+              </div>
             </div>
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3 text-center">
               <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jami Ish Haqi</p>
@@ -436,6 +461,7 @@ export default function CompanyFinancePage() {
         endDate={endDate}
         onSaveAttendance={handleAttendanceChange}
         onUpdateUser={handleUpdateUser}
+        globalRestDay={globalRestDay}
       />
 
       {/* Detail Drawer for stat cards */}

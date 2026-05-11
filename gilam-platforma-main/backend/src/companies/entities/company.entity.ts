@@ -36,6 +36,9 @@ export class Company {
   @OneToMany(() => User, (user) => user.company)
   users: User[];
 
+  @Column({ type: 'jsonb', nullable: true, default: {} })
+  settings: any;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

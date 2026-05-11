@@ -22,6 +22,7 @@ sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXIS
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS work_schedule VARCHAR(20) DEFAULT 'MONTHLY';" 2>/dev/null || echo "  work_schedule allaqachon mavjud"
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS lunch_break_minutes INT DEFAULT 60;" 2>/dev/null || echo "  lunch_break_minutes allaqachon mavjud"
 # Attendance yangi ustunlari
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE companies ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}'::jsonb;" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "ALTER TYPE attendancestatus ADD VALUE IF NOT EXISTS 'HOURLY';" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "ALTER TYPE attendance_status_enum ADD VALUE IF NOT EXISTS 'HOURLY';" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS start_time TIME;" 2>/dev/null || true
