@@ -81,6 +81,9 @@ export class UsersService {
       passwordHash,
       birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
       salary: dto.salary || 0,
+      workSchedule: dto.workSchedule || 'MONTHLY',
+      birthPlace: dto.birthPlace || null,
+      photoUrl: dto.photoUrl || null,
     });
 
     return this.usersRepository.save(user);
@@ -117,6 +120,12 @@ export class UsersService {
     }
     if (dto.lunchBreakMinutes !== undefined) {
       user.lunchBreakMinutes = dto.lunchBreakMinutes;
+    }
+    if (dto.birthPlace !== undefined) {
+      user.birthPlace = dto.birthPlace;
+    }
+    if (dto.photoUrl !== undefined) {
+      user.photoUrl = dto.photoUrl;
     }
 
     if (dto.currentLocation !== undefined) {

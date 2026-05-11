@@ -10,7 +10,14 @@ import {
   UseGuards,
   ForbiddenException,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -19,10 +26,41 @@ import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User, UserRole } from './entities/user.entity';
 
+const uploadDir = join(process.cwd(), 'uploads', 'photos');
+if (!existsSync(uploadDir)) {
+  mkdirSync(uploadDir, { recursive: true });
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post('upload-photo')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: diskStorage({
+        destination: uploadDir,
+        filename: (_req, file, cb) => {
+          const uniqueName = `${uuidv4()}${extname(file.originalname)}`;
+          cb(null, uniqueName);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return cb(new Error('Faqat JPG, PNG yoki WEBP formatdagi rasmlar qabul qilinadi'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  uploadPhoto(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      return { error: 'Fayl yuklanmadi' };
+    }
+    return { url: `/uploads/photos/${file.filename}` };
+  }
 
   @Post()
   create(@Body() dto: CreateUserDto, @CurrentUser() user: User) {

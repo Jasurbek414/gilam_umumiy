@@ -47,6 +47,14 @@ export class CreateUserDto {
 
   @IsOptional()
   lunchBreakMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  birthPlace?: string;
+
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
 }
 
 export class UpdateUserDto {
@@ -94,4 +102,12 @@ export class UpdateUserDto {
   @IsNumber()
   @Type(() => Number)
   lunchBreakMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  birthPlace?: string;
+
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
 }

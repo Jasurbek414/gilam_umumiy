@@ -127,6 +127,18 @@ export const usersApi = {
   remove: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
   getMileage: (id: string, from: string, to: string) => request<{ totalKm: number; pointCount: number }>(`/users/${id}/mileage?from=${from}&to=${to}`),
   getMileageDaily: (id: string, from: string, to: string) => request<{ date: string; km: number; points: number }[]>(`/users/${id}/mileage/daily?from=${from}&to=${to}`),
+  uploadPhoto: async (file: File): Promise<{ url: string }> => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('photo', file);
+    const res = await fetch(`${API_BASE}/users/upload-photo`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Rasm yuklashda xatolik');
+    return res.json();
+  },
 };
 
 // ===== CUSTOMERS API =====

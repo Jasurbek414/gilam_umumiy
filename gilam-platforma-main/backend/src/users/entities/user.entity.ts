@@ -75,6 +75,12 @@ export class User {
   @Column({ name: 'lunch_break_minutes', type: 'int', nullable: true, default: 60 })
   lunchBreakMinutes: number;
 
+  @Column({ name: 'birth_place', type: 'varchar', length: 255, nullable: true })
+  birthPlace: string;
+
+  @Column({ name: 'photo_url', type: 'varchar', length: 500, nullable: true })
+  photoUrl: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

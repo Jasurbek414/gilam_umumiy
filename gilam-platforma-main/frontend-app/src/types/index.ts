@@ -32,6 +32,12 @@ export interface User {
   company?: Company;
   status: UserStatus;
   currentLocation?: any;
+  birthDate?: string;
+  birthPlace?: string;
+  photoUrl?: string;
+  salary?: number;
+  workSchedule?: string;
+  lunchBreakMinutes?: number;
   createdAt: string;
   updatedAt?: string;
 }
