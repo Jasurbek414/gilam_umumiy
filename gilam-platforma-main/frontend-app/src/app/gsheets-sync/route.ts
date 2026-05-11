@@ -17,47 +17,36 @@ export async function POST(req: Request) {
     const { staff, expenses } = body;
 
     if (!staff || !Array.isArray(staff)) {
-      return NextResponse.json({ success: false, error: 'Xodimlar ro\'yxati topilmadi' }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Xodimlar ro'yxati topilmadi" }, { status: 400 });
     }
 
     // 1. Ish haqi xarajatlarini ajratish
     const salaryExpenses = (expenses || []).filter((e: any) =>
       e.category === 'Ish haqi' && (
-        e.title?.includes("Avans to'lovi") ||
-        e.title?.includes("Oylik to'lovi") ||
         e.title?.includes("Avans") ||
         e.title?.includes("Oylik")
       )
     );
 
     // 2. Har bir xodim uchun to'lovlarni guruhlash
-    const staffPayments: Record<string, { avans: number; oylik: number; payments: any[] }> = {};
+    const staffPayments: Record<string, any[]> = {};
     for (const member of staff) {
-      staffPayments[member.fullName || member.full_name || ''] = {
-        avans: 0,
-        oylik: 0,
-        payments: [],
-      };
+      const name = member.fullName || member.full_name || '';
+      staffPayments[name] = [];
     }
 
     for (const exp of salaryExpenses) {
       const namePart = exp.title?.split(' - ')?.[1]?.trim() || '';
       const isAvans = exp.title?.toLowerCase()?.includes('avans');
-      const amount = Number(exp.amount || 0);
       const dateStr = exp.date?.split('T')?.[0] || '';
-
+      const payment = {
+        date: dateStr,
+        type: isAvans ? 'Avans' : 'Oylik',
+        amount: Number(exp.amount || 0),
+        comment: exp.comment || '',
+      };
       if (staffPayments[namePart]) {
-        if (isAvans) {
-          staffPayments[namePart].avans += amount;
-        } else {
-          staffPayments[namePart].oylik += amount;
-        }
-        staffPayments[namePart].payments.push({
-          date: dateStr,
-          type: isAvans ? 'Avans' : 'Oylik',
-          amount,
-          comment: exp.comment || '',
-        });
+        staffPayments[namePart].push(payment);
       }
     }
 
@@ -84,159 +73,122 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4.5. Eski filter va merge'larni tozalash
+    // 4.5. Eski filter, merge, conditional format'larni tozalash
     const preSheet = (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets?.find(
       s => s.properties?.title === sheetName
     );
     const preSheetId = preSheet?.properties?.sheetId;
     if (preSheetId !== undefined) {
       const cleanupRequests: any[] = [];
-      // Barcha merge'larni ochish
       cleanupRequests.push({
         unmergeCells: {
           range: { sheetId: preSheetId, startRowIndex: 0, endRowIndex: 1000, startColumnIndex: 0, endColumnIndex: 20 },
         },
       });
-      // Agar filter mavjud bo'lsa olib tashlash
       if (preSheet?.basicFilter) {
-        cleanupRequests.push({
-          clearBasicFilter: { sheetId: preSheetId },
-        });
+        cleanupRequests.push({ clearBasicFilter: { sheetId: preSheetId } });
       }
-      // Conditional format rules'ni olib tashlash (teskari tartibda)
       const ruleCount = preSheet?.conditionalFormats?.length || 0;
       for (let i = ruleCount - 1; i >= 0; i--) {
-        cleanupRequests.push({
-          deleteConditionalFormatRule: { sheetId: preSheetId, index: i },
-        });
+        cleanupRequests.push({ deleteConditionalFormatRule: { sheetId: preSheetId, index: i } });
       }
-      if (cleanupRequests.length > 0) {
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId,
-          requestBody: { requests: cleanupRequests },
-        });
-      }
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: { requests: cleanupRequests },
+      });
     }
 
     // 5. Eski ma'lumotlarni tozalash
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `'${sheetName}'!A:J`,
+      range: `'${sheetName}'!A:K`,
     });
 
-    // ====== XODIMLAR JADVALI ======
+    // ====== YAGONA JADVAL ======
     const now = new Date();
     const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
     const currentMonth = monthNames[now.getMonth()];
     const currentYear = now.getFullYear();
     const syncTime = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${currentYear} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+    const COLS = 10;
     const allRows: any[][] = [];
+    const rowTypes: string[] = []; // 'title' | 'subtitle' | 'header' | 'employee' | 'payment' | 'total' | 'empty'
 
-    // Sarlavha
-    allRows.push([`XODIMLAR ISH HAQI VA AVANSLAR HISOBOTI — ${currentMonth} ${currentYear}`, '', '', '', '', '', '', '']);
-    allRows.push([`Yangilangan: ${syncTime}`, '', '', '', '', '', '', '']);
-    allRows.push([]); // Bo'sh satr
+    // TITLE
+    allRows.push([`XODIMLAR ISH HAQI VA AVANSLAR HISOBOTI`, '', '', '', '', '', '', '', '', '']);
+    rowTypes.push('title');
 
-    // === BO'LIM 1: XODIMLAR RO'YXATI ===
-    allRows.push(['№', 'Xodim Ismi', 'Lavozimi', 'Telefon', 'Ish rejimi', 'Oylik (so\'m)', 'Jami Avans (so\'m)', 'Jami Oylik (so\'m)', 'Qoldiq (so\'m)']);
+    // SUBTITLE
+    allRows.push([`Yangilangan: ${syncTime}  |  ${currentMonth} ${currentYear}`, '', '', '', '', '', '', '', '', '']);
+    rowTypes.push('subtitle');
 
-    const staffHeaderRowIndex = allRows.length - 1; // 0-indexed = 3
+    // BO'SH
+    allRows.push(Array(COLS).fill(''));
+    rowTypes.push('empty');
 
-    staff.forEach((member: any, idx: number) => {
-      const name = member.fullName || member.full_name || 'Noma\'lum';
+    // HEADER
+    allRows.push(['№', 'Sana', 'Xodim Ismi', 'Lavozimi', 'Telefon', 'Ish rejimi', "To'lov Turi", "Summa (so'm)", 'Izoh', "Qoldiq (so'm)"]);
+    rowTypes.push('header');
+    const headerRowIdx = allRows.length - 1;
+
+    let totalAvans = 0;
+    let totalOylik = 0;
+    let totalSalary = 0;
+    let employeeNum = 0;
+    let totalPayments = 0;
+
+    // HAR BIR XODIM
+    for (const member of staff) {
+      const name = member.fullName || member.full_name || '';
       const role = roleLabels[member.role] || member.role || '';
       const phone = member.phone || '';
       const schedule = member.workSchedule || member.work_schedule || '6/1';
       const salary = Number(member.salary || 0);
-      const payments = staffPayments[name] || { avans: 0, oylik: 0 };
-      const totalPaid = payments.avans + payments.oylik;
-      const remaining = salary - totalPaid;
+      const payments = staffPayments[name] || [];
 
-      allRows.push([
-        idx + 1,
-        name,
-        role,
-        phone,
-        schedule,
-        salary,
-        payments.avans,
-        payments.oylik,
-        remaining,
-      ]);
-    });
+      // To'lovlarni sanasi bo'yicha tartiblash
+      payments.sort((a: any, b: any) => b.date.localeCompare(a.date));
 
-    // Jami qator
-    const staffDataStart = staffHeaderRowIndex + 2; // Sheet row (1-indexed)
-    const staffDataEnd = staffDataStart + staff.length - 1;
-    allRows.push([
-      '',
-      'JAMI:',
-      '',
-      '',
-      '',
-      `=SUM(F${staffDataStart}:F${staffDataEnd})`,
-      `=SUM(G${staffDataStart}:G${staffDataEnd})`,
-      `=SUM(H${staffDataStart}:H${staffDataEnd})`,
-      `=SUM(I${staffDataStart}:I${staffDataEnd})`,
-    ]);
+      const memberAvans = payments.filter((p: any) => p.type === 'Avans').reduce((s: number, p: any) => s + p.amount, 0);
+      const memberOylik = payments.filter((p: any) => p.type === 'Oylik').reduce((s: number, p: any) => s + p.amount, 0);
+      const remaining = salary - memberAvans - memberOylik;
 
-    const totalRowIndex = allRows.length - 1;
+      totalAvans += memberAvans;
+      totalOylik += memberOylik;
+      totalSalary += salary;
+      employeeNum++;
 
-    allRows.push([]); // Bo'sh satr
-    allRows.push([]); // Bo'sh satr
+      if (payments.length === 0) {
+        // Xodim — to'lovsiz
+        allRows.push([employeeNum, '', name, role, phone, schedule, "—", salary, "Hali to'lov yo'q", remaining]);
+        rowTypes.push('employee');
+      } else {
+        // Birinchi to'lov = xodim satri bilan birga
+        allRows.push([employeeNum, payments[0].date, name, role, phone, schedule, payments[0].type, payments[0].amount, payments[0].comment, remaining]);
+        rowTypes.push('employee');
+        totalPayments++;
 
-    // === BO'LIM 2: TO'LOVLAR TARIXI ===
-    allRows.push(['TO\'LOVLAR TARIXI', '', '', '', '', '', '', '']);
-    const historyTitleRowIndex = allRows.length - 1;
-
-    allRows.push(['№', 'Sana', 'Xodim Ismi', 'Lavozimi', 'To\'lov Turi', 'Summa (so\'m)', 'Izoh', '']);
-    const historyHeaderRowIndex = allRows.length - 1;
-
-    // To'lovlarni sanasi bo'yicha tartiblash
-    const allPayments: any[] = [];
-    for (const exp of salaryExpenses) {
-      const namePart = exp.title?.split(' - ')?.[1]?.trim() || exp.title || '';
-      const isAvans = exp.title?.toLowerCase()?.includes('avans');
-      const matchedStaff = staff.find((s: any) => (s.fullName || s.full_name) === namePart);
-      allPayments.push({
-        date: exp.date?.split('T')?.[0] || '',
-        name: namePart,
-        role: matchedStaff ? (roleLabels[matchedStaff.role] || matchedStaff.role) : '',
-        type: isAvans ? 'Avans' : 'Oylik',
-        amount: Number(exp.amount || 0),
-        comment: exp.comment || '',
-      });
+        // Qolgan to'lovlar
+        for (let i = 1; i < payments.length; i++) {
+          allRows.push(['', payments[i].date, '', '', '', '', payments[i].type, payments[i].amount, payments[i].comment, '']);
+          rowTypes.push('payment');
+          totalPayments++;
+        }
+      }
     }
 
-    // Sanasi bo'yicha teskari tartiblash (eng yangi yuqorida)
-    allPayments.sort((a, b) => b.date.localeCompare(a.date));
-
-    if (allPayments.length === 0) {
-      allRows.push(['', 'Hali to\'lov amalga oshirilmagan', '', '', '', '', '', '']);
-    } else {
-      allPayments.forEach((p, idx) => {
-        allRows.push([
-          idx + 1,
-          p.date,
-          p.name,
-          p.role,
-          p.type,
-          p.amount,
-          p.comment,
-          '',
-        ]);
-      });
-    }
+    // JAMI
+    const totalRemaining = totalSalary - totalAvans - totalOylik;
+    allRows.push(['', '', 'JAMI:', '', '', '', `Avans: ${totalAvans.toLocaleString()}`, totalAvans + totalOylik, `Oylik: ${totalOylik.toLocaleString()}`, totalRemaining]);
+    rowTypes.push('total');
 
     // 6. Yozish
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `'${sheetName}'!A1`,
       valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: allRows,
-      },
+      requestBody: { values: allRows },
     });
 
     // 7. Professional formatlash
@@ -247,17 +199,18 @@ export async function POST(req: Request) {
 
     if (sheetId !== undefined) {
       const requests: any[] = [];
+      const totalRows = allRows.length;
 
-      // --- TITLE ROW (row 0) ---
+      // TITLE (merge + format)
       requests.push({
         mergeCells: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 9 },
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: COLS },
           mergeType: 'MERGE_ALL',
         },
       });
       requests.push({
         repeatCell: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 9 },
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: COLS },
           cell: {
             userEnteredFormat: {
               backgroundColor: { red: 0.1, green: 0.27, blue: 0.53 },
@@ -269,7 +222,6 @@ export async function POST(req: Request) {
           fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)',
         },
       });
-      // Row height for title
       requests.push({
         updateDimensionProperties: {
           range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
@@ -278,16 +230,16 @@ export async function POST(req: Request) {
         },
       });
 
-      // --- SUBTITLE ROW (row 1) ---
+      // SUBTITLE (merge + format)
       requests.push({
         mergeCells: {
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 9 },
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: COLS },
           mergeType: 'MERGE_ALL',
         },
       });
       requests.push({
         repeatCell: {
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 9 },
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: COLS },
           cell: {
             userEnteredFormat: {
               backgroundColor: { red: 0.9, green: 0.92, blue: 0.96 },
@@ -299,150 +251,105 @@ export async function POST(req: Request) {
         },
       });
 
-      // --- STAFF HEADER (row staffHeaderRowIndex) ---
+      // HEADER ROW
       requests.push({
         repeatCell: {
-          range: { sheetId, startRowIndex: staffHeaderRowIndex, endRowIndex: staffHeaderRowIndex + 1, startColumnIndex: 0, endColumnIndex: 9 },
+          range: { sheetId, startRowIndex: headerRowIdx, endRowIndex: headerRowIdx + 1, startColumnIndex: 0, endColumnIndex: COLS },
           cell: {
             userEnteredFormat: {
               backgroundColor: { red: 0.15, green: 0.5, blue: 0.22 },
               textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 1, green: 1, blue: 1 } },
               horizontalAlignment: 'CENTER',
               verticalAlignment: 'MIDDLE',
-              borders: {
-                bottom: { style: 'SOLID_MEDIUM', color: { red: 0.1, green: 0.35, blue: 0.15 } },
-              },
             },
           },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,borders)',
+          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)',
         },
       });
       requests.push({
         updateDimensionProperties: {
-          range: { sheetId, dimension: 'ROWS', startIndex: staffHeaderRowIndex, endIndex: staffHeaderRowIndex + 1 },
+          range: { sheetId, dimension: 'ROWS', startIndex: headerRowIdx, endIndex: headerRowIdx + 1 },
           properties: { pixelSize: 35 },
           fields: 'pixelSize',
         },
       });
 
-      // --- STAFF DATA ROWS (alternating colors) ---
-      for (let i = 0; i < staff.length; i++) {
-        const rowIdx = staffHeaderRowIndex + 1 + i;
-        const isEven = i % 2 === 0;
-        requests.push({
-          repeatCell: {
-            range: { sheetId, startRowIndex: rowIdx, endRowIndex: rowIdx + 1, startColumnIndex: 0, endColumnIndex: 9 },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: isEven
-                  ? { red: 1, green: 1, blue: 1 }
-                  : { red: 0.95, green: 0.97, blue: 0.95 },
-                textFormat: { fontSize: 10 },
-                borders: {
-                  bottom: { style: 'SOLID', color: { red: 0.85, green: 0.88, blue: 0.85 } },
+      // DATA ROWS — har bir satrga rang berish
+      for (let i = headerRowIdx + 1; i < totalRows; i++) {
+        const type = rowTypes[i];
+        if (type === 'employee') {
+          // Xodim satri — ko'k fon
+          requests.push({
+            repeatCell: {
+              range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: COLS },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: { red: 0.92, green: 0.95, blue: 1 },
+                  textFormat: { bold: true, fontSize: 10 },
+                  borders: {
+                    top: { style: 'SOLID', color: { red: 0.7, green: 0.78, blue: 0.9 } },
+                    bottom: { style: 'SOLID', color: { red: 0.85, green: 0.88, blue: 0.92 } },
+                  },
                 },
               },
+              fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
             },
-            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
-          },
-        });
-      }
-
-      // --- TOTAL ROW ---
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 9 },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: { red: 0.95, green: 0.88, blue: 0.7 },
-              textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.2, green: 0.15, blue: 0.05 } },
-              horizontalAlignment: 'CENTER',
-              borders: {
-                top: { style: 'SOLID_MEDIUM', color: { red: 0.7, green: 0.6, blue: 0.3 } },
-                bottom: { style: 'SOLID_MEDIUM', color: { red: 0.7, green: 0.6, blue: 0.3 } },
-              },
-            },
-          },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,borders)',
-        },
-      });
-
-      // --- HISTORY TITLE ---
-      requests.push({
-        mergeCells: {
-          range: { sheetId, startRowIndex: historyTitleRowIndex, endRowIndex: historyTitleRowIndex + 1, startColumnIndex: 0, endColumnIndex: 8 },
-          mergeType: 'MERGE_ALL',
-        },
-      });
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: historyTitleRowIndex, endRowIndex: historyTitleRowIndex + 1, startColumnIndex: 0, endColumnIndex: 8 },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: { red: 0.55, green: 0.27, blue: 0.07 },
-              textFormat: { bold: true, fontSize: 12, foregroundColor: { red: 1, green: 1, blue: 1 } },
-              horizontalAlignment: 'CENTER',
-            },
-          },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)',
-        },
-      });
-      requests.push({
-        updateDimensionProperties: {
-          range: { sheetId, dimension: 'ROWS', startIndex: historyTitleRowIndex, endIndex: historyTitleRowIndex + 1 },
-          properties: { pixelSize: 38 },
-          fields: 'pixelSize',
-        },
-      });
-
-      // --- HISTORY HEADER ---
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: historyHeaderRowIndex, endRowIndex: historyHeaderRowIndex + 1, startColumnIndex: 0, endColumnIndex: 8 },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: { red: 0.75, green: 0.42, blue: 0.15 },
-              textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 1, green: 1, blue: 1 } },
-              horizontalAlignment: 'CENTER',
-              borders: {
-                bottom: { style: 'SOLID_MEDIUM', color: { red: 0.55, green: 0.27, blue: 0.07 } },
-              },
-            },
-          },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,borders)',
-        },
-      });
-
-      // --- HISTORY DATA ROWS ---
-      const historyDataStart = historyHeaderRowIndex + 1;
-      const historyDataEnd = historyDataStart + Math.max(allPayments.length, 1);
-      for (let i = 0; i < Math.max(allPayments.length, 1); i++) {
-        const rowIdx = historyDataStart + i;
-        const isEven = i % 2 === 0;
-        requests.push({
-          repeatCell: {
-            range: { sheetId, startRowIndex: rowIdx, endRowIndex: rowIdx + 1, startColumnIndex: 0, endColumnIndex: 8 },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: isEven
-                  ? { red: 1, green: 1, blue: 1 }
-                  : { red: 0.98, green: 0.95, blue: 0.9 },
-                textFormat: { fontSize: 10 },
-                borders: {
-                  bottom: { style: 'SOLID', color: { red: 0.9, green: 0.87, blue: 0.82 } },
+          });
+        } else if (type === 'payment') {
+          // To'lov satri — oq/och kulrang
+          requests.push({
+            repeatCell: {
+              range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: COLS },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: { red: 0.98, green: 0.98, blue: 0.98 },
+                  textFormat: { fontSize: 9, foregroundColor: { red: 0.35, green: 0.35, blue: 0.4 } },
+                  borders: {
+                    bottom: { style: 'DOTTED', color: { red: 0.88, green: 0.88, blue: 0.88 } },
+                  },
                 },
               },
+              fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
             },
-            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
-          },
-        });
+          });
+        } else if (type === 'total') {
+          // JAMI satri
+          requests.push({
+            repeatCell: {
+              range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: COLS },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: { red: 0.95, green: 0.88, blue: 0.7 },
+                  textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.2, green: 0.15, blue: 0.05 } },
+                  horizontalAlignment: 'CENTER',
+                  borders: {
+                    top: { style: 'SOLID_MEDIUM', color: { red: 0.7, green: 0.6, blue: 0.3 } },
+                    bottom: { style: 'SOLID_MEDIUM', color: { red: 0.7, green: 0.6, blue: 0.3 } },
+                  },
+                },
+              },
+              fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,borders)',
+            },
+          });
+        }
       }
 
-      // --- NUMBER FORMAT for money columns ---
-      // Staff money columns (F, G, H, I = index 5-8)
+      // NUMBER FORMAT — Summa va Qoldiq ustunlari
       requests.push({
         repeatCell: {
-          range: { sheetId, startRowIndex: staffHeaderRowIndex + 1, endRowIndex: totalRowIndex + 1, startColumnIndex: 5, endColumnIndex: 9 },
+          range: { sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 7, endColumnIndex: 8 },
+          cell: {
+            userEnteredFormat: {
+              numberFormat: { type: 'NUMBER', pattern: '#,##0' },
+              horizontalAlignment: 'RIGHT',
+            },
+          },
+          fields: 'userEnteredFormat(numberFormat,horizontalAlignment)',
+        },
+      });
+      requests.push({
+        repeatCell: {
+          range: { sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 9, endColumnIndex: 10 },
           cell: {
             userEnteredFormat: {
               numberFormat: { type: 'NUMBER', pattern: '#,##0' },
@@ -453,45 +360,31 @@ export async function POST(req: Request) {
         },
       });
 
-      // History money column (F = index 5)
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: historyDataStart, endRowIndex: historyDataEnd, startColumnIndex: 5, endColumnIndex: 6 },
-          cell: {
-            userEnteredFormat: {
-              numberFormat: { type: 'NUMBER', pattern: '#,##0' },
-              horizontalAlignment: 'RIGHT',
-            },
-          },
-          fields: 'userEnteredFormat(numberFormat,horizontalAlignment)',
-        },
-      });
-
-      // --- COLUMN WIDTHS ---
-      const columnWidths = [40, 200, 130, 130, 90, 140, 140, 140, 140];
-      columnWidths.forEach((w, i) => {
+      // COLUMN WIDTHS
+      const columnWidths = [35, 100, 170, 120, 120, 70, 100, 130, 180, 130];
+      columnWidths.forEach((w, idx) => {
         requests.push({
           updateDimensionProperties: {
-            range: { sheetId, dimension: 'COLUMNS', startIndex: i, endIndex: i + 1 },
+            range: { sheetId, dimension: 'COLUMNS', startIndex: idx, endIndex: idx + 1 },
             properties: { pixelSize: w },
             fields: 'pixelSize',
           },
         });
       });
 
-      // --- FREEZE ROWS ---
+      // FREEZE
       requests.push({
         updateSheetProperties: {
-          properties: { sheetId, gridProperties: { frozenRowCount: staffHeaderRowIndex + 1 } },
+          properties: { sheetId, gridProperties: { frozenRowCount: headerRowIdx + 1 } },
           fields: 'gridProperties.frozenRowCount',
         },
       });
 
-      // --- CONDITIONAL FORMAT: Qoldiq < 0 = qizil ---
+      // CONDITIONAL: Qoldiq < 0 = qizil
       requests.push({
         addConditionalFormatRule: {
           rule: {
-            ranges: [{ sheetId, startRowIndex: staffHeaderRowIndex + 1, endRowIndex: totalRowIndex, startColumnIndex: 8, endColumnIndex: 9 }],
+            ranges: [{ sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 9, endColumnIndex: 10 }],
             booleanRule: {
               condition: { type: 'NUMBER_LESS', values: [{ userEnteredValue: '0' }] },
               format: {
@@ -504,11 +397,11 @@ export async function POST(req: Request) {
         },
       });
 
-      // --- CONDITIONAL FORMAT: Qoldiq > 0 = yashil ---
+      // CONDITIONAL: Qoldiq > 0 = yashil
       requests.push({
         addConditionalFormatRule: {
           rule: {
-            ranges: [{ sheetId, startRowIndex: staffHeaderRowIndex + 1, endRowIndex: totalRowIndex, startColumnIndex: 8, endColumnIndex: 9 }],
+            ranges: [{ sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 9, endColumnIndex: 10 }],
             booleanRule: {
               condition: { type: 'NUMBER_GREATER', values: [{ userEnteredValue: '0' }] },
               format: {
@@ -529,9 +422,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `${staff.length} ta xodim va ${allPayments.length} ta to'lov Google Sheets'ga sinxronlashtirildi`,
-      totalStaff: staff.length,
-      totalPayments: allPayments.length,
+      message: `${employeeNum} ta xodim va ${totalPayments} ta to'lov sinxronlashtirildi`,
+      totalStaff: employeeNum,
+      totalPayments,
     });
   } catch (error: any) {
     console.error('Sync xatolik:', error?.message || error);
