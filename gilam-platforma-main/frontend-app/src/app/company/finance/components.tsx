@@ -174,6 +174,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const [dayStart, setDayStart] = useState('09:00');
   const [dayEnd, setDayEnd] = useState('18:00');
   const [daySal, setDaySal] = useState(0);
+  const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
 
   // Sync state when member changes
   React.useEffect(() => {
@@ -193,8 +194,6 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const absentDays = userAtts.filter((a: any) => a.status === 'ABSENT').length;
   const totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
   const roleLabels: any = { DRIVER:'Haydovchi', MANAGER:'Menejer', WORKER:'Ishchi', OPERATOR:'Operator', COMPANY_ADMIN:'Admin' };
-
-  const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
 
   // Generate full month calendar based on currentDate
   const year = currentDate.getFullYear();
