@@ -83,6 +83,8 @@ cp -f "$REPO/frontend-app/src/types/index.ts" "$FRONT/src/types/index.ts"
 cp -f "$REPO/frontend-app/src/app/admin/page.tsx" "$FRONT/src/app/admin/page.tsx"
 cp -f "$REPO/frontend-app/src/app/admin/users/page.tsx" "$FRONT/src/app/admin/users/page.tsx"
 cp -f "$REPO/frontend-app/package.json" "$FRONT/package.json"
+cp -f "$REPO/frontend-app/next.config.ts" "$FRONT/next.config.ts" 2>/dev/null || true
+cp -f "$REPO/frontend-app/next.config.mjs" "$FRONT/next.config.mjs" 2>/dev/null || true
 echo "  ✓ Frontend fayllar ko'chirildi"
 
 echo ""
