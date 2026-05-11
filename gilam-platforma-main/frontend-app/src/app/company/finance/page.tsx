@@ -373,7 +373,8 @@ export default function CompanyFinancePage() {
               </button>
               <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3 text-center">
                 <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jami Ish Haqi</p>
-              <p className="text-xl font-black text-emerald-600">{totalAccruedSalaries.toLocaleString()} <span className="text-xs">so'm</span></p>
+                <p className="text-xl font-black text-emerald-600">{totalAccruedSalaries.toLocaleString()} <span className="text-xs">so'm</span></p>
+              </div>
             </div>
           </div>
           <div className="overflow-x-auto">
