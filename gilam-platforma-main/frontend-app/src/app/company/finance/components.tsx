@@ -339,15 +339,34 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, expens
     if (isNaN(amount) || amount <= 0) return toast.error("Noto'g'ri summa kiritildi");
     
     try {
+      const dateStr = new Date().toISOString().split('T')[0];
       await expensesApi.create({
         companyId: member.companyId,
         title: `${type === 'avans' ? 'Avans' : 'Oylik'} to'lovi - ${member.fullName}`,
         amount: amount,
         category: 'Ish haqi',
         comment: `${monthNames[month]} ${year} uchun to'lov`,
-        date: new Date().toISOString().split('T')[0]
+        date: dateStr
       });
-      toast.success("To'lov muvaffaqiyatli saqlandi! Xarajatlarga tushdi.");
+      
+      // Tizimdan tashqari Google Sheets ga ham yuborish
+      try {
+        await fetch('/api/sheets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employeeName: member.fullName,
+            role: roleLabels[member.role] || member.role,
+            type: type === 'avans' ? 'Avans' : 'Oylik',
+            amount: amount,
+            date: dateStr
+          })
+        });
+      } catch (sheetErr) {
+        console.error("Google Sheets yozishda xatolik", sheetErr);
+      }
+
+      toast.success("To'lov muvaffaqiyatli saqlandi! Xarajatlarga va Jadvalga tushdi.");
     } catch(e: any) {
       toast.error("Xatolik: " + e.message);
     }
