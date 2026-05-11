@@ -100,13 +100,16 @@ export default function CompanyFinancePage() {
   const handleSyncGSheets = async () => {
     try {
       setIsSyncing(true);
-      // Barcha xarajatlarni olish (sana filtrisiz)
-      const allExpenses = await expensesApi.getByCompany(user.company.id);
+      // Barcha xarajatlarni va xodimlarni olish
+      const [allExpenses, allStaff] = await Promise.all([
+        expensesApi.getByCompany(user.company.id),
+        usersApi.getByCompany(user.company.id),
+      ]);
 
       const res = await fetch('/gsheets-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expenses: allExpenses })
+        body: JSON.stringify({ staff: allStaff, expenses: allExpenses })
       });
       const data = await res.json();
       if (data.success) {
