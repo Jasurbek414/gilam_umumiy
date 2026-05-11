@@ -175,6 +175,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const [dayEnd, setDayEnd] = useState('18:00');
   const [daySal, setDaySal] = useState(0);
   const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
+  const [monthAttendances, setMonthAttendances] = useState<any[]>([]);
 
   // Sync state when member changes
   React.useEffect(() => {
@@ -186,9 +187,24 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     }
   }, [member?.id]);
 
+  // Load attendances for the visible month
+  React.useEffect(() => {
+    if (member && isOpen) {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const s = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const e = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      
+      attendanceApi.getByUser(member.id, s, e).then(data => {
+        setMonthAttendances(data);
+      }).catch(console.error);
+    }
+  }, [member?.id, currentDate, isOpen]);
+
   if (!isOpen || !member) return null;
 
-  const userAtts = attendances.filter((a: any) => a.userId === member.id);
+  const userAtts = monthAttendances;
   const totalDays = userAtts.filter((a: any) => ['PRESENT', 'HOURLY'].includes(a.status)).length;
   const halfDays = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
   const absentDays = userAtts.filter((a: any) => a.status === 'ABSENT').length;
@@ -262,15 +278,21 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     setDaySal(calcDaySalary(editDay, status, hours, ws, sal));
   };
 
-  const saveDay = () => {
+  const saveDay = async () => {
     if (!editDay) return;
-    let hours = 0;
-    if (dayStart && dayEnd) {
-      const [sh, sm] = dayStart.split(':').map(Number);
-      const [eh, em] = dayEnd.split(':').map(Number);
-      hours = Math.max(0, (eh + em / 60) - (sh + sm / 60) - (lunch / 60));
+    if (onSaveAttendance) {
+      await onSaveAttendance(member.id, editDay, dayStatus, daySal, '', dayStart, dayEnd);
+      // Refetch current month attendances
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const s = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const e = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      try {
+        const data = await attendanceApi.getByUser(member.id, s, e);
+        setMonthAttendances(data);
+      } catch (err) {}
     }
-    onSaveAttendance(member.id, editDay, dayStatus, daySal, '', dayStart, dayEnd);
     setEditDay(null);
   };
 
