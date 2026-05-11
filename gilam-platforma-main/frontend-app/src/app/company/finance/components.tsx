@@ -244,11 +244,12 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const openDay = (day: string) => {
     const att = userAtts.find((a: any) => a.date?.startsWith(day));
     setEditDay(day);
-    setDayStatus(att?.status || 'PRESENT');
+    const initialStatus = att?.status || (ws === 'HOURLY' ? 'HOURLY' : 'PRESENT');
+    setDayStatus(initialStatus);
     setDayStart(att?.startTime || '09:00');
     setDayEnd(att?.endTime || '18:00');
     const hrs = att?.workedHours || 0;
-    setDaySal(att?.calculatedSalary ?? calcDaySalary(day, att?.status || 'PRESENT', hrs, ws, sal));
+    setDaySal(att?.calculatedSalary ?? calcDaySalary(day, initialStatus, hrs, ws, sal));
   };
 
   const recalcDay = (status: string, s: string, e: string) => {
@@ -407,13 +408,27 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                 <div>
                   <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Holat</label>
                   <select value={dayStatus} onChange={e => { setDayStatus(e.target.value); recalcDay(e.target.value, dayStart, dayEnd); }} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none">
-                    <option value="PRESENT">✅ Keldi</option><option value="HALF_DAY">⏱ Yarim kun</option><option value="HOURLY">⏰ Soatlik</option><option value="ABSENT">❌ Kelmadi</option>
+                    {ws === 'HOURLY' ? (
+                      <>
+                        <option value="HOURLY">⏰ Soatlik</option>
+                        <option value="ABSENT">❌ Kelmadi</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="PRESENT">✅ Keldi</option>
+                        <option value="HALF_DAY">⏱ Yarim kun</option>
+                        <option value="ABSENT">❌ Kelmadi</option>
+                      </>
+                    )}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Keldi</label><input type="time" value={dayStart} onChange={e => { setDayStart(e.target.value); recalcDay(dayStatus, e.target.value, dayEnd); }} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" /></div>
-                  <div><label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Ketdi</label><input type="time" value={dayEnd} onChange={e => { setDayEnd(e.target.value); recalcDay(dayStatus, dayStart, e.target.value); }} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" /></div>
-                </div>
+                
+                {ws === 'HOURLY' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Keldi (Vaqt)</label><input type="time" value={dayStart} onChange={e => { setDayStart(e.target.value); recalcDay(dayStatus, e.target.value, dayEnd); }} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" /></div>
+                    <div><label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Ketdi (Vaqt)</label><input type="time" value={dayEnd} onChange={e => { setDayEnd(e.target.value); recalcDay(dayStatus, dayStart, e.target.value); }} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" /></div>
+                  </div>
+                )}
                 <div>
                   <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Maosh (so'm)</label>
                   <input type="number" value={daySal} onChange={e => setDaySal(Number(e.target.value))} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black outline-none" />
