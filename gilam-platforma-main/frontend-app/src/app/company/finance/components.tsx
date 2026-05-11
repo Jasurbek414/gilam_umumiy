@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { MdTrendingUp, MdTrendingDown, MdEdit, MdDelete, MdHistory, MdOpenInNew, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
 import toast from 'react-hot-toast';
-import { expensesApi, attendanceApi } from '@/lib/api';
+import { expensesApi, attendanceApi, usersApi } from '@/lib/api';
 
 // ── Stat Card (Clickable) ──
 export function StatCard({ title, value, icon: Icon, color, trend, up, onClick }: any) {
@@ -349,24 +349,22 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, expens
         date: dateStr
       });
       
-      // Tizimdan tashqari Google Sheets ga ham yuborish
+      // Google Sheets'ga to'liq hisobotni avtomatik sinxronlash
       try {
-        await fetch('/gsheets', {
+        const [allExpenses, allStaff] = await Promise.all([
+          expensesApi.getByCompany(member.companyId),
+          usersApi.getByCompany(member.companyId),
+        ]);
+        await fetch('/gsheets-sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            employeeName: member.fullName,
-            role: roleLabels[member.role] || member.role,
-            type: type === 'avans' ? 'Avans' : 'Oylik',
-            amount: amount,
-            date: dateStr
-          })
+          body: JSON.stringify({ staff: allStaff, expenses: allExpenses })
         });
       } catch (sheetErr) {
-        console.error("Google Sheets yozishda xatolik", sheetErr);
+        console.error("Google Sheets sinxronlashda xatolik", sheetErr);
       }
 
-      toast.success("To'lov muvaffaqiyatli saqlandi! Xarajatlarga va Jadvalga tushdi.");
+      toast.success("To'lov saqlandi va Google Sheets yangilandi! ✅");
     } catch(e: any) {
       toast.error("Xatolik: " + e.message);
     }
