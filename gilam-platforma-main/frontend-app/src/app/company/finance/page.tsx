@@ -41,6 +41,10 @@ export default function CompanyFinancePage() {
 
   const [expenseSearch, setExpenseSearch] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('ALL');
+  
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyAction, setHistoryAction] = useState('ALL');
+  const [historyEntity, setHistoryEntity] = useState('ALL');
 
   const [form, setForm] = useState({ title: '', amount: '', category: 'Logistika', comment: '' });
 
@@ -68,7 +72,7 @@ export default function CompanyFinancePage() {
 
   const loadAudit = async () => {
     try {
-      const logs = await auditApi.getByCompany(user.company.id, 'EXPENSE', 100);
+      const logs = await auditApi.getByCompany(user.company.id, '', 200);
       setAuditLogs(logs.filter((l: any) => l.action !== 'CREATE'));
     } catch(err) { console.error(err); }
   };
@@ -330,9 +334,29 @@ export default function CompanyFinancePage() {
       {/* History Tab */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><MdHistory className="text-amber-500" /> O'zgarishlar Tarixi</h2>
-            <p className="text-xs text-slate-500 mt-1">Barcha tahrirlash va o'chirish amallari shu yerda saqlanadi.</p>
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><MdHistory className="text-amber-500" /> O'zgarishlar Tarixi</h2>
+              <p className="text-xs text-slate-500 mt-1">Barcha tahrirlash va o'chirish amallari shu yerda saqlanadi.</p>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-slate-200">
+               <div className="relative">
+                 <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">🔍</span>
+                 <input type="text" placeholder="Qidiruv (xodim, tafsilot)..." value={historySearch} onChange={e => setHistorySearch(e.target.value)} className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 w-64 transition-all" />
+               </div>
+               <select value={historyAction} onChange={e => setHistoryAction(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 outline-none hover:border-blue-300">
+                 <option value="ALL">Barcha amallar</option>
+                 <option value="UPDATE">Tahrirlash</option>
+                 <option value="DELETE">O'chirish</option>
+               </select>
+               <select value={historyEntity} onChange={e => setHistoryEntity(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 outline-none hover:border-blue-300">
+                 <option value="ALL">Barcha bo'limlar</option>
+                 <option value="EXPENSE">Xarajatlar</option>
+                 <option value="USER">Xodimlar</option>
+                 <option value="ORDER">Buyurtmalar</option>
+               </select>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -340,7 +364,13 @@ export default function CompanyFinancePage() {
                 <th className="px-5 py-3">Amal</th><th className="px-5 py-3">Turi</th><th className="px-5 py-3">Tafsilot</th><th className="px-5 py-3">Kim</th><th className="px-5 py-3">Vaqt</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {auditLogs.map(log => <AuditRow key={log.id} log={log} />)}
+                {auditLogs.filter(log => {
+                   const s = historySearch.toLowerCase();
+                   const matchesSearch = (log.user?.fullName||'').toLowerCase().includes(s) || (log.changes?JSON.stringify(log.changes):'').toLowerCase().includes(s) || (log.entityType||'').toLowerCase().includes(s);
+                   const matchesAction = historyAction === 'ALL' || log.action === historyAction;
+                   const matchesEntity = historyEntity === 'ALL' || log.entityType === historyEntity;
+                   return matchesSearch && matchesAction && matchesEntity;
+                }).map(log => <AuditRow key={log.id} log={log} />)}
                 {auditLogs.length===0 && <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400">Tarix mavjud emas</td></tr>}
               </tbody>
             </table>
