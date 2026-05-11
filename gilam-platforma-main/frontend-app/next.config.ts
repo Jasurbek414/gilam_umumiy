@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Allow external domain tunnel proxy to load without cross-origin issues
-  serverExternalPackages: [],
+  serverExternalPackages: ['googleapis'],
   async redirects() {
     return [];
   },

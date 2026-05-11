@@ -351,7 +351,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, expens
       
       // Tizimdan tashqari Google Sheets ga ham yuborish
       try {
-        await fetch('/api/sheets', {
+        await fetch('/gsheets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
