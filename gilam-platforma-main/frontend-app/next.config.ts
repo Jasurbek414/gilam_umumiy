@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     return [];
   },
   async rewrites() {
-    // Default to global domain if no env is provided
-    const BACKEND_URL = process.env.BACKEND_URL || 'https://gilam-api.ecos.uz';
+    // Default to local backend if no env is provided
+    const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8081';
     return [
       {
         source: '/api/:path*',
