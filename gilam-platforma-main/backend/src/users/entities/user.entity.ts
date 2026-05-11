@@ -76,10 +76,10 @@ export class User {
   lunchBreakMinutes: number;
 
   @Column({ name: 'birth_place', type: 'varchar', length: 255, nullable: true })
-  birthPlace: string;
+  birthPlace: string | null;
 
   @Column({ name: 'photo_url', type: 'varchar', length: 500, nullable: true })
-  photoUrl: string;
+  photoUrl: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
