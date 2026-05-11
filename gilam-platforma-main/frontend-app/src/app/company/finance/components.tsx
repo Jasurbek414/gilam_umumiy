@@ -1,7 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-import { MdTrendingUp, MdTrendingDown, MdEdit, MdDelete, MdHistory, MdOpenInNew } from 'react-icons/md';
+import { MdTrendingUp, MdTrendingDown, MdEdit, MdDelete, MdHistory, MdOpenInNew, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
+import toast from 'react-hot-toast';
+import { expensesApi } from '@/lib/api';
 
 // ── Stat Card (Clickable) ──
 export function StatCard({ title, value, icon: Icon, color, trend, up, onClick }: any) {
@@ -192,10 +194,11 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
   const roleLabels: any = { DRIVER:'Haydovchi', MANAGER:'Menejer', WORKER:'Ishchi', OPERATOR:'Operator', COMPANY_ADMIN:'Admin' };
 
-  // Generate full month calendar
-  const now = startDate ? new Date(startDate) : new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
+
+  // Generate full month calendar based on currentDate
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
@@ -271,9 +274,30 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     setEditDay(null);
   };
 
+  const handlePay = async (type: 'avans' | 'oylik') => {
+    const amountStr = window.prompt(`${type === 'avans' ? 'Avans' : 'Oylik'} summasini kiriting (so'm):`);
+    if (!amountStr) return;
+    const amount = Number(amountStr);
+    if (isNaN(amount) || amount <= 0) return toast.error("Noto'g'ri summa kiritildi");
+    
+    try {
+      await expensesApi.create({
+        companyId: member.companyId,
+        title: `${type === 'avans' ? 'Avans' : 'Oylik'} to'lovi - ${member.fullName}`,
+        amount: amount,
+        category: 'Ish haqi',
+        comment: `${monthNames[month]} ${year} uchun to'lov`,
+        date: new Date().toISOString().split('T')[0]
+      });
+      toast.success("To'lov muvaffaqiyatli saqlandi! Xarajatlarga tushdi.");
+    } catch(e: any) {
+      toast.error("Xatolik: " + e.message);
+    }
+  };
+
   const todayStr = new Date().toISOString().split('T')[0];
   const weekDays = ['Du','Se','Ch','Pa','Ju','Sh','Ya'];
-  const statusColors: any = { PRESENT:'bg-emerald-500', HALF_DAY:'bg-amber-400', HOURLY:'bg-blue-500', ABSENT:'bg-rose-400' };
+  const statusColors: any = { PRESENT:'bg-emerald-50 text-emerald-700 border-emerald-200', HALF_DAY:'bg-amber-50 text-amber-700 border-amber-200', HOURLY:'bg-blue-50 text-blue-700 border-blue-200', ABSENT:'bg-rose-50 text-rose-700 border-rose-200' };
   const statusLabels: any = { PRESENT:'✅ Keldi', HALF_DAY:'⏱ Yarim kun', HOURLY:'⏰ Soatlik', ABSENT:'❌ Kelmadi' };
 
   return (
@@ -313,10 +337,10 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
         {/* Quick Actions for Salary */}
         <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-600 shadow-sm transition-all">
+              <button onClick={() => handlePay('avans')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-600 shadow-sm transition-all active:scale-95">
                  <span className="text-blue-500 text-lg">💸</span> Avans berish
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-emerald-300 hover:text-emerald-600 shadow-sm transition-all">
+              <button onClick={() => handlePay('oylik')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-emerald-300 hover:text-emerald-600 shadow-sm transition-all active:scale-95">
                  <span className="text-emerald-500 text-lg">💰</span> Oylik to'lash
               </button>
            </div>
@@ -330,7 +354,14 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
 
           {/* Full Month Calendar */}
           <div className="px-5 py-4">
-            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">📅 {monthNames[month]} {year} · Kunni bosib davomat yozing</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">📅 KUNNI BOSIB DAVOMAT YOZING</p>
+              <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-1 hover:bg-slate-200 rounded-md text-slate-600"><MdChevronLeft className="text-lg" /></button>
+                <span className="text-xs font-black text-slate-700 w-24 text-center">{monthNames[month]} {year}</span>
+                <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-1 hover:bg-slate-200 rounded-md text-slate-600"><MdChevronRight className="text-lg" /></button>
+              </div>
+            </div>
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               {/* Weekday headers */}
               <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
@@ -346,15 +377,16 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                   const isSun = new Date(day).getDay() === 0;
                   const status = att?.status;
                   const daySalary = att?.calculatedSalary || 0;
+                  
+                  const bgClass = status ? (statusColors[status] || 'bg-white text-slate-600 border-slate-100') : 'bg-white text-slate-600 border-slate-100';
 
                   return (
-                    <div key={day} onClick={() => openDay(day)} className={`border-b border-r border-slate-100 h-[72px] p-1.5 cursor-pointer transition-all hover:bg-blue-50/60 group relative ${isToday ? 'bg-blue-50/40' : ''}`}>
+                    <div key={day} onClick={() => openDay(day)} className={`border-b border-r border-slate-100 h-[72px] p-2 cursor-pointer transition-all hover:brightness-95 group relative ${bgClass}`}>
                       <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold ${isToday ? 'bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : isSun ? 'text-rose-400' : 'text-slate-600'}`}>{dayNum}</span>
-                        {status && <span className={`w-2 h-2 rounded-full ${statusColors[status] || 'bg-slate-300'}`} />}
+                        <span className={`text-xs font-bold ${isToday ? 'bg-slate-800 text-white w-6 h-6 rounded-full flex items-center justify-center' : isSun && !status ? 'text-rose-400' : ''}`}>{dayNum}</span>
                       </div>
-                      {status && <p className="text-[8px] font-bold text-slate-400 mt-1 truncate">{statusLabels[status]?.slice(2) || status}</p>}
-                      {daySalary > 0 && <p className="text-[9px] font-black text-blue-600 mt-0.5">{(daySalary / 1000).toFixed(0)}k</p>}
+                      {status && <p className="text-[9px] font-bold mt-1 leading-tight truncate">{statusLabels[status]?.slice(2) || status}</p>}
+                      {daySalary > 0 && <p className="text-[10px] font-black mt-0.5 opacity-80">{(daySalary / 1000).toFixed(0)}k</p>}
                     </div>
                   );
                 })}
