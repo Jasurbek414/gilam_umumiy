@@ -303,7 +303,20 @@ export default function CompanyFinancePage() {
               <tbody className="divide-y divide-slate-50">
                 {staff.filter((m: any) => m.status === 'ACTIVE').map((member: any, idx: number) => {
                   const userAtts = attendances.filter((a: any) => a.userId === member.id);
-                  const totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
+                  let totalSal = 0;
+                  if (member.workSchedule === 'MONTHLY') {
+                    const absents = userAtts.filter((a: any) => a.status === 'ABSENT').length;
+                    const halfs = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
+                    
+                    // We need to know days in month for the selected startDate!
+                    const targetDate = new Date(startDate);
+                    const daysInMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+                    const dailyRate = Number(member.salary || 0) / daysInMonth;
+                    
+                    totalSal = Math.round(Number(member.salary || 0) - (absents * dailyRate) - (halfs * dailyRate / 2));
+                  } else {
+                    totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
+                  }
                   const presentDays = userAtts.filter((a: any) => ['PRESENT','HOURLY'].includes(a.status)).length;
                   const scheduleLabel: any = { MONTHLY:'Oylik', WEEKLY:'Haftalik', DAILY:'Kunlik', HOURLY:'Soatlik' };
                   const scheduleIcon: any = { MONTHLY:'📅', WEEKLY:'📆', DAILY:'📋', HOURLY:'⏰' };

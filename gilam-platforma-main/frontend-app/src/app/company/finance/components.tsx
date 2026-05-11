@@ -208,7 +208,15 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const totalDays = userAtts.filter((a: any) => ['PRESENT', 'HOURLY'].includes(a.status)).length;
   const halfDays = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
   const absentDays = userAtts.filter((a: any) => a.status === 'ABSENT').length;
-  const totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
+  let totalSalary = 0;
+  if (ws === 'MONTHLY') {
+    const dailyRate = sal / daysInMonth;
+    const absents = userAtts.filter((a: any) => a.status === 'ABSENT').length;
+    const halfs = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
+    totalSalary = Math.round(sal - (absents * dailyRate) - (halfs * dailyRate / 2));
+  } else {
+    totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
+  }
   const roleLabels: any = { DRIVER:'Haydovchi', MANAGER:'Menejer', WORKER:'Ishchi', OPERATOR:'Operator', COMPANY_ADMIN:'Admin' };
 
   // Generate full month calendar based on currentDate
@@ -246,6 +254,7 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     else if (schedule === 'DAILY') baseDaySal = salary;
     
     if (schedule === 'HOURLY') return Math.round(salary * hours);
+    if (status === 'REST_DAY') return schedule === 'MONTHLY' ? Math.round(baseDaySal) : 0;
     return status === 'HALF_DAY' ? Math.round(baseDaySal / 2) : Math.round(baseDaySal);
   };
 
@@ -319,8 +328,8 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
 
   const todayStr = new Date().toISOString().split('T')[0];
   const weekDays = ['Du','Se','Ch','Pa','Ju','Sh','Ya'];
-  const statusColors: any = { PRESENT:'bg-emerald-50 text-emerald-700 border-emerald-200', HALF_DAY:'bg-amber-50 text-amber-700 border-amber-200', HOURLY:'bg-blue-50 text-blue-700 border-blue-200', ABSENT:'bg-rose-50 text-rose-700 border-rose-200' };
-  const statusLabels: any = { PRESENT:'✅ Keldi', HALF_DAY:'⏱ Yarim kun', HOURLY:'⏰ Soatlik', ABSENT:'❌ Kelmadi' };
+  const statusColors: any = { PRESENT:'bg-emerald-50 text-emerald-700 border-emerald-200', HALF_DAY:'bg-amber-50 text-amber-700 border-amber-200', HOURLY:'bg-blue-50 text-blue-700 border-blue-200', REST_DAY:'bg-indigo-50 text-indigo-600 border-indigo-200', ABSENT:'bg-rose-50 text-rose-700 border-rose-200' };
+  const statusLabels: any = { PRESENT:'✅ Keldi', HALF_DAY:'⏱ Yarim kun', HOURLY:'⏰ Soatlik', REST_DAY:'🛌 Dam olish', ABSENT:'❌ Kelmadi' };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3">
@@ -433,12 +442,14 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                     {ws === 'HOURLY' ? (
                       <>
                         <option value="HOURLY">⏰ Soatlik</option>
+                        <option value="REST_DAY">🛌 Dam olish</option>
                         <option value="ABSENT">❌ Kelmadi</option>
                       </>
                     ) : (
                       <>
                         <option value="PRESENT">✅ Keldi</option>
                         <option value="HALF_DAY">⏱ Yarim kun</option>
+                        <option value="REST_DAY">🛌 Dam olish</option>
                         <option value="ABSENT">❌ Kelmadi</option>
                       </>
                     )}
