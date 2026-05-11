@@ -165,7 +165,7 @@ export function DetailDrawer({ isOpen, onClose, title, icon, color, children }: 
 }
 
 // ── Staff Profile Modal (State-based) ──
-export function StaffProfileModal({ isOpen, onClose, member, attendances, startDate, endDate, onSaveAttendance, onUpdateUser }: any) {
+export function StaffProfileModal({ isOpen, onClose, member, attendances, startDate, endDate, onSaveAttendance, onUpdateUser, globalRestDay }: any) {
   const [ws, setWs] = useState(member?.workSchedule || 'MONTHLY');
   const [sal, setSal] = useState(Number(member?.salary || 0));
   const [lunch, setLunch] = useState(Number(member?.lunchBreakMinutes || 60));
