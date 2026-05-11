@@ -151,11 +151,42 @@ export default function CompanyFinancePage() {
     } catch(err: any) { toast.error(err.message); }
   };
 
+  // Helper to calculate total salary for a single user
+  const calculateUserSalary = (member: any) => {
+    const userAtts = attendances.filter((a: any) => a.userId === member.id);
+    if (member.workSchedule === 'MONTHLY') {
+      const targetDate = new Date(startDate);
+      const daysInMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+      const dailyRate = Number(member.salary || 0) / daysInMonth;
+      
+      let penalty = 0;
+      let bonus = 0;
+      
+      userAtts.forEach((a: any) => {
+        if (!a.date) return;
+        const isOffDay = globalRestDay !== '' && new Date(a.date).getDay() === Number(globalRestDay);
+        if (isOffDay) {
+          if (a.status === 'PRESENT') bonus += dailyRate;
+          if (a.status === 'HALF_DAY') bonus += dailyRate / 2;
+        } else {
+          if (a.status === 'ABSENT') penalty += dailyRate;
+          if (a.status === 'HALF_DAY') penalty += dailyRate / 2;
+        }
+      });
+      return Math.round(Number(member.salary || 0) + bonus - penalty);
+    }
+    return userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
+  };
+
   // Calculations
   const pStart = new Date(startDate); const pEnd = new Date(endDate); pEnd.setHours(23,59,59,999);
   const filteredOrders = orders.filter(o => { const c = new Date(o.createdAt); return c >= pStart && c <= pEnd; });
   const totalIncomes = expenses.filter(e => e.type==='INCOME').reduce((a,e) => a+Number(e.amount||0), 0);
-  const totalExpenses = expenses.filter(e => e.type!=='INCOME').reduce((a,e) => a+Number(e.amount||0), 0) + attendances.reduce((a,att) => a+Number(att.calculatedSalary||0), 0);
+  
+  const totalAccruedSalaries = staff.filter((m: any) => m.status === 'ACTIVE').reduce((sum: number, member: any) => sum + calculateUserSalary(member), 0);
+  const manualExpenses = expenses.filter(e => e.type !== 'INCOME' && e.category !== 'Ish haqi').reduce((a,e) => a+Number(e.amount||0), 0);
+  const totalExpenses = manualExpenses + totalAccruedSalaries;
+  
   const totalRevenue = filteredOrders.filter(o => ['DELIVERED','COMPLETED'].includes(o.status)).reduce((a,o) => a+Number(o.totalAmount||0), 0) + totalIncomes;
   const expectedRevenue = filteredOrders.filter(o => !['DELIVERED','COMPLETED','CANCELLED'].includes(o.status)).reduce((a,o) => a+Number(o.totalAmount||0), 0);
 
@@ -317,7 +348,7 @@ export default function CompanyFinancePage() {
             </div>
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3 text-center">
               <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jami Ish Haqi</p>
-              <p className="text-xl font-black text-emerald-600">{attendances.reduce((a: number, att: any) => a + Number(att.calculatedSalary || 0), 0).toLocaleString()} <span className="text-xs">so'm</span></p>
+              <p className="text-xl font-black text-emerald-600">{totalAccruedSalaries.toLocaleString()} <span className="text-xs">so'm</span></p>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -328,31 +359,7 @@ export default function CompanyFinancePage() {
               <tbody className="divide-y divide-slate-50">
                 {staff.filter((m: any) => m.status === 'ACTIVE').map((member: any, idx: number) => {
                   const userAtts = attendances.filter((a: any) => a.userId === member.id);
-                  let totalSal = 0;
-                  if (member.workSchedule === 'MONTHLY') {
-                    const targetDate = new Date(startDate);
-                    const daysInMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
-                    const dailyRate = Number(member.salary || 0) / daysInMonth;
-                    
-                    let penalty = 0;
-                    let bonus = 0;
-                    
-                    userAtts.forEach((a: any) => {
-                      if (!a.date) return;
-                      const isOffDay = globalRestDay !== '' && new Date(a.date).getDay() === Number(globalRestDay);
-                      if (isOffDay) {
-                        if (a.status === 'PRESENT') bonus += dailyRate;
-                        if (a.status === 'HALF_DAY') bonus += dailyRate / 2;
-                      } else {
-                        if (a.status === 'ABSENT') penalty += dailyRate;
-                        if (a.status === 'HALF_DAY') penalty += dailyRate / 2;
-                      }
-                    });
-                    
-                    totalSal = Math.round(Number(member.salary || 0) + bonus - penalty);
-                  } else {
-                    totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
-                  }
+                  const totalSal = calculateUserSalary(member);
                   const presentDays = userAtts.filter((a: any) => ['PRESENT','HOURLY'].includes(a.status)).length;
                   const scheduleLabel: any = { MONTHLY:'Oylik', WEEKLY:'Haftalik', DAILY:'Kunlik', HOURLY:'Soatlik' };
                   const scheduleIcon: any = { MONTHLY:'📅', WEEKLY:'📆', DAILY:'📋', HOURLY:'⏰' };
