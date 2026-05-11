@@ -369,38 +369,39 @@ export default function StaffPage() {
                      )}
                    </div>
    
-                   <div className="flex flex-col items-center text-center mt-2 mb-6 relative">
-                     <div className="relative mb-4">
-                        {member.photoUrl ? (
-                           <img src={getPhotoUrl(member.photoUrl)!} alt={member.fullName} className={`w-24 h-24 rounded-full object-cover shadow-lg border-4 ${member.status === 'ACTIVE' ? 'border-white' : 'border-slate-100'} transition-all duration-300`} />
-                        ) : (
-                           <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black shadow-lg border-4 ${member.status === 'ACTIVE' ? 'bg-gradient-to-br from-blue-100 to-indigo-50 text-blue-600 border-white' : 'bg-slate-100 text-slate-400 border-slate-50'} transition-all duration-300`}>
-                             {member.fullName?.charAt(0)?.toUpperCase()}
-                           </div>
-                        )}
-                        <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center ${member.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                           {member.status === 'ACTIVE' ? <MdCheckCircle className="text-white text-xs"/> : <MdBlock className="text-white text-xs"/>}
+                <div className="flex flex-col items-center text-center mt-2 mb-4 relative">
+                  <div className="relative mb-3">
+                     {member.photoUrl ? (
+                        <img src={getPhotoUrl(member.photoUrl)!} alt={member.fullName} className={`w-16 h-16 rounded-full object-cover shadow-md border-2 ${member.status === 'ACTIVE' ? 'border-white' : 'border-slate-100'} transition-all duration-300`} />
+                     ) : (
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-md border-2 ${member.status === 'ACTIVE' ? 'bg-gradient-to-br from-blue-100 to-indigo-50 text-blue-600 border-white' : 'bg-slate-100 text-slate-400 border-slate-50'} transition-all duration-300`}>
+                          {member.fullName?.charAt(0)?.toUpperCase()}
                         </div>
+                     )}
+                     <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center ${member.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'}`}>
                      </div>
-                     <h3 className={`text-lg font-black tracking-tight ${member.status === 'ACTIVE' ? 'text-slate-800' : 'text-slate-400 line-through'}`}>{member.fullName}</h3>
-                     <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1 bg-blue-50 px-3 py-1 rounded-full inline-flex items-center gap-1">
-                        <Icon /> {roleLabels[member.role] || member.role}
-                     </p>
-                   </div>
-   
-                   <div className="space-y-3 pt-4 border-t border-slate-100">
-                     <div className="flex items-center gap-3 text-sm text-slate-600 font-semibold p-3 bg-slate-50/80 rounded-2xl hover:bg-blue-50/50 transition-colors">
-                       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-500 shadow-sm"><MdPhone /></div>
+                  </div>
+                  <h3 className={`text-base font-black tracking-tight ${member.status === 'ACTIVE' ? 'text-slate-800' : 'text-slate-400 line-through'}`}>{member.fullName}</h3>
+                  <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1 bg-blue-50 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                     <Icon className="text-xs" /> {roleLabels[member.role] || member.role}
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between px-1">
+                     <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold bg-slate-50/80 px-3 py-2 rounded-xl flex-1 mr-2 hover:bg-blue-50/50 transition-colors">
+                       <MdPhone className="text-blue-500" />
                        {member.phone}
                      </div>
-                     <div className="flex items-center gap-3 text-sm text-slate-600 font-semibold p-3 bg-slate-50/80 rounded-2xl hover:bg-emerald-50/50 transition-colors">
-                       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-emerald-500 shadow-sm"><MdAttachMoney /></div>
-                       <div className="flex flex-col leading-tight">
-                          <span>{formatSalary(member.salary)}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase">{scheduleLabels[member.workSchedule || 'MONTHLY']}</span>
-                       </div>
-                     </div>
-                   </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold px-3 py-2 bg-slate-50/80 rounded-xl hover:bg-emerald-50/50 transition-colors">
+                    <MdAttachMoney className="text-emerald-500 text-sm" />
+                    <div className="flex items-center justify-between flex-1">
+                       <span>{formatSalary(member.salary)}</span>
+                       <span className="text-[9px] text-slate-400 font-bold uppercase ml-2 bg-white px-1.5 py-0.5 rounded shadow-sm">{scheduleLabels[member.workSchedule || 'MONTHLY']}</span>
+                    </div>
+                  </div>
+                </div>
                 </div>
               </div>
             );
@@ -418,7 +419,7 @@ export default function StaffPage() {
           
           {/* Photo Upload Area */}
           <div className="flex justify-center mb-2">
-             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -426,15 +427,15 @@ export default function StaffPage() {
                   accept="image/jpeg, image/png, image/webp" 
                   className="hidden" 
                 />
-                <div className={`w-28 h-28 rounded-full border-4 border-white shadow-xl overflow-hidden bg-slate-50 flex items-center justify-center relative ${uploadingPhoto ? 'opacity-50' : ''}`}>
+                <div className={`w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-50 flex items-center justify-center relative ${uploadingPhoto ? 'opacity-50' : ''}`}>
                    {formData.photoUrl ? (
                       <img src={getPhotoUrl(formData.photoUrl)!} alt="Avatar" className="w-full h-full object-cover" />
                    ) : (
-                      <MdPerson className="text-6xl text-slate-300" />
+                      <MdPerson className="text-4xl text-slate-300" />
                    )}
                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MdPhotoCamera className="text-white text-2xl" />
-                      <span className="text-white text-[10px] font-bold uppercase mt-1">Rasm yuklash</span>
+                      <MdPhotoCamera className="text-white text-xl" />
+                      <span className="text-white text-[8px] font-bold uppercase mt-1">Yuklash</span>
                    </div>
                 </div>
                 {uploadingPhoto && (
@@ -445,54 +446,54 @@ export default function StaffPage() {
              </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-             <div className="space-y-2">
-               <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Xodim Ismi (F.I.O)</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Xodim Ismi (F.I.O)</label>
                <input
                  required
-                 className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all"
                  placeholder="Ism Familiya"
                  value={formData.fullName}
                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                />
              </div>
-             <div className="space-y-2">
-               <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Telefon raqami</label>
+             <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Telefon raqami</label>
                <input
                  required
-                 className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all"
                  placeholder="+998"
                  value={formData.phone}
                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
                />
              </div>
 
-             <div className="space-y-2">
-               <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Tug'ilgan sanasi</label>
+             <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Tug'ilgan sanasi</label>
                <input
                  type="date"
                  required
-                 className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all"
                  value={formData.birthDate}
                  onChange={(e) => setFormData({...formData, birthDate: e.target.value})}
                />
              </div>
-             <div className="space-y-2">
-               <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Tug'ilgan joyi</label>
+             <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Tug'ilgan joyi</label>
                <input
-                 className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all"
                  placeholder="Viloyat, Tuman"
                  value={formData.birthPlace}
                  onChange={(e) => setFormData({...formData, birthPlace: e.target.value})}
                />
              </div>
 
-             {/* Rol tanlash — faqat yangi qo'shishda ko'rinadi (yoki admin ruxsati bilan) */}
+             {/* Rol tanlash */}
              {!editingMember && (
-               <div className="space-y-2 md:col-span-2">
-                 <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Vazifasi (Roli)</label>
+               <div className="space-y-1 md:col-span-2">
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Vazifasi (Roli)</label>
                  <select
-                   className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all cursor-pointer"
+                   className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all cursor-pointer"
                    value={formData.role}
                    onChange={(e) => setFormData({...formData, role: e.target.value})}
                  >
@@ -503,10 +504,10 @@ export default function StaffPage() {
                </div>
              )}
 
-             <div className="space-y-2">
-               <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1 flex items-center gap-1"><MdOutlineAccessTime/> Ish rejimi</label>
+             <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1 flex items-center gap-1"><MdOutlineAccessTime/> Ish rejimi</label>
                <select
-                 className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all cursor-pointer"
+                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all cursor-pointer"
                  value={formData.workSchedule}
                  onChange={(e) => setFormData({...formData, workSchedule: e.target.value})}
                >
@@ -517,28 +518,28 @@ export default function StaffPage() {
                </select>
              </div>
              
-             <div className="space-y-2">
-               <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Belgilangan Maosh</label>
+             <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Belgilangan Maosh</label>
                <div className="relative">
                   <input
                     type="number"
-                    className="w-full pl-5 pr-14 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                    className="w-full pl-4 pr-12 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all"
                     placeholder="Masalan: 3000000"
                     value={formData.salary}
                     onChange={(e) => setFormData({...formData, salary: e.target.value})}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">UZS</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">UZS</span>
                </div>
              </div>
 
-             {/* Parol — faqat DRIVER va MANAGER uchun */}
+             {/* Parol */}
              {formData.role !== 'WORKER' && (
-               <div className="space-y-2 md:col-span-2">
-                 <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Tizimga kirish paroli</label>
+               <div className="space-y-1 md:col-span-2">
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Tizimga kirish paroli</label>
                  <input
                    required={!editingMember}
                    type="password"
-                   className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none font-bold text-slate-800 transition-all"
+                   className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-bold text-slate-800 transition-all"
                    placeholder={editingMember ? "Parolni o'zgartirish uchun yozing (yo'qsa bo'sh)" : "Kamida 6 xona"}
                    value={formData.password}
                    onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -547,11 +548,11 @@ export default function StaffPage() {
              )}
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex gap-3">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-colors">
+          <div className="pt-3 border-t border-slate-100 flex gap-3 mt-4">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 text-sm bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
               Bekor qilish
             </button>
-            <button type="submit" disabled={uploadingPhoto} className="flex-[2] py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all disabled:opacity-50">
+            <button type="submit" disabled={uploadingPhoto} className="flex-[2] py-3 text-sm bg-slate-900 text-white font-black rounded-xl shadow-lg shadow-slate-900/20 active:scale-95 transition-all disabled:opacity-50">
               {editingMember ? 'SAQLASH' : 'XODIMNI QO\'SHISH'}
             </button>
           </div>
