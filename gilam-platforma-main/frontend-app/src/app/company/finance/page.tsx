@@ -330,15 +330,26 @@ export default function CompanyFinancePage() {
                   const userAtts = attendances.filter((a: any) => a.userId === member.id);
                   let totalSal = 0;
                   if (member.workSchedule === 'MONTHLY') {
-                    const absents = userAtts.filter((a: any) => a.status === 'ABSENT').length;
-                    const halfs = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
-                    
-                    // We need to know days in month for the selected startDate!
                     const targetDate = new Date(startDate);
                     const daysInMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
                     const dailyRate = Number(member.salary || 0) / daysInMonth;
                     
-                    totalSal = Math.round(Number(member.salary || 0) - (absents * dailyRate) - (halfs * dailyRate / 2));
+                    let penalty = 0;
+                    let bonus = 0;
+                    
+                    userAtts.forEach((a: any) => {
+                      if (!a.date) return;
+                      const isOffDay = globalRestDay !== '' && new Date(a.date).getDay() === Number(globalRestDay);
+                      if (isOffDay) {
+                        if (a.status === 'PRESENT') bonus += dailyRate;
+                        if (a.status === 'HALF_DAY') bonus += dailyRate / 2;
+                      } else {
+                        if (a.status === 'ABSENT') penalty += dailyRate;
+                        if (a.status === 'HALF_DAY') penalty += dailyRate / 2;
+                      }
+                    });
+                    
+                    totalSal = Math.round(Number(member.salary || 0) + bonus - penalty);
                   } else {
                     totalSal = userAtts.reduce((sum: number, a: any) => sum + Number(a.calculatedSalary || 0), 0);
                   }

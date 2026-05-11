@@ -220,9 +220,20 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   let totalSalary = 0;
   if (ws === 'MONTHLY') {
     const dailyRate = sal / daysInMonth;
-    const absents = userAtts.filter((a: any) => a.status === 'ABSENT').length;
-    const halfs = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
-    totalSalary = Math.round(sal - (absents * dailyRate) - (halfs * dailyRate / 2));
+    let penalty = 0;
+    let bonus = 0;
+    userAtts.forEach((a: any) => {
+      if (!a.date) return;
+      const isOffDay = globalRestDay !== '' && new Date(a.date).getDay() === Number(globalRestDay);
+      if (isOffDay) {
+        if (a.status === 'PRESENT') bonus += dailyRate;
+        if (a.status === 'HALF_DAY') bonus += dailyRate / 2;
+      } else {
+        if (a.status === 'ABSENT') penalty += dailyRate;
+        if (a.status === 'HALF_DAY') penalty += dailyRate / 2;
+      }
+    });
+    totalSalary = Math.round(sal + bonus - penalty);
   } else {
     totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
   }
