@@ -20,411 +20,349 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Xodimlar ro'yxati topilmadi" }, { status: 400 });
     }
 
-    // 1. Ish haqi xarajatlarini ajratish
     const salaryExpenses = (expenses || []).filter((e: any) =>
-      e.category === 'Ish haqi' && (
-        e.title?.includes("Avans") ||
-        e.title?.includes("Oylik")
-      )
+      e.category === 'Ish haqi' && (e.title?.includes('Avans') || e.title?.includes('Oylik'))
     );
 
-    // 2. Har bir xodim uchun to'lovlarni guruhlash
+    // Har bir xodim uchun to'lovlarni guruhlash
     const staffPayments: Record<string, any[]> = {};
-    for (const member of staff) {
-      const name = member.fullName || member.full_name || '';
-      staffPayments[name] = [];
+    for (const m of staff) {
+      staffPayments[m.fullName || m.full_name || ''] = [];
     }
-
     for (const exp of salaryExpenses) {
       const namePart = exp.title?.split(' - ')?.[1]?.trim() || '';
-      const isAvans = exp.title?.toLowerCase()?.includes('avans');
-      const dateStr = exp.date?.split('T')?.[0] || '';
-      const payment = {
-        date: dateStr,
-        type: isAvans ? 'Avans' : 'Oylik',
-        amount: Number(exp.amount || 0),
-        comment: exp.comment || '',
-      };
       if (staffPayments[namePart]) {
-        staffPayments[namePart].push(payment);
+        staffPayments[namePart].push({
+          date: exp.date?.split('T')?.[0] || '',
+          type: exp.title?.toLowerCase()?.includes('avans') ? 'Avans' : 'Oylik',
+          amount: Number(exp.amount || 0),
+          comment: exp.comment || '',
+        });
       }
     }
 
-    // 3. Google Sheets ulanish
+    // Google Sheets
     const auth = new google.auth.GoogleAuth({
       keyFile: path.join(process.cwd(), 'credentials.json'),
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
-
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = '1k8vMhWoQ9jy4CLl55ipGf7vq2VykAZ3bM_VV5yl8bgc';
     const sheetName = 'Ish haqi va Avanslar';
 
-    // 4. Varaq mavjudligini tekshirish
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingSheets = spreadsheet.data.sheets?.map(s => s.properties?.title) || [];
-
+    // Varaq yaratish
+    const sp = await sheets.spreadsheets.get({ spreadsheetId });
+    const existingSheets = sp.data.sheets?.map(s => s.properties?.title) || [];
     if (!existingSheets.includes(sheetName)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{ addSheet: { properties: { title: sheetName } } }],
-        },
-      });
+      await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] } });
     }
 
-    // 4.5. Eski filter, merge, conditional format'larni tozalash
-    const preSheet = (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets?.find(
-      s => s.properties?.title === sheetName
-    );
+    // Tozalash
+    const preSheet = (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets?.find(s => s.properties?.title === sheetName);
     const preSheetId = preSheet?.properties?.sheetId;
     if (preSheetId !== undefined) {
-      const cleanupRequests: any[] = [];
-      cleanupRequests.push({
-        unmergeCells: {
-          range: { sheetId: preSheetId, startRowIndex: 0, endRowIndex: 1000, startColumnIndex: 0, endColumnIndex: 20 },
-        },
-      });
-      if (preSheet?.basicFilter) {
-        cleanupRequests.push({ clearBasicFilter: { sheetId: preSheetId } });
-      }
-      const ruleCount = preSheet?.conditionalFormats?.length || 0;
-      for (let i = ruleCount - 1; i >= 0; i--) {
-        cleanupRequests.push({ deleteConditionalFormatRule: { sheetId: preSheetId, index: i } });
-      }
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: { requests: cleanupRequests },
-      });
+      const clean: any[] = [
+        { unmergeCells: { range: { sheetId: preSheetId, startRowIndex: 0, endRowIndex: 1000, startColumnIndex: 0, endColumnIndex: 20 } } },
+      ];
+      if (preSheet?.basicFilter) clean.push({ clearBasicFilter: { sheetId: preSheetId } });
+      const rc = preSheet?.conditionalFormats?.length || 0;
+      for (let i = rc - 1; i >= 0; i--) clean.push({ deleteConditionalFormatRule: { sheetId: preSheetId, index: i } });
+      await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: clean } });
     }
+    await sheets.spreadsheets.values.clear({ spreadsheetId, range: `'${sheetName}'!A:K` });
 
-    // 5. Eski ma'lumotlarni tozalash
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId,
-      range: `'${sheetName}'!A:K`,
-    });
-
-    // ====== YAGONA JADVAL ======
+    // ======= MA'LUMOTLARNI TAYYORLASH =======
     const now = new Date();
-    const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
-    const currentMonth = monthNames[now.getMonth()];
-    const currentYear = now.getFullYear();
-    const syncTime = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${currentYear} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+    const syncTime = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-    const COLS = 10;
-    const allRows: any[][] = [];
-    const rowTypes: string[] = []; // 'title' | 'subtitle' | 'header' | 'employee' | 'payment' | 'total' | 'empty'
+    const C = 10; // ustunlar soni
+    const rows: any[][] = [];
+    const types: string[] = []; // row type
 
-    // TITLE
-    allRows.push([`XODIMLAR ISH HAQI VA AVANSLAR HISOBOTI`, '', '', '', '', '', '', '', '', '']);
-    rowTypes.push('title');
+    // === ROW 0: TITLE ===
+    rows.push(['GILAM PLATFORMASI — ISH HAQI VA AVANSLAR HISOBOTI', ...Array(C-1).fill('')]);
+    types.push('title');
 
-    // SUBTITLE
-    allRows.push([`Yangilangan: ${syncTime}  |  ${currentMonth} ${currentYear}`, '', '', '', '', '', '', '', '', '']);
-    rowTypes.push('subtitle');
+    // === ROW 1: Info bar ===
+    let totalStaffCount = staff.length;
+    let grandAvans = 0, grandOylik = 0, grandSalary = 0;
+    for (const m of staff) {
+      const name = m.fullName || m.full_name || '';
+      const payments = staffPayments[name] || [];
+      const mAvans = payments.filter((p:any) => p.type === 'Avans').reduce((s:number,p:any) => s + p.amount, 0);
+      const mOylik = payments.filter((p:any) => p.type === 'Oylik').reduce((s:number,p:any) => s + p.amount, 0);
+      grandAvans += mAvans;
+      grandOylik += mOylik;
+      grandSalary += Number(m.salary || 0);
+    }
+    rows.push([`📅 ${syncTime}  •  ${months[now.getMonth()]} ${now.getFullYear()}  •  👥 ${totalStaffCount} xodim  •  💰 Jami oylik: ${grandSalary.toLocaleString()} so'm`, ...Array(C-1).fill('')]);
+    types.push('info');
 
-    // BO'SH
-    allRows.push(Array(COLS).fill(''));
-    rowTypes.push('empty');
+    // === ROW 2: Statistika ===
+    rows.push([`✅ Jami berilgan avans: ${grandAvans.toLocaleString()} so'm  •  ✅ Jami berilgan oylik: ${grandOylik.toLocaleString()} so'm  •  📊 Qoldiq: ${(grandSalary - grandAvans - grandOylik).toLocaleString()} so'm`, ...Array(C-1).fill('')]);
+    types.push('stats');
 
-    // HEADER
-    allRows.push(['№', 'Sana', 'Xodim Ismi', 'Lavozimi', 'Telefon', 'Ish rejimi', "To'lov Turi", "Summa (so'm)", 'Izoh', "Qoldiq (so'm)"]);
-    rowTypes.push('header');
-    const headerRowIdx = allRows.length - 1;
+    // === ROW 3: BO'SH ===
+    rows.push(Array(C).fill(''));
+    types.push('empty');
 
-    let totalAvans = 0;
-    let totalOylik = 0;
-    let totalSalary = 0;
-    let employeeNum = 0;
-    let totalPayments = 0;
+    // === ROW 4: HEADER ===
+    rows.push(['№', 'Sana', 'Xodim Ismi', 'Lavozimi', 'Telefon', 'Ish rejimi', "To'lov Turi", "Summa (so'm)", 'Izoh', "Qoldiq (so'm)"]);
+    types.push('header');
+    const hdrIdx = rows.length - 1;
 
-    // HAR BIR XODIM
+    let empNum = 0, totalPayments = 0;
+
     for (const member of staff) {
       const name = member.fullName || member.full_name || '';
       const role = roleLabels[member.role] || member.role || '';
       const phone = member.phone || '';
       const schedule = member.workSchedule || member.work_schedule || '6/1';
       const salary = Number(member.salary || 0);
-      const payments = staffPayments[name] || [];
-
-      // To'lovlarni sanasi bo'yicha tartiblash
-      payments.sort((a: any, b: any) => b.date.localeCompare(a.date));
-
-      const memberAvans = payments.filter((p: any) => p.type === 'Avans').reduce((s: number, p: any) => s + p.amount, 0);
-      const memberOylik = payments.filter((p: any) => p.type === 'Oylik').reduce((s: number, p: any) => s + p.amount, 0);
-      const remaining = salary - memberAvans - memberOylik;
-
-      totalAvans += memberAvans;
-      totalOylik += memberOylik;
-      totalSalary += salary;
-      employeeNum++;
+      const payments = (staffPayments[name] || []).sort((a:any,b:any) => b.date.localeCompare(a.date));
+      const mAvans = payments.filter((p:any) => p.type === 'Avans').reduce((s:number,p:any) => s + p.amount, 0);
+      const mOylik = payments.filter((p:any) => p.type === 'Oylik').reduce((s:number,p:any) => s + p.amount, 0);
+      const remaining = salary - mAvans - mOylik;
+      empNum++;
 
       if (payments.length === 0) {
-        // Xodim — to'lovsiz
-        allRows.push([employeeNum, '', name, role, phone, schedule, "—", salary, "Hali to'lov yo'q", remaining]);
-        rowTypes.push('employee');
+        rows.push([empNum, '—', name, role, phone, schedule, '—', salary, "To'lov kutilmoqda", remaining]);
+        types.push('employee');
       } else {
-        // Birinchi to'lov = xodim satri bilan birga
-        allRows.push([employeeNum, payments[0].date, name, role, phone, schedule, payments[0].type, payments[0].amount, payments[0].comment, remaining]);
-        rowTypes.push('employee');
+        rows.push([empNum, payments[0].date, name, role, phone, schedule, payments[0].type, payments[0].amount, payments[0].comment, remaining]);
+        types.push('employee');
         totalPayments++;
-
-        // Qolgan to'lovlar
         for (let i = 1; i < payments.length; i++) {
-          allRows.push(['', payments[i].date, '', '', '', '', payments[i].type, payments[i].amount, payments[i].comment, '']);
-          rowTypes.push('payment');
+          rows.push(['', payments[i].date, '', '', '', '', payments[i].type, payments[i].amount, payments[i].comment, '']);
+          types.push('payment');
           totalPayments++;
         }
       }
     }
 
-    // JAMI
-    const totalRemaining = totalSalary - totalAvans - totalOylik;
-    allRows.push(['', '', 'JAMI:', '', '', '', `Avans: ${totalAvans.toLocaleString()}`, totalAvans + totalOylik, `Oylik: ${totalOylik.toLocaleString()}`, totalRemaining]);
-    rowTypes.push('total');
+    // === JAMI ROW ===
+    rows.push(['', '', '═══ JAMI ═══', '', `${empNum} xodim`, '', `${totalPayments} ta to'lov`, grandAvans + grandOylik, '', grandSalary - grandAvans - grandOylik]);
+    types.push('total');
+    const totalIdx = rows.length - 1;
 
-    // 6. Yozish
+    // Yozish
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `'${sheetName}'!A1`,
       valueInputOption: 'USER_ENTERED',
-      requestBody: { values: allRows },
+      requestBody: { values: rows },
     });
 
-    // 7. Professional formatlash
-    const sheet = (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets?.find(
-      s => s.properties?.title === sheetName
-    );
-    const sheetId = sheet?.properties?.sheetId;
+    // ======= FORMATLASH =======
+    const sh = (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets?.find(s => s.properties?.title === sheetName);
+    const sid = sh?.properties?.sheetId;
 
-    if (sheetId !== undefined) {
-      const requests: any[] = [];
-      const totalRows = allRows.length;
+    if (sid !== undefined) {
+      const rq: any[] = [];
+      const T = rows.length;
 
-      // TITLE (merge + format)
-      requests.push({
-        mergeCells: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: COLS },
-          mergeType: 'MERGE_ALL',
-        },
-      });
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: COLS },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: { red: 0.1, green: 0.27, blue: 0.53 },
-              textFormat: { bold: true, fontSize: 14, foregroundColor: { red: 1, green: 1, blue: 1 } },
-              horizontalAlignment: 'CENTER',
+      // --- TITLE ---
+      rq.push({ mergeCells: { range: { sheetId: sid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: C }, mergeType: 'MERGE_ALL' } });
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: C },
+        cell: { userEnteredFormat: {
+          backgroundColor: { red: 0.08, green: 0.16, blue: 0.32 },
+          textFormat: { bold: true, fontSize: 15, fontFamily: 'Montserrat', foregroundColor: { red: 1, green: 1, blue: 1 } },
+          horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE',
+          padding: { top: 8, bottom: 8 },
+        }},
+        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,padding)',
+      }});
+      rq.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 50 }, fields: 'pixelSize' } });
+
+      // --- INFO BAR ---
+      rq.push({ mergeCells: { range: { sheetId: sid, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: C }, mergeType: 'MERGE_ALL' } });
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: C },
+        cell: { userEnteredFormat: {
+          backgroundColor: { red: 0.13, green: 0.22, blue: 0.42 },
+          textFormat: { fontSize: 10, fontFamily: 'Roboto', foregroundColor: { red: 0.82, green: 0.87, blue: 0.95 } },
+          horizontalAlignment: 'CENTER',
+        }},
+        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)',
+      }});
+
+      // --- STATS BAR ---
+      rq.push({ mergeCells: { range: { sheetId: sid, startRowIndex: 2, endRowIndex: 3, startColumnIndex: 0, endColumnIndex: C }, mergeType: 'MERGE_ALL' } });
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: 2, endRowIndex: 3, startColumnIndex: 0, endColumnIndex: C },
+        cell: { userEnteredFormat: {
+          backgroundColor: { red: 0.18, green: 0.30, blue: 0.52 },
+          textFormat: { fontSize: 10, fontFamily: 'Roboto', foregroundColor: { red: 0.75, green: 0.88, blue: 0.65 } },
+          horizontalAlignment: 'CENTER',
+        }},
+        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)',
+      }});
+
+      // --- HEADER ---
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: hdrIdx, endRowIndex: hdrIdx + 1, startColumnIndex: 0, endColumnIndex: C },
+        cell: { userEnteredFormat: {
+          backgroundColor: { red: 0.16, green: 0.50, blue: 0.27 },
+          textFormat: { bold: true, fontSize: 10, fontFamily: 'Roboto', foregroundColor: { red: 1, green: 1, blue: 1 } },
+          horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE',
+          borders: {
+            bottom: { style: 'SOLID_MEDIUM', color: { red: 0.1, green: 0.35, blue: 0.18 } },
+          },
+        }},
+        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,borders)',
+      }});
+      rq.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'ROWS', startIndex: hdrIdx, endIndex: hdrIdx + 1 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } });
+
+      // --- DATA ROWS ---
+      for (let i = hdrIdx + 1; i < T; i++) {
+        const rt = types[i];
+        if (rt === 'employee') {
+          rq.push({ repeatCell: {
+            range: { sheetId: sid, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: C },
+            cell: { userEnteredFormat: {
+              backgroundColor: { red: 0.94, green: 0.96, blue: 1 },
+              textFormat: { bold: true, fontSize: 10, fontFamily: 'Roboto' },
               verticalAlignment: 'MIDDLE',
-            },
-          },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)',
-        },
-      });
-      requests.push({
-        updateDimensionProperties: {
-          range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
-          properties: { pixelSize: 45 },
-          fields: 'pixelSize',
-        },
-      });
-
-      // SUBTITLE (merge + format)
-      requests.push({
-        mergeCells: {
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: COLS },
-          mergeType: 'MERGE_ALL',
-        },
-      });
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: COLS },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: { red: 0.9, green: 0.92, blue: 0.96 },
-              textFormat: { italic: true, fontSize: 9, foregroundColor: { red: 0.3, green: 0.3, blue: 0.4 } },
-              horizontalAlignment: 'CENTER',
-            },
-          },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)',
-        },
-      });
-
-      // HEADER ROW
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: headerRowIdx, endRowIndex: headerRowIdx + 1, startColumnIndex: 0, endColumnIndex: COLS },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: { red: 0.15, green: 0.5, blue: 0.22 },
-              textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 1, green: 1, blue: 1 } },
-              horizontalAlignment: 'CENTER',
-              verticalAlignment: 'MIDDLE',
-            },
-          },
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)',
-        },
-      });
-      requests.push({
-        updateDimensionProperties: {
-          range: { sheetId, dimension: 'ROWS', startIndex: headerRowIdx, endIndex: headerRowIdx + 1 },
-          properties: { pixelSize: 35 },
-          fields: 'pixelSize',
-        },
-      });
-
-      // DATA ROWS — har bir satrga rang berish
-      for (let i = headerRowIdx + 1; i < totalRows; i++) {
-        const type = rowTypes[i];
-        if (type === 'employee') {
-          // Xodim satri — ko'k fon
-          requests.push({
-            repeatCell: {
-              range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: COLS },
-              cell: {
-                userEnteredFormat: {
-                  backgroundColor: { red: 0.92, green: 0.95, blue: 1 },
-                  textFormat: { bold: true, fontSize: 10 },
-                  borders: {
-                    top: { style: 'SOLID', color: { red: 0.7, green: 0.78, blue: 0.9 } },
-                    bottom: { style: 'SOLID', color: { red: 0.85, green: 0.88, blue: 0.92 } },
-                  },
-                },
+              borders: {
+                top: { style: 'SOLID', color: { red: 0.75, green: 0.82, blue: 0.93 } },
+                bottom: { style: 'SOLID', color: { red: 0.85, green: 0.89, blue: 0.95 } },
+                left: { style: 'SOLID', color: { red: 0.85, green: 0.89, blue: 0.95 } },
+                right: { style: 'SOLID', color: { red: 0.85, green: 0.89, blue: 0.95 } },
               },
-              fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
-            },
-          });
-        } else if (type === 'payment') {
-          // To'lov satri — oq/och kulrang
-          requests.push({
-            repeatCell: {
-              range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: COLS },
-              cell: {
-                userEnteredFormat: {
-                  backgroundColor: { red: 0.98, green: 0.98, blue: 0.98 },
-                  textFormat: { fontSize: 9, foregroundColor: { red: 0.35, green: 0.35, blue: 0.4 } },
-                  borders: {
-                    bottom: { style: 'DOTTED', color: { red: 0.88, green: 0.88, blue: 0.88 } },
-                  },
-                },
+            }},
+            fields: 'userEnteredFormat(backgroundColor,textFormat,verticalAlignment,borders)',
+          }});
+          rq.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'ROWS', startIndex: i, endIndex: i + 1 }, properties: { pixelSize: 30 }, fields: 'pixelSize' } });
+        } else if (rt === 'payment') {
+          rq.push({ repeatCell: {
+            range: { sheetId: sid, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: C },
+            cell: { userEnteredFormat: {
+              backgroundColor: { red: 0.99, green: 0.99, blue: 0.99 },
+              textFormat: { fontSize: 9, fontFamily: 'Roboto', foregroundColor: { red: 0.4, green: 0.4, blue: 0.45 } },
+              borders: {
+                bottom: { style: 'DOTTED', color: { red: 0.9, green: 0.9, blue: 0.92 } },
+                left: { style: 'SOLID', color: { red: 0.92, green: 0.92, blue: 0.94 } },
+                right: { style: 'SOLID', color: { red: 0.92, green: 0.92, blue: 0.94 } },
               },
-              fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
-            },
-          });
-        } else if (type === 'total') {
-          // JAMI satri
-          requests.push({
-            repeatCell: {
-              range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: COLS },
-              cell: {
-                userEnteredFormat: {
-                  backgroundColor: { red: 0.95, green: 0.88, blue: 0.7 },
-                  textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.2, green: 0.15, blue: 0.05 } },
-                  horizontalAlignment: 'CENTER',
-                  borders: {
-                    top: { style: 'SOLID_MEDIUM', color: { red: 0.7, green: 0.6, blue: 0.3 } },
-                    bottom: { style: 'SOLID_MEDIUM', color: { red: 0.7, green: 0.6, blue: 0.3 } },
-                  },
-                },
+            }},
+            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)',
+          }});
+          rq.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'ROWS', startIndex: i, endIndex: i + 1 }, properties: { pixelSize: 26 }, fields: 'pixelSize' } });
+        } else if (rt === 'total') {
+          rq.push({ repeatCell: {
+            range: { sheetId: sid, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: C },
+            cell: { userEnteredFormat: {
+              backgroundColor: { red: 0.08, green: 0.16, blue: 0.32 },
+              textFormat: { bold: true, fontSize: 11, fontFamily: 'Roboto', foregroundColor: { red: 1, green: 1, blue: 1 } },
+              horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE',
+              borders: {
+                top: { style: 'SOLID_THICK', color: { red: 0.08, green: 0.16, blue: 0.32 } },
+                bottom: { style: 'SOLID_THICK', color: { red: 0.08, green: 0.16, blue: 0.32 } },
               },
-              fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,borders)',
-            },
-          });
+            }},
+            fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,borders)',
+          }});
+          rq.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'ROWS', startIndex: i, endIndex: i + 1 }, properties: { pixelSize: 38 }, fields: 'pixelSize' } });
         }
       }
 
-      // NUMBER FORMAT — Summa va Qoldiq ustunlari
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 7, endColumnIndex: 8 },
-          cell: {
-            userEnteredFormat: {
-              numberFormat: { type: 'NUMBER', pattern: '#,##0' },
-              horizontalAlignment: 'RIGHT',
-            },
+      // --- To'lov turi ustuni ranglash (Avans = ko'k, Oylik = yashil) ---
+      // Avans conditional
+      rq.push({ addConditionalFormatRule: { rule: {
+        ranges: [{ sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: T, startColumnIndex: 6, endColumnIndex: 7 }],
+        booleanRule: {
+          condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: 'Avans' }] },
+          format: {
+            backgroundColor: { red: 0.88, green: 0.93, blue: 1 },
+            textFormat: { foregroundColor: { red: 0.15, green: 0.35, blue: 0.7 }, bold: true },
           },
-          fields: 'userEnteredFormat(numberFormat,horizontalAlignment)',
         },
-      });
-      requests.push({
-        repeatCell: {
-          range: { sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 9, endColumnIndex: 10 },
-          cell: {
-            userEnteredFormat: {
-              numberFormat: { type: 'NUMBER', pattern: '#,##0' },
-              horizontalAlignment: 'RIGHT',
-            },
+      }, index: 0 }});
+      // Oylik conditional
+      rq.push({ addConditionalFormatRule: { rule: {
+        ranges: [{ sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: T, startColumnIndex: 6, endColumnIndex: 7 }],
+        booleanRule: {
+          condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: 'Oylik' }] },
+          format: {
+            backgroundColor: { red: 0.85, green: 0.96, blue: 0.85 },
+            textFormat: { foregroundColor: { red: 0.1, green: 0.5, blue: 0.18 }, bold: true },
           },
-          fields: 'userEnteredFormat(numberFormat,horizontalAlignment)',
         },
+      }, index: 1 }});
+
+      // Qoldiq < 0 = qizil
+      rq.push({ addConditionalFormatRule: { rule: {
+        ranges: [{ sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: totalIdx, startColumnIndex: 9, endColumnIndex: 10 }],
+        booleanRule: {
+          condition: { type: 'NUMBER_LESS', values: [{ userEnteredValue: '0' }] },
+          format: {
+            backgroundColor: { red: 1, green: 0.88, blue: 0.88 },
+            textFormat: { foregroundColor: { red: 0.8, green: 0.1, blue: 0.1 }, bold: true },
+          },
+        },
+      }, index: 2 }});
+      // Qoldiq > 0 = yashil
+      rq.push({ addConditionalFormatRule: { rule: {
+        ranges: [{ sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: totalIdx, startColumnIndex: 9, endColumnIndex: 10 }],
+        booleanRule: {
+          condition: { type: 'NUMBER_GREATER', values: [{ userEnteredValue: '0' }] },
+          format: {
+            backgroundColor: { red: 0.88, green: 1, blue: 0.88 },
+            textFormat: { foregroundColor: { red: 0.08, green: 0.48, blue: 0.15 }, bold: true },
+          },
+        },
+      }, index: 3 }});
+      // Qoldiq = 0
+      rq.push({ addConditionalFormatRule: { rule: {
+        ranges: [{ sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: totalIdx, startColumnIndex: 9, endColumnIndex: 10 }],
+        booleanRule: {
+          condition: { type: 'NUMBER_EQ', values: [{ userEnteredValue: '0' }] },
+          format: {
+            backgroundColor: { red: 0.95, green: 0.95, blue: 0.88 },
+            textFormat: { foregroundColor: { red: 0.5, green: 0.45, blue: 0.2 }, bold: true },
+          },
+        },
+      }, index: 4 }});
+
+      // --- NUMBER FORMAT ---
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: T, startColumnIndex: 7, endColumnIndex: 8 },
+        cell: { userEnteredFormat: { numberFormat: { type: 'NUMBER', pattern: '#,##0' }, horizontalAlignment: 'RIGHT' } },
+        fields: 'userEnteredFormat(numberFormat,horizontalAlignment)',
+      }});
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: T, startColumnIndex: 9, endColumnIndex: 10 },
+        cell: { userEnteredFormat: { numberFormat: { type: 'NUMBER', pattern: '#,##0' }, horizontalAlignment: 'RIGHT' } },
+        fields: 'userEnteredFormat(numberFormat,horizontalAlignment)',
+      }});
+
+      // --- № CENTER ---
+      rq.push({ repeatCell: {
+        range: { sheetId: sid, startRowIndex: hdrIdx+1, endRowIndex: T, startColumnIndex: 0, endColumnIndex: 1 },
+        cell: { userEnteredFormat: { horizontalAlignment: 'CENTER' } },
+        fields: 'userEnteredFormat(horizontalAlignment)',
+      }});
+
+      // --- COLUMN WIDTHS ---
+      [40, 100, 180, 130, 130, 80, 95, 130, 200, 130].forEach((w, i) => {
+        rq.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: i, endIndex: i+1 }, properties: { pixelSize: w }, fields: 'pixelSize' } });
       });
 
-      // COLUMN WIDTHS
-      const columnWidths = [35, 100, 170, 120, 120, 70, 100, 130, 180, 130];
-      columnWidths.forEach((w, idx) => {
-        requests.push({
-          updateDimensionProperties: {
-            range: { sheetId, dimension: 'COLUMNS', startIndex: idx, endIndex: idx + 1 },
-            properties: { pixelSize: w },
-            fields: 'pixelSize',
-          },
-        });
-      });
+      // --- FREEZE ---
+      rq.push({ updateSheetProperties: { properties: { sheetId: sid, gridProperties: { frozenRowCount: hdrIdx + 1 } }, fields: 'gridProperties.frozenRowCount' } });
 
-      // FREEZE
-      requests.push({
-        updateSheetProperties: {
-          properties: { sheetId, gridProperties: { frozenRowCount: headerRowIdx + 1 } },
-          fields: 'gridProperties.frozenRowCount',
-        },
-      });
+      // --- FILTER ---
+      rq.push({ setBasicFilter: { filter: { range: { sheetId: sid, startRowIndex: hdrIdx, startColumnIndex: 0, endColumnIndex: C, endRowIndex: T } } } });
 
-      // CONDITIONAL: Qoldiq < 0 = qizil
-      requests.push({
-        addConditionalFormatRule: {
-          rule: {
-            ranges: [{ sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 9, endColumnIndex: 10 }],
-            booleanRule: {
-              condition: { type: 'NUMBER_LESS', values: [{ userEnteredValue: '0' }] },
-              format: {
-                backgroundColor: { red: 1, green: 0.85, blue: 0.85 },
-                textFormat: { foregroundColor: { red: 0.8, green: 0.1, blue: 0.1 }, bold: true },
-              },
-            },
-          },
-          index: 0,
-        },
-      });
-
-      // CONDITIONAL: Qoldiq > 0 = yashil
-      requests.push({
-        addConditionalFormatRule: {
-          rule: {
-            ranges: [{ sheetId, startRowIndex: headerRowIdx + 1, endRowIndex: totalRows, startColumnIndex: 9, endColumnIndex: 10 }],
-            booleanRule: {
-              condition: { type: 'NUMBER_GREATER', values: [{ userEnteredValue: '0' }] },
-              format: {
-                backgroundColor: { red: 0.85, green: 1, blue: 0.85 },
-                textFormat: { foregroundColor: { red: 0.1, green: 0.5, blue: 0.15 }, bold: true },
-              },
-            },
-          },
-          index: 1,
-        },
-      });
-
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: { requests },
-      });
+      await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: rq } });
     }
 
     return NextResponse.json({
       success: true,
-      message: `${employeeNum} ta xodim va ${totalPayments} ta to'lov sinxronlashtirildi`,
-      totalStaff: employeeNum,
-      totalPayments,
+      message: `${empNum} ta xodim va ${totalPayments} ta to'lov sinxronlashtirildi`,
+      totalStaff: empNum, totalPayments,
     });
   } catch (error: any) {
     console.error('Sync xatolik:', error?.message || error);
