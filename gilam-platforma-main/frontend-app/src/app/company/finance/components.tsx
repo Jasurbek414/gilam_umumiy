@@ -327,36 +327,6 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Schedule Cards */}
-          <div className="px-5 py-4 border-b border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">⚙️ Ish Tartibi</p>
-              <button onClick={handleSave} className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[11px] font-bold hover:bg-slate-700 transition-all">💾 Saqlash</button>
-            </div>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {schedules.map(s => {
-                const active = ws === s.key;
-                const colors: any = { orange:'border-orange-300 bg-orange-50 text-orange-600', blue:'border-blue-300 bg-blue-50 text-blue-600', purple:'border-purple-300 bg-purple-50 text-purple-600', emerald:'border-emerald-300 bg-emerald-50 text-emerald-600' };
-                return (
-                  <button key={s.key} onClick={() => handleScheduleSelect(s.key)} className={`p-3 rounded-xl border-2 transition-all text-center relative ${active ? colors[s.color] + ' shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                    {active && <span className="absolute top-1 right-1 w-4 h-4 bg-current rounded-full flex items-center justify-center text-white text-[8px]">✓</span>}
-                    <div className="text-xl mb-0.5">{s.icon}</div>
-                    <p className={`text-xs font-black ${active ? '' : 'text-slate-600'}`}>{s.label}</p>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">{salaryLabel[ws]} (so'm)</label>
-                <input type="number" value={sal} onChange={e => setSal(Number(e.target.value))} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-800 outline-none focus:border-blue-400" />
-              </div>
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Abet vaqti (daqiqa)</label>
-                <input type="number" value={lunch} onChange={e => setLunch(Number(e.target.value))} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-800 outline-none focus:border-blue-400 transition-all" />
-              </div>
-            </div>
-          </div>
 
           {/* Full Month Calendar */}
           <div className="px-5 py-4">
