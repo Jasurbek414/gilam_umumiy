@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAttachMoney, MdTrendingUp, MdTrendingDown, MdLibraryBooks, MdAdd, MdFilterList, MdHistory } from 'react-icons/md';
+import { MdAttachMoney, MdTrendingUp, MdTrendingDown, MdLibraryBooks, MdAdd, MdFilterList, MdHistory, MdSync } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi } from '@/lib/api';
@@ -49,7 +49,7 @@ export default function CompanyFinancePage() {
   const [globalRestDay, setGlobalRestDay] = useState<string>('');
 
   const [form, setForm] = useState({ title: '', amount: '', category: 'Logistika', comment: '' });
-
+  const [isSyncing, setIsSyncing] = useState(false);
   useEffect(() => {
     const u = getUser();
     if (!u?.company) { setTimeout(() => router.push('/'), 0); return; }
@@ -95,6 +95,27 @@ export default function CompanyFinancePage() {
     if (p === 'daily') setStartDate(getLocalDateString());
     else if (p === 'weekly') { const d = new Date(); d.setDate(d.getDate()-7); setStartDate(getLocalDateString(d)); }
     else { const d = new Date(); d.setMonth(d.getMonth()-1); setStartDate(getLocalDateString(d)); }
+  };
+
+  const handleSyncGSheets = async () => {
+    try {
+      setIsSyncing(true);
+      const res = await fetch('/gsheets-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expenses })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error("Xatolik: " + data.error);
+      }
+    } catch (err: any) {
+      toast.error("Sinxronlashda xatolik yuz berdi");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // CRUD handlers
@@ -346,8 +367,12 @@ export default function CompanyFinancePage() {
                  </select>
               </div>
             </div>
-            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3 text-center">
-              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jami Ish Haqi</p>
+            <div className="flex items-center gap-4">
+              <button onClick={handleSyncGSheets} disabled={isSyncing} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all">
+                <MdSync className={isSyncing ? "animate-spin" : ""} /> {isSyncing ? "Yuborilmoqda..." : "Sheets'ga yuborish"}
+              </button>
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3 text-center">
+                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jami Ish Haqi</p>
               <p className="text-xl font-black text-emerald-600">{totalAccruedSalaries.toLocaleString()} <span className="text-xs">so'm</span></p>
             </div>
           </div>
