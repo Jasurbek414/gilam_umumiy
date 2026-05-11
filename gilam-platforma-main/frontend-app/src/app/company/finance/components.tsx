@@ -208,6 +208,15 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   const totalDays = userAtts.filter((a: any) => ['PRESENT', 'HOURLY'].includes(a.status)).length;
   const halfDays = userAtts.filter((a: any) => a.status === 'HALF_DAY').length;
   const absentDays = userAtts.filter((a: any) => a.status === 'ABSENT').length;
+  // Generate full month calendar based on currentDate
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startWeekday = (firstDay.getDay() + 6) % 7; // Monday=0
+  const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+
   let totalSalary = 0;
   if (ws === 'MONTHLY') {
     const dailyRate = sal / daysInMonth;
@@ -218,15 +227,6 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
     totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
   }
   const roleLabels: any = { DRIVER:'Haydovchi', MANAGER:'Menejer', WORKER:'Ishchi', OPERATOR:'Operator', COMPANY_ADMIN:'Admin' };
-
-  // Generate full month calendar based on currentDate
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startWeekday = (firstDay.getDay() + 6) % 7; // Monday=0
-  const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
 
   const calDays: (string | null)[] = [];
   for (let i = 0; i < startWeekday; i++) calDays.push(null);
