@@ -55,7 +55,7 @@ export class UsersController {
       },
     }),
   )
-  uploadPhoto(@UploadedFile() file: Express.Multer.File) {
+  uploadPhoto(@UploadedFile() file: any) {
     if (!file) {
       return { error: 'Fayl yuklanmadi' };
     }
