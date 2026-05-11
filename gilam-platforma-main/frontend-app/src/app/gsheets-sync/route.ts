@@ -84,6 +84,40 @@ export async function POST(req: Request) {
       });
     }
 
+    // 4.5. Eski filter va merge'larni tozalash
+    const preSheet = (await sheets.spreadsheets.get({ spreadsheetId })).data.sheets?.find(
+      s => s.properties?.title === sheetName
+    );
+    const preSheetId = preSheet?.properties?.sheetId;
+    if (preSheetId !== undefined) {
+      const cleanupRequests: any[] = [];
+      // Barcha merge'larni ochish
+      cleanupRequests.push({
+        unmergeCells: {
+          range: { sheetId: preSheetId, startRowIndex: 0, endRowIndex: 1000, startColumnIndex: 0, endColumnIndex: 20 },
+        },
+      });
+      // Agar filter mavjud bo'lsa olib tashlash
+      if (preSheet?.basicFilter) {
+        cleanupRequests.push({
+          clearBasicFilter: { sheetId: preSheetId },
+        });
+      }
+      // Conditional format rules'ni olib tashlash (teskari tartibda)
+      const ruleCount = preSheet?.conditionalFormats?.length || 0;
+      for (let i = ruleCount - 1; i >= 0; i--) {
+        cleanupRequests.push({
+          deleteConditionalFormatRule: { sheetId: preSheetId, index: i },
+        });
+      }
+      if (cleanupRequests.length > 0) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: { requests: cleanupRequests },
+        });
+      }
+    }
+
     // 5. Eski ma'lumotlarni tozalash
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
