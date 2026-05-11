@@ -165,7 +165,7 @@ export function DetailDrawer({ isOpen, onClose, title, icon, color, children }: 
 }
 
 // ── Staff Profile Modal (State-based) ──
-export function StaffProfileModal({ isOpen, onClose, member, attendances, startDate, endDate, onSaveAttendance, onUpdateUser, globalRestDay }: any) {
+export function StaffProfileModal({ isOpen, onClose, member, attendances, expenses, startDate, endDate, onSaveAttendance, onUpdateUser, globalRestDay }: any) {
   const [ws, setWs] = useState(member?.workSchedule || 'MONTHLY');
   const [sal, setSal] = useState(Number(member?.salary || 0));
   const [lunch, setLunch] = useState(Number(member?.lunchBreakMinutes || 60));
@@ -237,6 +237,22 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
   } else {
     totalSalary = userAtts.reduce((s: number, a: any) => s + Number(a.calculatedSalary || 0), 0);
   }
+  
+  // Avanslar va Oylik to'lovlarni hisoblash
+  const userAdvances = (expenses || []).filter((e: any) => {
+    if (!e.date || e.category !== 'Ish haqi') return false;
+    const isAvansYokiOylik = e.title?.includes("Avans to'lovi") || e.title?.includes("Oylik to'lovi");
+    const isThisUser = e.title?.includes(member?.fullName);
+    if (!isAvansYokiOylik || !isThisUser) return false;
+    
+    // Shu oydagilarini ajratish
+    const eDate = new Date(e.date);
+    return eDate.getFullYear() === year && eDate.getMonth() === month;
+  });
+  
+  const totalPaid = userAdvances.reduce((sum: number, e: any) => sum + Number(e.amount || 0), 0);
+  const remainingSalary = totalSalary - totalPaid;
+
   const roleLabels: any = { DRIVER:'Haydovchi', MANAGER:'Menejer', WORKER:'Ishchi', OPERATOR:'Operator', COMPANY_ADMIN:'Admin' };
 
   const calDays: (string | null)[] = [];
@@ -386,9 +402,12 @@ export function StaffProfileModal({ isOpen, onClose, member, attendances, startD
                  <span className="text-emerald-500 text-lg">💰</span> Oylik to'lash
               </button>
            </div>
-           <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase">Qoldiq haqdorlik</p>
-              <p className="text-base font-black text-slate-800">{totalSalary.toLocaleString()} <span className="text-xs text-slate-500">so'm</span></p>
+           <div className="text-right flex flex-col gap-1 items-end">
+              <p className="text-[10px] font-black text-slate-400 uppercase">To'langan (Avans+Oylik): <span className="text-blue-500">{totalPaid.toLocaleString()} so'm</span></p>
+              <div className="flex items-center gap-2">
+                 <p className="text-[10px] font-black text-slate-400 uppercase">Qoldiq haqdorlik:</p>
+                 <p className={`text-base font-black ${remainingSalary < 0 ? 'text-rose-600' : 'text-slate-800'}`}>{remainingSalary.toLocaleString()} <span className="text-xs text-slate-500">so'm</span></p>
+              </div>
            </div>
         </div>
 

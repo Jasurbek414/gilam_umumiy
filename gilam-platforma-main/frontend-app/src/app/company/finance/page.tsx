@@ -475,6 +475,7 @@ export default function CompanyFinancePage() {
         onClose={() => setSelectedMember(null)}
         member={selectedMember}
         attendances={attendances}
+        expenses={expenses}
         startDate={startDate}
         endDate={endDate}
         onSaveAttendance={handleAttendanceChange}
