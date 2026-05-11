@@ -86,8 +86,14 @@ cp -f "$REPO/frontend-app/src/app/admin/users/page.tsx" "$FRONT/src/app/admin/us
 cp -f "$REPO/frontend-app/package.json" "$FRONT/package.json"
 cp -f "$REPO/frontend-app/next.config.ts" "$FRONT/next.config.ts" 2>/dev/null || true
 cp -f "$REPO/frontend-app/next.config.mjs" "$FRONT/next.config.mjs" 2>/dev/null || true
-echo "  ✓ Frontend fayllar ko'chirildi"
 
+# API routes for Google Sheets
+mkdir -p "$FRONT/src/app/gsheets"
+cp -f "$REPO/frontend-app/src/app/gsheets/route.ts" "$FRONT/src/app/gsheets/route.ts"
+mkdir -p "$FRONT/src/app/gsheets-sync"
+cp -f "$REPO/frontend-app/src/app/gsheets-sync/route.ts" "$FRONT/src/app/gsheets-sync/route.ts"
+
+echo "  ✓ Frontend fayllar ko'chirildi"
 echo ""
 echo "=== 6. Frontend build ==="
 cd "$FRONT"
