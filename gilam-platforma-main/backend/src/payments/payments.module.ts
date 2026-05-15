@@ -4,11 +4,13 @@ import { Payment } from './entities/payment.entity';
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { AuditModule } from '../audit/audit.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment]),
     AuditModule,
+    AuthModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

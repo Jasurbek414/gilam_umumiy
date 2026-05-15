@@ -5,11 +5,13 @@ import { Penalty } from './entities/penalty.entity';
 import { BonusesService } from './bonuses.service';
 import { BonusesController } from './bonuses.controller';
 import { AuditModule } from '../audit/audit.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Bonus, Penalty]),
     AuditModule,
+    AuthModule,
   ],
   controllers: [BonusesController],
   providers: [BonusesService],

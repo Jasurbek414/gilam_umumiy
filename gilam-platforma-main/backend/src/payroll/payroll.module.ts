@@ -8,12 +8,14 @@ import { PayrollService } from './payroll.service';
 import { PayrollController } from './payroll.controller';
 import { AdvancesModule } from '../advances/advances.module';
 import { AuditModule } from '../audit/audit.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PayrollPeriod, PayrollItem, Attendance, User]),
     AdvancesModule,
     AuditModule,
+    AuthModule,
   ],
   controllers: [PayrollController],
   providers: [PayrollService],
