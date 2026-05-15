@@ -12,11 +12,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   List<Map<String, dynamic>> _companies = [];
   String _companyName = '';
-  String _appRole = 'DRIVER';
   bool _loadingCompanies = false;
   bool _loading = false;
   bool _showCompanyPicker = false;
-  bool _showRolePicker = false;
 
   final TextEditingController _phoneCtrl = TextEditingController();
   final TextEditingController _passCtrl = TextEditingController();
@@ -72,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final role = user['role'] as String? ?? '';
       if (!['DRIVER', 'WASHER', 'FINISHER', 'MANAGER', 'WORKER'].contains(role)) {
-        throw Exception('Bu ilova faqat Haydovchi, Manager va Sex xodimlari uchun!');
+        throw Exception('Bu ilova faqat Haydovchi, Manager va Ishchilar uchun!');
       }
 
       final company = user['company'] as Map<String, dynamic>?;
@@ -80,7 +78,18 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception("Kiritilgan kampaniya nomi xato yoki bunday kampaniyada ishlamaysiz!");
       }
 
-      final fullUser = {...user, 'appRole': _appRole};
+      // Rolni backenddan avtomatik aniqlash — ishchilarga alohida tanlash shart emas
+      String appRole;
+      if (role == 'MANAGER') {
+        appRole = 'MANAGER';
+      } else if (role == 'DRIVER') {
+        appRole = 'DRIVER';
+      } else {
+        // WORKER, WASHER, FINISHER — oddiy ishchi rejimi
+        appRole = 'WORKER';
+      }
+
+      final fullUser = {...user, 'appRole': appRole};
       await saveUser(fullUser);
       widget.onLogin(fullUser);
     } catch (e) {
@@ -117,11 +126,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: kSurface2),
                     ),
-                    child: const Icon(Icons.directions_car, size: 38, color: kPrimary),
+                    child: const Icon(Icons.local_laundry_service, size: 38, color: kPrimary),
                   ),
                   const SizedBox(height: 24),
-                  const Text('Gilam Driver', style: TextStyle(color: kTextPrimary, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                  const Text('Eksklyuziv hamkorlik platformasi', style: TextStyle(color: kTextSecondary, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 1)),
+                  const Text('Gilam Xodim', style: TextStyle(color: kTextPrimary, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                  const Text('Xodimlar uchun platforma', style: TextStyle(color: kTextSecondary, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 1)),
                   const SizedBox(height: 48),
 
                   // Company picker
@@ -133,14 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: kPrimary))
                         : const Icon(Icons.keyboard_arrow_down, color: kTextMuted),
                     onTap: () => setState(() => _showCompanyPicker = true),
-                  ),
-                  const SizedBox(height: 12),
-
-                  _Tile(
-                    icon: Icons.people,
-                    text: _appRole == 'DRIVER' ? 'Haydovchi (Yetkazib berish)' : 'Manager (Nazorat)',
-                    trailing: const Icon(Icons.keyboard_arrow_down, color: kTextMuted),
-                    onTap: () => setState(() => _showRolePicker = true),
                   ),
                   const SizedBox(height: 12),
 
@@ -205,11 +206,6 @@ class _LoginScreenState extends State<LoginScreen> {
               loading: _loadingCompanies,
               onSelect: (name) => setState(() { _companyName = name; _showCompanyPicker = false; }),
               onClose: () => setState(() => _showCompanyPicker = false),
-            ),
-          if (_showRolePicker)
-            _RolePicker(
-              onSelect: (role) => setState(() { _appRole = role; _showRolePicker = false; }),
-              onClose: () => setState(() => _showRolePicker = false),
             ),
         ],
       ),
@@ -349,35 +345,6 @@ class _CompanyPicker extends StatelessWidget {
                     onTap: () => onSelect(companies[i]['name'] as String),
                   ),
                 ),
-    );
-  }
-}
-
-class _RolePicker extends StatelessWidget {
-  final Function(String) onSelect;
-  final VoidCallback onClose;
-  const _RolePicker({required this.onSelect, required this.onClose});
-
-  @override
-  Widget build(BuildContext context) {
-    return _BottomSheet(
-      title: 'Qaysi vazifada ishlaysiz?',
-      onClose: onClose,
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.directions_car_outlined, color: kPrimary),
-            title: const Text('Haydovchi (Yetkazish)', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
-            onTap: () => onSelect('DRIVER'),
-          ),
-          const Divider(color: kSurface2, height: 0),
-          ListTile(
-            leading: const Icon(Icons.admin_panel_settings_outlined, color: kPrimary),
-            title: const Text('Manager (Nazorat)', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
-            onTap: () => onSelect('MANAGER'),
-          ),
-        ],
-      ),
     );
   }
 }

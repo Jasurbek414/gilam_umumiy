@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     ChatService.instance.connect();
-    if (widget.user['appRole'] != 'FACILITY') {
+    if (widget.user['appRole'] == 'DRIVER') {
       _startBackgroundLocationTracker();
     }
   }
@@ -106,7 +106,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final user = widget.user;
     final isFac = user['appRole'] == 'FACILITY';
     final isManager = user['appRole'] == 'MANAGER';
-    final role = isManager ? 'Manager' : isFac ? 'Sex xodimi' : 'Haydovchi';
+    final isWorker = user['appRole'] == 'WORKER';
+    final role = isManager ? 'Manager' : isWorker ? 'Ishchi' : isFac ? 'Sex xodimi' : 'Haydovchi';
 
     final pages = isManager
         ? [
@@ -122,13 +123,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: kBackground,
-      appBar: _buildAppBar(role, isFac || isManager),
+      appBar: _buildAppBar(role),
       body: IndexedStack(index: _tab, children: pages),
       bottomNavigationBar: isManager ? _buildManagerNav() : _buildNav(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(String role, bool isFac) {
+  PreferredSizeWidget _buildAppBar(String role) {
     return AppBar(
       backgroundColor: kBackground,
       elevation: 0,
@@ -145,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Gilam Driver',
+          const Text('Gilam Xodim',
               style: TextStyle(color: kTextPrimary, fontSize: 16, fontWeight: FontWeight.w900)),
           Text(role, style: const TextStyle(color: kTextMuted, fontSize: 11, fontWeight: FontWeight.w500)),
         ]),
@@ -163,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Container(width: 7, height: 7,
                 decoration: const BoxDecoration(color: kPrimary, shape: BoxShape.circle)),
             const SizedBox(width: 6),
-            Text(isFac ? 'Sex' : 'Haydovchi',
+            Text(role,
                 style: const TextStyle(color: kPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
           ]),
         ),
