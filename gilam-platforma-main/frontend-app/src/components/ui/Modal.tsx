@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MdClose } from 'react-icons/md';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,12 @@ interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, title, children, className }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Prevent scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -26,7 +33,7 @@ export default function Modal({ isOpen, onClose, title, children, className }: M
     };
   }, [isOpen]);
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
@@ -69,4 +76,9 @@ export default function Modal({ isOpen, onClose, title, children, className }: M
       )}
     </AnimatePresence>
   );
+
+  // Portal orqali body ga render qilamiz — sidebar stacking context muammosini hal qiladi
+  if (!mounted) return null;
+  return createPortal(modalContent, document.body);
 }
+
