@@ -21,6 +21,24 @@ sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXIS
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS salary DECIMAL(12,2) DEFAULT 0;" 2>/dev/null || echo "  salary allaqachon mavjud"
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS work_schedule VARCHAR(20) DEFAULT 'MONTHLY';" 2>/dev/null || echo "  work_schedule allaqachon mavjud"
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS lunch_break_minutes INT DEFAULT 60;" 2>/dev/null || echo "  lunch_break_minutes allaqachon mavjud"
+# Payroll & Driver yangi ustunlar
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS father_name VARCHAR(255);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(100);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS branch VARCHAR(100);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS position_title VARCHAR(100);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS hire_date DATE;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS hourly_rate DECIMAL(10,2) DEFAULT 0;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_rate DECIMAL(10,2) DEFAULT 0;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_rate DECIMAL(10,2) DEFAULT 0;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS vehicle_number VARCHAR(20);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_accuracy DOUBLE PRECISION;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_speed DOUBLE PRECISION;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_heading DOUBLE PRECISION;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS battery_level INT;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS location_permission VARCHAR(20);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS device_info JSONB;" 2>/dev/null || true
 # Attendance yangi ustunlari
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE companies ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}'::jsonb;" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "ALTER TYPE attendancestatus ADD VALUE IF NOT EXISTS 'HOURLY';" 2>/dev/null || true
@@ -28,14 +46,19 @@ sudo -u postgres psql -d gilam_saas -c "ALTER TYPE attendance_status_enum ADD VA
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS start_time TIME;" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS end_time TIME;" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS worked_hours DECIMAL(5,2) DEFAULT 0;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS lunch_minutes INT DEFAULT 60;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS late_minutes INT DEFAULT 0;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS overtime_hours DECIMAL(5,2) DEFAULT 0;" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS absence_reason VARCHAR(20);" 2>/dev/null || true
+sudo -u postgres psql -d gilam_saas -c "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS marked_by UUID;" 2>/dev/null || true
 # Eski rollarni yangilarga o'tkazish
 sudo -u postgres psql -d gilam_saas -c "UPDATE users SET role = 'WORKER' WHERE role = 'WASHER';" 2>/dev/null || true
 sudo -u postgres psql -d gilam_saas -c "UPDATE users SET role = 'WORKER' WHERE role = 'FINISHER';" 2>/dev/null || true
 echo "  ✓ DB migratsiya bajarildi"
 
 echo ""
-echo ""
 echo "=== 3. Backend fayllarni yangilash ==="
+# Asosiy fayllar
 cp -f "$REPO/backend/src/users/entities/user.entity.ts" "$BACK/src/users/entities/user.entity.ts"
 cp -f "$REPO/backend/src/users/dto/user.dto.ts" "$BACK/src/users/dto/user.dto.ts"
 cp -f "$REPO/backend/src/users/users.service.ts" "$BACK/src/users/users.service.ts"
@@ -44,16 +67,25 @@ cp -f "$REPO/backend/src/orders/orders.controller.ts" "$BACK/src/orders/orders.c
 cp -f "$REPO/backend/src/orders/orders.service.ts" "$BACK/src/orders/orders.service.ts"
 cp -f "$REPO/backend/src/app.module.ts" "$BACK/src/app.module.ts"
 cp -f "$REPO/backend/src/main.ts" "$BACK/src/main.ts"
+# Mavjud modullar
 rm -rf "$BACK/src/audit" "$BACK/src/expenses" "$BACK/src/attendance"
 mkdir -p "$BACK/src/audit" "$BACK/src/expenses" "$BACK/src/attendance"
 cp -rf "$REPO/backend/src/audit/." "$BACK/src/audit/"
 cp -rf "$REPO/backend/src/expenses/." "$BACK/src/expenses/"
 cp -rf "$REPO/backend/src/attendance/." "$BACK/src/attendance/"
+# YANGI MODULLAR
+for module in advances payroll payments bonuses drivers; do
+  rm -rf "$BACK/src/$module"
+  mkdir -p "$BACK/src/$module"
+  cp -rf "$REPO/backend/src/$module/." "$BACK/src/$module/"
+  echo "  → $module moduli ko'chirildi"
+done
 echo "  ✓ Backend fayllar ko'chirildi"
 
 echo ""
 echo "=== 4. Backend build ==="
 cd "$BACK"
+npm install
 npm run build
 echo "  ✓ Backend build tayyor"
 
@@ -67,13 +99,25 @@ cp -f "$REPO/frontend-app/src/app/admin/companies/page.tsx" "$FRONT/src/app/admi
 cp -f "$REPO/frontend-app/src/app/company/layout.tsx" "$FRONT/src/app/company/layout.tsx"
 cp -f "$REPO/frontend-app/src/app/company/page.tsx" "$FRONT/src/app/company/page.tsx"
 cp -f "$REPO/frontend-app/src/app/company/orders/page.tsx" "$FRONT/src/app/company/orders/page.tsx"
+# Finance sahifasi (payroll tabs bilan)
 cp -f "$REPO/frontend-app/src/app/company/finance/page.tsx" "$FRONT/src/app/company/finance/page.tsx"
 cp -f "$REPO/frontend-app/src/app/company/finance/components.tsx" "$FRONT/src/app/company/finance/components.tsx"
+cp -f "$REPO/frontend-app/src/app/company/finance/PayrollTabs.tsx" "$FRONT/src/app/company/finance/PayrollTabs.tsx"
 cp -f "$REPO/frontend-app/src/app/company/staff/page.tsx" "$FRONT/src/app/company/staff/page.tsx"
 mkdir -p "$FRONT/src/app/company/settings"
 cp -f "$REPO/frontend-app/src/app/company/settings/page.tsx" "$FRONT/src/app/company/settings/page.tsx"
 mkdir -p "$FRONT/src/app/company/login"
 cp -f "$REPO/frontend-app/src/app/company/login/page.tsx" "$FRONT/src/app/company/login/page.tsx"
+# YANGI: Live Map sahifasi
+mkdir -p "$FRONT/src/app/company/live-map"
+cp -f "$REPO/frontend-app/src/app/company/live-map/page.tsx" "$FRONT/src/app/company/live-map/page.tsx"
+cp -f "$REPO/frontend-app/src/app/company/live-map/layout.tsx" "$FRONT/src/app/company/live-map/layout.tsx"
+# Logistics
+mkdir -p "$FRONT/src/components/logistics"
+cp -f "$REPO/frontend-app/src/components/logistics/LogisticsMap.tsx" "$FRONT/src/components/logistics/LogisticsMap.tsx" 2>/dev/null || true
+mkdir -p "$FRONT/src/app/company/logistics"
+cp -f "$REPO/frontend-app/src/app/company/logistics/page.tsx" "$FRONT/src/app/company/logistics/page.tsx" 2>/dev/null || true
+# Shared
 cp -f "$REPO/frontend-app/src/lib/api.ts" "$FRONT/src/lib/api.ts"
 cp -f "$REPO/frontend-app/src/components/layout/Sidebar.tsx" "$FRONT/src/components/layout/Sidebar.tsx"
 cp -f "$REPO/frontend-app/src/components/layout/CompanySidebar.tsx" "$FRONT/src/components/layout/CompanySidebar.tsx"
@@ -86,14 +130,13 @@ cp -f "$REPO/frontend-app/src/app/admin/users/page.tsx" "$FRONT/src/app/admin/us
 cp -f "$REPO/frontend-app/package.json" "$FRONT/package.json"
 cp -f "$REPO/frontend-app/next.config.ts" "$FRONT/next.config.ts" 2>/dev/null || true
 cp -f "$REPO/frontend-app/next.config.mjs" "$FRONT/next.config.mjs" 2>/dev/null || true
-
 # API routes for Google Sheets
 mkdir -p "$FRONT/src/app/gsheets"
 cp -f "$REPO/frontend-app/src/app/gsheets/route.ts" "$FRONT/src/app/gsheets/route.ts"
 mkdir -p "$FRONT/src/app/gsheets-sync"
 cp -f "$REPO/frontend-app/src/app/gsheets-sync/route.ts" "$FRONT/src/app/gsheets-sync/route.ts"
-
 echo "  ✓ Frontend fayllar ko'chirildi"
+
 echo ""
 echo "=== 6. Frontend build ==="
 cd "$FRONT"
@@ -116,5 +159,7 @@ rm -f /home/ubuntu/deploy_full.sh
 echo ""
 echo "=========================================="
 echo "  DEPLOY MUVAFFAQIYATLI YAKUNLANDI! ✅"
+echo "  Yangi modullar: advances, payroll,"
+echo "  payments, bonuses, drivers (live-map)"
 echo "=========================================="
 pm2 list

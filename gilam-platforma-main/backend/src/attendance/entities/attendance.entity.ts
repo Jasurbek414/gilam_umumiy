@@ -44,6 +44,29 @@ export class Attendance {
   @Column({ type: 'text', nullable: true })
   comment: string;
 
+  @Column({ name: 'lunch_minutes', type: 'int', nullable: true, default: 60 })
+  lunchMinutes: number;
+
+  @Column({ name: 'late_minutes', type: 'int', nullable: true, default: 0 })
+  lateMinutes: number;
+
+  @Column({ name: 'early_leave_minutes', type: 'int', nullable: true, default: 0 })
+  earlyLeaveMinutes: number;
+
+  @Column({ name: 'overtime_hours', type: 'decimal', precision: 5, scale: 2, nullable: true, default: 0 })
+  overtimeHours: number;
+
+  /** EXCUSED | UNEXCUSED | null */
+  @Column({ name: 'absence_reason', type: 'varchar', length: 20, nullable: true })
+  absenceReason: string;
+
+  /** Manager kim belgilagan */
+  @Column({ name: 'marked_by', type: 'uuid', nullable: true })
+  markedBy: string;
+
+  @Column({ name: 'attachment_url', type: 'varchar', length: 500, nullable: true })
+  attachmentUrl: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }

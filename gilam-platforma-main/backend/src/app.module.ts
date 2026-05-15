@@ -19,6 +19,11 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ExpensesModule } from './expenses/expenses.module';
 import { AuditModule } from './audit/audit.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { AdvancesModule } from './advances/advances.module';
+import { PayrollModule } from './payroll/payroll.module';
+import { PaymentsModule } from './payments/payments.module';
+import { BonusesModule } from './bonuses/bonuses.module';
+import { DriversModule } from './drivers/drivers.module';
 
 @Module({
   imports: [
@@ -56,6 +61,11 @@ import { AttendanceModule } from './attendance/attendance.module';
     ExpensesModule,
     AuditModule,
     AttendanceModule,
+    AdvancesModule,
+    PayrollModule,
+    PaymentsModule,
+    BonusesModule,
+    DriversModule,
   ],
   controllers: [AppController],
   providers: [AppService],

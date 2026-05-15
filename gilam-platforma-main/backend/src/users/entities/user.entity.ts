@@ -81,6 +81,58 @@ export class User {
   @Column({ name: 'photo_url', type: 'varchar', length: 500, nullable: true })
   photoUrl: string | null;
 
+  @Column({ name: 'father_name', type: 'varchar', length: 255, nullable: true })
+  fatherName: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  department: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  branch: string | null;
+
+  @Column({ name: 'position_title', type: 'varchar', length: 100, nullable: true })
+  positionTitle: string | null;
+
+  @Column({ name: 'hire_date', type: 'date', nullable: true })
+  hireDate: Date | null;
+
+  @Column({ name: 'hourly_rate', type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
+  hourlyRate: number;
+
+  @Column({ name: 'daily_rate', type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
+  dailyRate: number;
+
+  @Column({ name: 'weekly_rate', type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
+  weeklyRate: number;
+
+  // ── Driver tracking fields ──
+  @Column({ name: 'is_online', default: false })
+  isOnline: boolean;
+
+  @Column({ name: 'last_seen_at', type: 'timestamp', nullable: true })
+  lastSeenAt: Date;
+
+  @Column({ name: 'vehicle_number', type: 'varchar', length: 20, nullable: true })
+  vehicleNumber: string;
+
+  @Column({ name: 'last_accuracy', type: 'double precision', nullable: true })
+  lastAccuracy: number;
+
+  @Column({ name: 'last_speed', type: 'double precision', nullable: true })
+  lastSpeed: number;
+
+  @Column({ name: 'last_heading', type: 'double precision', nullable: true })
+  lastHeading: number;
+
+  @Column({ name: 'location_permission', type: 'varchar', length: 20, nullable: true })
+  locationPermission: string;
+
+  @Column({ name: 'device_info', type: 'jsonb', nullable: true })
+  deviceInfo: any;
+
+  @Column({ name: 'battery_level', type: 'int', nullable: true })
+  batteryLevel: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

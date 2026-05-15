@@ -255,7 +255,6 @@ export function setLoginPath(path: string) {
 }
 
 
-// ===== ATTENDANCE API =====
 export const attendanceApi = {
   createOrUpdate: (data: any) =>
     request<any>('/attendance', {
@@ -268,4 +267,128 @@ export const attendanceApi = {
     request<any[]>(`/attendance/user/${userId}?startDate=${startDate}&endDate=${endDate}`),
   remove: (id: string) =>
     request<void>(`/attendance/${id}`, { method: 'DELETE' }),
+};
+
+// ===== ADVANCES API =====
+export const advancesApi = {
+  create: (data: any) =>
+    request<any>('/advances', { method: 'POST', body: JSON.stringify(data) }),
+  getByCompany: (companyId: string, startDate?: string, endDate?: string) => {
+    let url = `/advances/company/${companyId}`;
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (params.toString()) url += `?${params.toString()}`;
+    return request<any[]>(url);
+  },
+  getByEmployee: (employeeId: string, startDate?: string, endDate?: string) => {
+    let url = `/advances/employee/${employeeId}`;
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (params.toString()) url += `?${params.toString()}`;
+    return request<any[]>(url);
+  },
+  getEmployeeTotal: (employeeId: string, startDate: string, endDate: string) =>
+    request<{ total: number }>(`/advances/employee/${employeeId}/total?startDate=${startDate}&endDate=${endDate}`),
+  cancel: (id: string, companyId: string) =>
+    request<any>(`/advances/${id}/cancel`, { method: 'PATCH', body: JSON.stringify({ companyId }) }),
+};
+
+// ===== PAYROLL API =====
+export const payrollApi = {
+  calculate: (companyId: string, year: number, month: number, globalRestDay?: string) =>
+    request<any>('/payroll/calculate', {
+      method: 'POST',
+      body: JSON.stringify({ companyId, year, month, globalRestDay }),
+    }),
+  getPeriods: (companyId: string) =>
+    request<any[]>(`/payroll/periods/${companyId}`),
+  getPeriod: (periodId: string) =>
+    request<any>(`/payroll/period/${periodId}`),
+  approve: (periodId: string, companyId: string) =>
+    request<any>(`/payroll/period/${periodId}/approve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ companyId }),
+    }),
+  markAsPaid: (periodId: string, companyId: string) =>
+    request<any>(`/payroll/period/${periodId}/pay`, {
+      method: 'PATCH',
+      body: JSON.stringify({ companyId }),
+    }),
+  getEmployeeBalance: (employeeId: string, companyId: string) =>
+    request<{ totalEarned: number; totalAdvances: number; totalPaid: number; balance: number }>(
+      `/payroll/employee/${employeeId}/balance?companyId=${companyId}`
+    ),
+};
+
+// ===== PAYMENTS API =====
+export const paymentsApi = {
+  create: (data: any) =>
+    request<any>('/payments', { method: 'POST', body: JSON.stringify(data) }),
+  getByCompany: (companyId: string, startDate?: string, endDate?: string) => {
+    let url = `/payments/company/${companyId}`;
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (params.toString()) url += `?${params.toString()}`;
+    return request<any[]>(url);
+  },
+  getByEmployee: (employeeId: string) =>
+    request<any[]>(`/payments/employee/${employeeId}`),
+};
+
+// ===== BONUSES & PENALTIES API =====
+export const bonusesApi = {
+  create: (data: any) =>
+    request<any>('/bonuses', { method: 'POST', body: JSON.stringify(data) }),
+  getByEmployee: (employeeId: string) =>
+    request<any[]>(`/bonuses/employee/${employeeId}`),
+  getByCompany: (companyId: string) =>
+    request<any[]>(`/bonuses/company/${companyId}`),
+};
+
+export const penaltiesApi = {
+  create: (data: any) =>
+    request<any>('/penalties', { method: 'POST', body: JSON.stringify(data) }),
+  getByEmployee: (employeeId: string) =>
+    request<any[]>(`/penalties/employee/${employeeId}`),
+  getByCompany: (companyId: string) =>
+    request<any[]>(`/penalties/company/${companyId}`),
+};
+
+// ===== DRIVERS API =====
+export const driversApi = {
+  getLive: (companyId?: string) =>
+    request<any[]>(companyId ? `/drivers/live/company/${companyId}` : '/drivers/live'),
+  getAllWithStatus: (companyId?: string) => {
+    let url = '/drivers/all-with-status';
+    if (companyId) url += `?companyId=${companyId}`;
+    return request<any[]>(url);
+  },
+  getStatusSummary: (companyId?: string) => {
+    let url = '/drivers/status-summary';
+    if (companyId) url += `?companyId=${companyId}`;
+    return request<any>(url);
+  },
+  getLocationHistory: (driverId: string, from: string, to: string) =>
+    request<any[]>(`/drivers/${driverId}/location-history?from=${from}&to=${to}`),
+  getWorkSessions: (driverId: string, from?: string, to?: string) => {
+    let url = `/drivers/${driverId}/work-sessions`;
+    const params = new URLSearchParams();
+    if (from) params.append('from', from);
+    if (to) params.append('to', to);
+    if (params.toString()) url += `?${params.toString()}`;
+    return request<any[]>(url);
+  },
+};
+
+// ===== ADDRESS API =====
+export const addressApi = {
+  save: (orderId: string, data: any) =>
+    request<any>(`/orders/${orderId}/address`, { method: 'POST', body: JSON.stringify(data) }),
+  confirm: (orderId: string) =>
+    request<any>(`/orders/${orderId}/address/confirm`, { method: 'PATCH' }),
+  get: (orderId: string) =>
+    request<any>(`/orders/${orderId}/address`),
 };

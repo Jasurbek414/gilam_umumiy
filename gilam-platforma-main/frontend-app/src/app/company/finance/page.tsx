@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAttachMoney, MdTrendingUp, MdTrendingDown, MdLibraryBooks, MdAdd, MdFilterList, MdHistory, MdSync } from 'react-icons/md';
+import { MdAttachMoney, MdTrendingUp, MdTrendingDown, MdLibraryBooks, MdAdd, MdFilterList, MdHistory, MdSync, MdAccountBalanceWallet, MdPayment, MdCalculate, MdAssessment } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi, customersApi } from '@/lib/api';
+import { getUser, ordersApi, expensesApi, auditApi, attendanceApi, usersApi, customersApi, advancesApi, payrollApi, paymentsApi, bonusesApi, penaltiesApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { StatCard, RevenueChart, CategoryChart, ExpenseRow, AuditRow, StaffProfileModal, DetailDrawer } from './components';
+import { AdvancesTab, PayrollTab, PaymentsTab, ReportsTab } from './PayrollTabs';
 
-type Tab = 'dashboard' | 'expenses' | 'history' | 'attendance';
+type Tab = 'dashboard' | 'expenses' | 'history' | 'attendance' | 'advances' | 'payroll' | 'payments' | 'reports';
 
 export default function CompanyFinancePage() {
   const router = useRouter();
@@ -50,6 +51,20 @@ export default function CompanyFinancePage() {
 
   const [form, setForm] = useState({ title: '', amount: '', category: 'Logistika', comment: '' });
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Yangi state'lar
+  const [advances, setAdvances] = useState<any[]>([]);
+  const [payrollPeriods, setPayrollPeriods] = useState<any[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<any>(null);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [advanceForm, setAdvanceForm] = useState({ employeeId: '', amount: '', paymentType: 'CASH', comment: '' });
+  const [paymentForm, setPaymentForm] = useState({ employeeId: '', amount: '', paymentType: 'CASH', comment: '' });
+  const [payrollYear, setPayrollYear] = useState(new Date().getFullYear());
+  const [payrollMonth, setPayrollMonth] = useState(new Date().getMonth() + 1);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [reportFilter, setReportFilter] = useState({ type: 'all', employeeId: '', department: '' });
   useEffect(() => {
     const u = getUser();
     if (!u?.company) { setTimeout(() => router.push('/'), 0); return; }
@@ -88,6 +103,64 @@ export default function CompanyFinancePage() {
   };
 
   useEffect(() => { if (activeTab === 'history' && user?.company?.id) loadAudit(); }, [activeTab]);
+
+  // Yangi tablar uchun data yuklash
+  useEffect(() => {
+    if (!user?.company?.id) return;
+    if (activeTab === 'advances') loadAdvances();
+    if (activeTab === 'payroll') loadPayroll();
+    if (activeTab === 'payments') loadPayments();
+    if (activeTab === 'reports') { loadAdvances(); loadPayroll(); loadPayments(); }
+  }, [activeTab, startDate, endDate, user]);
+
+  const loadAdvances = async () => {
+    try { const a = await advancesApi.getByCompany(user.company.id, startDate, endDate); setAdvances(a); } catch(e) { console.error(e); }
+  };
+  const loadPayroll = async () => {
+    try { const p = await payrollApi.getPeriods(user.company.id); setPayrollPeriods(p); } catch(e) { console.error(e); }
+  };
+  const loadPayments = async () => {
+    try { const p = await paymentsApi.getByCompany(user.company.id, startDate, endDate); setPayments(p); } catch(e) { console.error(e); }
+  };
+
+  const handleAddAdvance = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true);
+    try {
+      await advancesApi.create({ companyId: user.company.id, employeeId: advanceForm.employeeId, amount: Number(advanceForm.amount), paymentType: advanceForm.paymentType, comment: advanceForm.comment });
+      toast.success('Avans saqlandi ✅'); setIsAdvanceModalOpen(false); setAdvanceForm({ employeeId:'', amount:'', paymentType:'CASH', comment:'' }); loadAdvances();
+    } catch(err: any) { toast.error(err.message); } finally { setSaving(false); }
+  };
+
+  const handleCancelAdvance = async (id: string) => {
+    try { await advancesApi.cancel(id, user.company.id); toast.success('Avans bekor qilindi ✅'); loadAdvances(); } catch(err: any) { toast.error(err.message); }
+  };
+
+  const handleCalculatePayroll = async () => {
+    setIsCalculating(true);
+    try {
+      const result = await payrollApi.calculate(user.company.id, payrollYear, payrollMonth, globalRestDay);
+      toast.success(`Oylik hisoblandi! Jami: ${Number(result.totalAmount||0).toLocaleString()} so'm`);
+      loadPayroll(); setSelectedPeriod(result);
+    } catch(err: any) { toast.error(err.message); } finally { setIsCalculating(false); }
+  };
+
+  const handleApprovePeriod = async (periodId: string) => {
+    try { const r = await payrollApi.approve(periodId, user.company.id); toast.success('Tasdiqlandi ✅'); loadPayroll(); setSelectedPeriod(r); } catch(err: any) { toast.error(err.message); }
+  };
+
+  const handleMarkPaid = async (periodId: string) => {
+    try { const r = await payrollApi.markAsPaid(periodId, user.company.id); toast.success("To'landi deb belgilandi ✅"); loadPayroll(); setSelectedPeriod(r); } catch(err: any) { toast.error(err.message); }
+  };
+
+  const handleAddPayment = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true);
+    try {
+      await paymentsApi.create({ companyId: user.company.id, employeeId: paymentForm.employeeId, amount: Number(paymentForm.amount), paymentType: paymentForm.paymentType, comment: paymentForm.comment });
+      toast.success("To'lov saqlandi ✅"); setIsPaymentModalOpen(false); setPaymentForm({ employeeId:'', amount:'', paymentType:'CASH', comment:'' }); loadPayments();
+    } catch(err: any) { toast.error(err.message); } finally { setSaving(false); }
+  };
+
+  const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
 
   const handlePeriodChange = (p: 'daily'|'weekly'|'monthly') => {
     setPeriod(p);
@@ -226,6 +299,10 @@ export default function CompanyFinancePage() {
     { key: 'dashboard' as Tab, label: '📊 Dashboard', icon: MdTrendingUp },
     { key: 'expenses' as Tab, label: '📋 Xarajatlar', icon: MdLibraryBooks },
     { key: 'attendance' as Tab, label: '👥 Xodimlar Oyligi', icon: MdTrendingUp },
+    { key: 'advances' as Tab, label: '💰 Avanslar', icon: MdAccountBalanceWallet },
+    { key: 'payroll' as Tab, label: '🧮 Oylik Hisoblash', icon: MdCalculate },
+    { key: 'payments' as Tab, label: '💳 To\'lovlar', icon: MdPayment },
+    { key: 'reports' as Tab, label: '📈 Hisobotlar', icon: MdAssessment },
     { key: 'history' as Tab, label: '📜 Tarix', icon: MdHistory },
   ];
 
@@ -419,6 +496,59 @@ export default function CompanyFinancePage() {
         </div>
       )}
 
+      {/* Advances Tab */}
+      {activeTab === 'advances' && (
+        <AdvancesTab
+          advances={advances}
+          staff={staff}
+          onAdd={() => setIsAdvanceModalOpen(true)}
+          onCancel={handleCancelAdvance}
+          totalAdvances={advances.filter((a: any) => !a.isCancelled).reduce((s: number, a: any) => s + Number(a.amount||0), 0)}
+        />
+      )}
+
+      {/* Payroll Tab */}
+      {activeTab === 'payroll' && (
+        <PayrollTab
+          periods={payrollPeriods}
+          selectedPeriod={selectedPeriod}
+          onSelect={async (p: any) => { const full = await payrollApi.getPeriod(p.id); setSelectedPeriod(full); }}
+          year={payrollYear}
+          month={payrollMonth}
+          onYearChange={setPayrollYear}
+          onMonthChange={setPayrollMonth}
+          onCalculate={handleCalculatePayroll}
+          onApprove={handleApprovePeriod}
+          onMarkPaid={handleMarkPaid}
+          isCalculating={isCalculating}
+          monthNames={monthNames}
+        />
+      )}
+
+      {/* Payments Tab */}
+      {activeTab === 'payments' && (
+        <PaymentsTab
+          payments={payments}
+          onAdd={() => setIsPaymentModalOpen(true)}
+          totalPayments={payments.reduce((s: number, p: any) => s + Number(p.amount||0), 0)}
+        />
+      )}
+
+      {/* Reports Tab */}
+      {activeTab === 'reports' && (
+        <ReportsTab
+          staff={staff}
+          advances={advances}
+          periods={payrollPeriods}
+          payments={payments}
+          attendances={attendances}
+          startDate={startDate}
+          endDate={endDate}
+          monthNames={monthNames}
+          globalRestDay={globalRestDay}
+        />
+      )}
+
       {/* History Tab */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -465,6 +595,72 @@ export default function CompanyFinancePage() {
           </div>
         </div>
       )}
+
+      {/* Advance Modal */}
+      <Modal isOpen={isAdvanceModalOpen} onClose={() => setIsAdvanceModalOpen(false)} title="Yangi Avans">
+        <form onSubmit={handleAddAdvance} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Xodim</label>
+            <select required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-amber-500 outline-none font-bold text-slate-800 bg-white" value={advanceForm.employeeId} onChange={e => setAdvanceForm({...advanceForm, employeeId: e.target.value})}>
+              <option value="">Tanlang...</option>
+              {staff.filter((s: any) => s.status === 'ACTIVE').map((s: any) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Summa</label>
+              <input required type="number" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-amber-500 outline-none font-bold text-slate-800" placeholder="Summa..." value={advanceForm.amount} onChange={e => setAdvanceForm({...advanceForm, amount: e.target.value})} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">To'lov turi</label>
+              <select className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none font-bold text-slate-800 bg-white" value={advanceForm.paymentType} onChange={e => setAdvanceForm({...advanceForm, paymentType: e.target.value})}>
+                <option value="CASH">Naqd</option><option value="CARD">Karta</option><option value="OTHER">Boshqa</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Izoh</label>
+            <textarea rows={2} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none font-bold text-slate-800 resize-none" value={advanceForm.comment} onChange={e => setAdvanceForm({...advanceForm, comment: e.target.value})} />
+          </div>
+          <div className="pt-4 flex gap-3">
+            <button type="button" onClick={() => setIsAdvanceModalOpen(false)} className="flex-1 py-3 text-sm font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200">Bekor</button>
+            <button type="submit" disabled={saving} className="flex-1 py-3 text-sm font-bold text-white bg-amber-600 rounded-xl shadow-lg disabled:opacity-50">{saving ? 'Saqlanmoqda...' : 'Saqlash'}</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Payment Modal */}
+      <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Yangi To'lov">
+        <form onSubmit={handleAddPayment} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Xodim</label>
+            <select required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 outline-none font-bold text-slate-800 bg-white" value={paymentForm.employeeId} onChange={e => setPaymentForm({...paymentForm, employeeId: e.target.value})}>
+              <option value="">Tanlang...</option>
+              {staff.filter((s: any) => s.status === 'ACTIVE').map((s: any) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Summa</label>
+              <input required type="number" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 outline-none font-bold text-slate-800" placeholder="Summa..." value={paymentForm.amount} onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">To'lov turi</label>
+              <select className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none font-bold text-slate-800 bg-white" value={paymentForm.paymentType} onChange={e => setPaymentForm({...paymentForm, paymentType: e.target.value})}>
+                <option value="CASH">Naqd</option><option value="CARD">Karta</option><option value="TRANSFER">O'tkazma</option><option value="OTHER">Boshqa</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Izoh</label>
+            <textarea rows={2} className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none font-bold text-slate-800 resize-none" value={paymentForm.comment} onChange={e => setPaymentForm({...paymentForm, comment: e.target.value})} />
+          </div>
+          <div className="pt-4 flex gap-3">
+            <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 text-sm font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200">Bekor</button>
+            <button type="submit" disabled={saving} className="flex-1 py-3 text-sm font-bold text-white bg-green-600 rounded-xl shadow-lg disabled:opacity-50">{saving ? 'Saqlanmoqda...' : 'Saqlash'}</button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Add Modal */}
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Yangi Xarajat Qo'shish">

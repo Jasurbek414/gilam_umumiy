@@ -14,6 +14,8 @@ import {
   MdLogout,
   MdStore,
   MdAssessment,
+  MdMap,
+  MdPhone,
 } from 'react-icons/md';
 
 const companyLinks = [
@@ -22,6 +24,7 @@ const companyLinks = [
   { name: 'Mijozlar', href: '/company/customers', icon: MdPeople },
   { name: 'Xisobotlar', href: '/company/finance', icon: MdAssessment },
   { name: 'Haydovchilar liniyasi', href: '/company/logistics', icon: MdLocalShipping },
+  { name: '🗺️ Live Xarita', href: '/company/live-map', icon: MdMap },
   { name: 'Xodimlar', href: '/company/staff', icon: MdPeople },
   { name: 'Mening Korxonam', href: '/company/settings', icon: MdStore, exact: true },
 ];
