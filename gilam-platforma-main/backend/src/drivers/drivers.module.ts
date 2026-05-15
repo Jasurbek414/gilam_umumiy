@@ -7,9 +7,11 @@ import { CustomerAddress } from './entities/customer-address.entity';
 import { DriversService } from './drivers.service';
 import { DriversController, AddressController } from './drivers.controller';
 import { DriversGateway } from './drivers.gateway';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     TypeOrmModule.forFeature([User, LocationHistory, DriverWorkSession, CustomerAddress]),
   ],
   controllers: [DriversController, AddressController],
