@@ -243,7 +243,7 @@ class _StaffAttendanceSheetState extends State<StaffAttendanceSheet> {
 
   Future<void> _updateProfile() async {
     try {
-      await apiRequest('/users/${widget.staff['id']}', 'PATCH', {
+      await apiRequest('/users/${widget.staff['id']}', method: 'PATCH', body: {
         'workSchedule': _schedule,
         'salary': _salary,
         'lunchBreakMinutes': _lunchMinutes,
@@ -395,7 +395,7 @@ class _StaffAttendanceSheetState extends State<StaffAttendanceSheet> {
                       onPressed: () async {
                         Navigator.pop(c);
                         try {
-                          await apiRequest('/attendance', 'POST', {
+                          await apiRequest('/attendance', method: 'POST', body: {
                             'userId': widget.staff['id'],
                             'companyId': widget.companyId,
                             'date': dateStr,
