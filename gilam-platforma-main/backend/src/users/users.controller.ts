@@ -77,7 +77,6 @@ export class UsersController {
       companyId: (dto.role === UserRole.OPERATOR) 
         ? null 
         : (user.role === UserRole.SUPER_ADMIN ? dto.companyId : user.companyId),
-      passwordHash: dto.password,
     };
     return this.usersService.create(finalDto);
   }

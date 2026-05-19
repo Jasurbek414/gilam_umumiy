@@ -26,6 +26,14 @@ export class UsersService {
     });
   }
 
+  async findByPhoneWithDeleted(phone: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { phone },
+      relations: ['company'],
+      withDeleted: true,
+    });
+  }
+
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
@@ -60,11 +68,35 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto): Promise<User> {
+    // Telefon raqamni normalizatsiya qilish (bo'sh joy, chiziq va qavslarni olib tashlash)
+    dto.phone = dto.phone.replace(/[\s\-\(\)]/g, '').trim();
+
+    // 1. Faol foydalanuvchilar orasida tekshirish
     const existing = await this.findByPhone(dto.phone);
     if (existing) {
       throw new ConflictException(
         `Bu telefon raqam allaqachon ro'yxatdan o'tgan: ${dto.phone}`,
       );
+    }
+
+    // 2. O'chirilgan (soft-deleted) foydalanuvchilar orasida tekshirish
+    //    Agar avval o'chirilgan bo'lsa, uni qayta tiklash (restore)
+    const softDeleted = await this.findByPhoneWithDeleted(dto.phone);
+    if (softDeleted) {
+      const salt = await bcrypt.genSalt(10);
+      const rawPassword = dto.password || (dto.role === 'WORKER' ? Math.random().toString(36) : '123456');
+      softDeleted.passwordHash = await bcrypt.hash(rawPassword, salt);
+      softDeleted.fullName = dto.fullName;
+      softDeleted.role = dto.role as UserRole;
+      softDeleted.companyId = dto.companyId as any;
+      softDeleted.status = UserStatus.ACTIVE;
+      softDeleted.deletedAt = null;
+      softDeleted.birthDate = dto.birthDate ? new Date(dto.birthDate) : null;
+      softDeleted.salary = dto.salary || 0;
+      softDeleted.workSchedule = dto.workSchedule || 'MONTHLY';
+      softDeleted.birthPlace = dto.birthPlace || null;
+      softDeleted.photoUrl = dto.photoUrl || null;
+      return this.usersRepository.save(softDeleted);
     }
 
     const salt = await bcrypt.genSalt(10);

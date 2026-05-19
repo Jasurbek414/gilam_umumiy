@@ -94,7 +94,11 @@ export default function UsersPage() {
       setIsModalOpen(false);
       await loadData();
     } catch (err: any) {
-      toast.error('Xatolik: ' + err.message);
+      if (err.status === 409) {
+        toast.error('⚠️ Bu telefon raqam tizimda allaqachon mavjud! Boshqa raqam kiriting.');
+      } else {
+        toast.error('Xatolik: ' + (err.message || 'Noma\'lum xato'));
+      }
     } finally {
       setSaving(false);
     }
