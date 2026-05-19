@@ -55,12 +55,20 @@ class LocationService {
 
     try {
       // Joriy lokatsiyani olish
-      _lastPosition = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
+      try {
+        _lastPosition = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+            timeLimit: Duration(seconds: 10), // 10 soniya kutish
+          ),
+        );
+      } catch (e) {
+        _lastPosition = await Geolocator.getLastKnownPosition();
+        if (_lastPosition == null) {
+          return {'success': false, 'error': 'GPS signal topilmadi. Iltimos, ochiqroq joyga chiqing!'};
+        }
+      }
 
       // Backend ga online xabar
       await apiRequest('/drivers/go-online', method: 'POST', body: {
