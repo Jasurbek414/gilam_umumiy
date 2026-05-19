@@ -136,7 +136,7 @@ class _StaffCard extends StatelessWidget {
     final name = user['fullName'] ?? 'Noma\'lum';
     final phone = user['phone'] ?? '';
     final role = user['role'] as String? ?? '';
-    final salary = user['salary'];
+    final salary = user['salary'] != null ? (double.tryParse(user['salary'].toString())?.toInt() ?? 0) : null;
     final schedule = user['workSchedule'] ?? 'MONTHLY';
     final roleLabels = {'DRIVER': '🚐 Haydovchi', 'WORKER': '👷 Ishchi', 'MANAGER': '👔 Manager'};
     final scheduleLabels = {'MONTHLY': 'Oylik', 'WEEKLY': 'Haftalik', 'DAILY': 'Kunlik', 'HOURLY': 'Soatlik'};
@@ -219,8 +219,8 @@ class _StaffAttendanceSheetState extends State<StaffAttendanceSheet> {
     _endDate = DateTime(now.year, now.month + 1, 0); // last day of month
     
     _schedule = widget.staff['workSchedule'] ?? 'MONTHLY';
-    _salary = (widget.staff['salary'] ?? 0) is int ? widget.staff['salary'] : int.tryParse(widget.staff['salary'].toString()) ?? 0;
-    _lunchMinutes = (widget.staff['lunchBreakMinutes'] ?? 60) is int ? widget.staff['lunchBreakMinutes'] : int.tryParse(widget.staff['lunchBreakMinutes'].toString()) ?? 60;
+    _salary = (widget.staff['salary'] ?? 0) is int ? widget.staff['salary'] : (double.tryParse(widget.staff['salary'].toString())?.toInt() ?? 0);
+    _lunchMinutes = (widget.staff['lunchBreakMinutes'] ?? 60) is int ? widget.staff['lunchBreakMinutes'] : (double.tryParse(widget.staff['lunchBreakMinutes'].toString())?.toInt() ?? 60);
     
     _load();
   }
@@ -279,7 +279,7 @@ class _StaffAttendanceSheetState extends State<StaffAttendanceSheet> {
     }
     
     int cSal = currentAtt?['calculatedSalary'] != null ? 
-        (currentAtt!['calculatedSalary'] is int ? currentAtt['calculatedSalary'] : int.tryParse(currentAtt['calculatedSalary'].toString()) ?? 0) 
+        (currentAtt!['calculatedSalary'] is int ? currentAtt['calculatedSalary'] : (double.tryParse(currentAtt['calculatedSalary'].toString())?.toInt() ?? 0)) 
         : calcSalary();
 
     final dateStr = date.toIso8601String().split('T')[0];
