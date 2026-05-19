@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import '../core/theme.dart';
 import '../core/api.dart';
 import '../core/chat_service.dart';
 import 'orders_screen.dart';
 import 'chat_screen.dart';
 import 'profile_screen.dart';
+import 'driver_cabinet_screen.dart';
 import 'manager/manager_dashboard.dart';
 import 'manager/manager_orders.dart';
 import 'manager/manager_staff.dart';
@@ -21,84 +20,18 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  int _tab = 0; // 0=Buyurtmalar, 1=Profil
-  StreamSubscription<Position>? _locStream;
-  Timer? _locTimer;
+  int _tab = 0; // 0=Buyurtmalar(yoki Ish), 1=Profil
 
   @override
   void initState() {
     super.initState();
     ChatService.instance.connect();
-    if (widget.user['appRole'] == 'DRIVER') {
-      _startBackgroundLocationTracker();
-    }
   }
 
   @override
   void dispose() {
     ChatService.instance.disconnect();
-    _locStream?.cancel();
-    _locTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _startBackgroundLocationTracker() async {
-    LocationPermission p = await Geolocator.checkPermission();
-    if (p == LocationPermission.denied) p = await Geolocator.requestPermission();
-    if (p == LocationPermission.deniedForever) return;
-
-    if (p == LocationPermission.always || p == LocationPermission.whileInUse) {
-      LocationSettings settings = const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      );
-
-      if (Platform.isAndroid) {
-        settings = AndroidSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-          forceLocationManager: true,
-          foregroundNotificationConfig: const ForegroundNotificationConfig(
-            notificationText: "Sizning manzilingiz operatorga yetkazilmoqda",
-            notificationTitle: "Gilam Driver",
-            enableWakeLock: true,
-          ),
-        );
-      }
-
-      // App ochilganida darhol joylashuvni aniqlash va backendga jo'natish
-      _sendCurrentLocation();
-
-      // Harakatga asoslangan yangilanish (10 metr)
-      _locStream = Geolocator.getPositionStream(locationSettings: settings).listen((pos) {
-        _sendLocationToBackend(pos.latitude, pos.longitude);
-      });
-
-      // Doimiy yangilanish — har 30 soniyada (haydovchi qimirlamasa ham)
-      _locTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        _sendCurrentLocation();
-      });
-    }
-  }
-
-  Future<void> _sendCurrentLocation() async {
-    try {
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
-      _sendLocationToBackend(pos.latitude, pos.longitude);
-    } catch (e) {
-      debugPrint('[Location] GPS olishda xatolik: $e');
-    }
-  }
-
-  void _sendLocationToBackend(double lat, double lng) {
-    apiRequest('/users/${widget.user['id']}', method: 'PUT', body: {
-      'currentLocation': '$lat,$lng'
-    }).catchError((e) {
-      debugPrint('[Location] Serverga yuborishda xatolik: $e');
-    });
   }
 
   @override
@@ -116,10 +49,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ManagerStaff(user: user),
             ProfileScreen(user: user, onLogout: widget.onLogout),
           ]
-        : [
-            OrdersPage(user: user),
-            ProfileScreen(user: user, onLogout: widget.onLogout),
-          ];
+        : (user['appRole'] == 'DRIVER')
+          ? [
+              DriverCabinetScreen(),
+              OrdersPage(user: user),
+              ProfileScreen(user: user, onLogout: widget.onLogout),
+            ]
+          : [
+              OrdersPage(user: user),
+              ProfileScreen(user: user, onLogout: widget.onLogout),
+            ];
 
     return Scaffold(
       backgroundColor: kBackground,
@@ -182,12 +121,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildNav() {
-    final items = [
-      (Icons.list_alt_outlined, Icons.list_alt_rounded, 'Buyurtmalar', false),
-      (Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Operator', true),
-      (Icons.person_outline_rounded, Icons.person_rounded, 'Profil', false),
-    ];
-    const int chatIdx = 1;
+    final isDriver = widget.user['appRole'] == 'DRIVER';
+    final items = isDriver
+      ? [
+          (Icons.work_outline, Icons.work, 'Ish Kabineti', false),
+          (Icons.list_alt_outlined, Icons.list_alt_rounded, 'Buyurtmalar', false),
+          (Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Operator', true),
+          (Icons.person_outline_rounded, Icons.person_rounded, 'Profil', false),
+        ]
+      : [
+          (Icons.list_alt_outlined, Icons.list_alt_rounded, 'Buyurtmalar', false),
+          (Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Operator', true),
+          (Icons.person_outline_rounded, Icons.person_rounded, 'Profil', false),
+        ];
+    final int chatIdx = isDriver ? 2 : 1;
 
     return Container(
       decoration: BoxDecoration(
@@ -201,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: Row(
             children: List.generate(items.length, (i) {
               final isChat = i == chatIdx;
-              final sel = !isChat && _getTabIndex(i) == _tab;
+              final sel = !isChat && _getTabIndex(i, isDriver) == _tab;
               final item = items[i];
 
               return Expanded(
@@ -211,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     if (isChat) {
                       _openChat();
                     } else {
-                      setState(() => _tab = _getTabIndex(i));
+                      setState(() => _tab = _getTabIndex(i, isDriver));
                     }
                   },
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -244,11 +191,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  int _getTabIndex(int navIdx) {
-    // navIdx: 0=Buyurtmalar, 1=Operator(chat-push), 2=Profil
-    if (navIdx == 0) return 0;
-    if (navIdx == 2) return 1;
-    return 0;
+  int _getTabIndex(int navIdx, bool isDriver) {
+    if (isDriver) {
+      if (navIdx == 0) return 0;
+      if (navIdx == 1) return 1;
+      if (navIdx == 3) return 2;
+      return 0;
+    } else {
+      if (navIdx == 0) return 0;
+      if (navIdx == 2) return 1;
+      return 0;
+    }
   }
 
   Widget _buildManagerNav() {
