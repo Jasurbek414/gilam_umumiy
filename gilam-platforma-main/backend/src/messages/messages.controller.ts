@@ -30,7 +30,8 @@ export class MessagesController {
   @Get('conversations')
   async getConversations(@Request() req) {
     const userId = req.user.id;
-    return await this.messagesService.getConversations(userId);
+    const companyId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.companyId;
+    return await this.messagesService.getConversations(userId, companyId);
   }
 
   @Get('history/:otherUserId')

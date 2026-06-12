@@ -58,7 +58,7 @@ export class MessagesService {
     );
   }
 
-  async getConversations(userId: string) {
+  async getConversations(userId: string, companyId?: string) {
     // Basic logic to get unique speakers for a user
     const sent = await this.messageRepository.find({
       where: { senderId: userId },
@@ -77,6 +77,7 @@ export class MessagesService {
         if (
           user &&
           (user as any).id !== userId &&
+          (!companyId || (user as any).companyId === companyId) &&
           !others.has((user as any).id)
         ) {
           others.add((user as any).id);
