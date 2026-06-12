@@ -56,7 +56,7 @@ export class DriversGateway implements OnGatewayConnection, OnGatewayDisconnect 
     await this.driversService.goOnline(data.driverId, data.latitude, data.longitude);
 
     // Broadcast to web clients watching this company
-    this.server.emit('driver.online', {
+    this.server.to(`company:${data.companyId}`).emit('driver.online', {
       driverId: data.driverId,
       companyId: data.companyId,
       timestamp: new Date().toISOString(),
@@ -74,11 +74,14 @@ export class DriversGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.driverSockets.delete(data.driverId);
     await this.driversService.goOffline(data.driverId, data.reason, data.latitude, data.longitude);
 
-    this.server.emit('driver.offline', {
-      driverId: data.driverId,
-      reason: data.reason,
-      timestamp: new Date().toISOString(),
-    });
+    const driver = await this.userRepo.findOne({ where: { id: data.driverId }});
+    if (driver?.companyId) {
+      this.server.to(`company:${driver.companyId}`).emit('driver.offline', {
+        driverId: data.driverId,
+        reason: data.reason,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     this.logger.log(`Driver ${data.driverId} offline: ${data.reason}`);
     return { status: 'ok' };
@@ -96,26 +99,29 @@ export class DriversGateway implements OnGatewayConnection, OnGatewayDisconnect 
     const result = await this.driversService.updateLocation(data.driverId, data);
 
     if (result.accepted) {
-      // Real-time broadcast to all connected web clients
-      this.server.emit('driver.location.updated', {
-        driverId: data.driverId,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        accuracy: data.accuracy,
-        speed: data.speed,
-        heading: data.heading,
-        battery: data.battery,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (result.isMock) {
-        this.server.emit('driver.mock_location', { driverId: data.driverId });
-      }
-      if (result.lowAccuracy) {
-        this.server.emit('driver.low_accuracy', {
+      // Real-time broadcast to all connected web clients in the company
+      const driver = await this.userRepo.findOne({ where: { id: data.driverId }});
+      if (driver?.companyId) {
+        this.server.to(`company:${driver.companyId}`).emit('driver.location.updated', {
           driverId: data.driverId,
+          latitude: data.latitude,
+          longitude: data.longitude,
           accuracy: data.accuracy,
+          speed: data.speed,
+          heading: data.heading,
+          battery: data.battery,
+          timestamp: new Date().toISOString(),
         });
+
+        if (result.isMock) {
+          this.server.to(`company:${driver.companyId}`).emit('driver.mock_location', { driverId: data.driverId });
+        }
+        if (result.lowAccuracy) {
+          this.server.to(`company:${driver.companyId}`).emit('driver.low_accuracy', {
+            driverId: data.driverId,
+            accuracy: data.accuracy,
+          });
+        }
       }
     }
 
@@ -148,7 +154,7 @@ export class DriversGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
     for (const d of lostDrivers) {
       if (d.lastSeenAt && d.lastSeenAt < threshold) {
-        this.server.emit('driver.connection.lost', {
+        this.server.to(`company:${d.companyId}`).emit('driver.connection.lost', {
           driverId: d.id,
           companyId: d.companyId,
           lastSeenAt: d.lastSeenAt,
