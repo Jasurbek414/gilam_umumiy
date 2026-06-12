@@ -71,12 +71,10 @@ export class UsersController {
       );
     }
     // CompanyAdmin faqat o'z kompaniyasi uchun yarata oladi
-    // Operator yaratilayotgan bo'lsa uni aniq global qilish (backend service da null qilinadi)
+    // O'zgarish: Operatorlar ham endi ma'lum bir korxonaga tegishli bo'ladi. Null qilinmaydi.
     const finalDto = {
       ...dto,
-      companyId: (dto.role === UserRole.OPERATOR) 
-        ? null 
-        : (user.role === UserRole.SUPER_ADMIN ? dto.companyId : user.companyId),
+      companyId: user.role === UserRole.SUPER_ADMIN ? dto.companyId : user.companyId,
     };
     return this.usersService.create(finalDto);
   }
