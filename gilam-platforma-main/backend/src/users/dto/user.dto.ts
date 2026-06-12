@@ -5,12 +5,14 @@ import {
   IsString,
   IsUUID,
   IsNumber,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UserRole, UserStatus } from '../entities/user.entity';
 
 export class CreateUserDto {
   @IsOptional()
+  @ValidateIf((o) => o.companyId !== null)
   @IsUUID()
   companyId?: string | null;
 
@@ -79,6 +81,7 @@ export class UpdateUserDto {
   status?: UserStatus;
 
   @IsOptional()
+  @ValidateIf((o) => o.companyId !== null)
   @IsUUID()
   companyId?: string | null;
 
