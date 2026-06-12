@@ -44,6 +44,12 @@
             </intent-filter>
         </service>
 
+        <!-- Geolocator Background Service -->
+        <service
+            android:name="com.baseflow.geolocator.GeolocatorLocationService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

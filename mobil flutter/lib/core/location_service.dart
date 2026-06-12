@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../core/api.dart';
 import '../core/constants.dart';
@@ -43,18 +44,22 @@ class LocationService {
 
   // ── GO ONLINE ──
   Future<Map<String, dynamic>> goOnline() async {
+    print('[LocationService] goOnline called');
     final hasPermission = await checkPermission();
     if (!hasPermission) {
+      print('[LocationService] No permission');
       return {'success': false, 'error': 'GPS ruxsati berilmagan'};
     }
 
     final gpsEnabled = await checkGps();
     if (!gpsEnabled) {
+      print('[LocationService] GPS not enabled');
       return {'success': false, 'error': 'GPS yoqilmagan'};
     }
 
     try {
       // Joriy lokatsiyani olish
+      print('[LocationService] getting current position...');
       try {
         _lastPosition = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
@@ -63,18 +68,24 @@ class LocationService {
             timeLimit: Duration(seconds: 10), // 10 soniya kutish
           ),
         );
+        print('[LocationService] position found: $_lastPosition');
       } catch (e) {
+        print('[LocationService] getCurrentPosition error: $e');
         _lastPosition = await Geolocator.getLastKnownPosition();
         if (_lastPosition == null) {
+          print('[LocationService] no last known position');
           return {'success': false, 'error': 'GPS signal topilmadi. Iltimos, ochiqroq joyga chiqing!'};
         }
+        print('[LocationService] using last known position: $_lastPosition');
       }
 
       // Backend ga online xabar
+      print('[LocationService] sending to backend...');
       await apiRequest('/drivers/go-online', method: 'POST', body: {
         'latitude': _lastPosition!.latitude,
         'longitude': _lastPosition!.longitude,
       });
+      print('[LocationService] backend success');
 
       // WebSocket ulanish
       _connectSocket();
@@ -85,6 +96,7 @@ class LocationService {
       _isOnline = true;
       return {'success': true};
     } catch (e) {
+      print('[LocationService] catch block error: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -147,11 +159,28 @@ class LocationService {
   void _startLocationStream() {
     _positionStream?.cancel();
 
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+    late LocationSettings locationSettings;
+    
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // 10 metrdan ko'p harakatlanganda
-      ),
+        distanceFilter: 10,
+        forceLocationManager: true,
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationText: "Gilam ilovasi orqa fonda GPS koordinatalarni yubormoqda...",
+          notificationTitle: "GPS kuzatuvi faol",
+          enableWakeLock: true,
+        ),
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      );
+    }
+
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
     ).listen((Position position) {
       _lastPosition = position;
 

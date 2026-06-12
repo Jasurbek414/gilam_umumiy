@@ -13,6 +13,18 @@ const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), 
 const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false });
 const Polyline = dynamic(() => import('react-leaflet').then(m => m.Polyline), { ssr: false });
+const MapUpdater = dynamic(
+  () => import('react-leaflet').then(m => {
+    return function Updater({ center, zoom }: any) {
+      const map = m.useMap();
+      React.useEffect(() => {
+        if (center) map.flyTo(center, zoom || 15, { animate: true, duration: 1.5 });
+      }, [center, zoom, map]);
+      return null;
+    }
+  }), 
+  { ssr: false }
+);
 
 const statusColors: any = {
   ONLINE: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200', dot: '#10b981', label: 'Online' },
@@ -112,8 +124,11 @@ export default function LiveMapPage() {
 
   const parseLocation = (loc: any) => {
     if (!loc) return null;
+    if (typeof loc === 'object' && 'x' in loc && 'y' in loc) {
+      return { lat: loc.y, lng: loc.x };
+    }
     if (typeof loc === 'string') {
-      const m = loc.match(/\(([-\d.]+),([-\d.]+)\)/);
+      const m = loc.match(/\(([-\d.]+),\s*([-\d.]+)\)/);
       if (m) return { lat: parseFloat(m[2]), lng: parseFloat(m[1]) };
     }
     return null;
@@ -222,6 +237,9 @@ export default function LiveMapPage() {
                 attribution='&copy; <a href="https://osm.org">OSM</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
+              {selectedDriver && parseLocation(selectedDriver.currentLocation) && (
+                <MapUpdater center={[parseLocation(selectedDriver.currentLocation)!.lat, parseLocation(selectedDriver.currentLocation)!.lng]} zoom={16} />
+              )}
               {filtered.filter(d => parseLocation(d.currentLocation)).map(d => {
                 const loc = parseLocation(d.currentLocation)!;
                 const s = statusColors[d.liveStatus || 'OFFLINE'] || statusColors.OFFLINE;

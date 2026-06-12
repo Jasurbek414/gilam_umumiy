@@ -34,7 +34,23 @@ export class Customer {
   @Column({ type: 'text', nullable: true })
   address: string;
 
-  @Column({ type: 'point', nullable: true })
+  @Column({ 
+    type: 'point', 
+    nullable: true,
+    transformer: {
+      from: (value) => value,
+      to: (value) => {
+        if (!value) return value;
+        if (typeof value === 'object' && 'x' in value && 'y' in value) {
+          return `${value.x},${value.y}`;
+        }
+        if (typeof value === 'string') {
+          return value.replace('(', '').replace(')', '');
+        }
+        return value;
+      }
+    }
+  })
   location: any;
 
   @Column({ name: 'operator_id', type: 'uuid', nullable: true })

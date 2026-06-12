@@ -101,3 +101,22 @@
     </div>
   </div>
 </div>
+
+<!-- ORDER DETAILS MODAL -->
+<div id="modal-order-details" style="display:none;" class="modal-overlay">
+  <div class="modal-content" style="max-width: 620px; width: 95%;">
+    <div class="modal-header">
+      <h3 style="color:var(--t1);"><span class="material-icons-round" style="vertical-align:middle; margin-right:8px; color:var(--accent);">receipt_long</span>Buyurtma Tafsilotlari</h3>
+      <button class="btn-icon" onclick="document.getElementById('modal-order-details').style.display='none'">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
+    <div class="modal-body" style="max-height: 65vh; overflow-y: auto; padding: 20px; color:var(--t2);">
+      <div id="order-details-content" class="space-y-4"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('modal-order-details').style.display='none'">Yopish</button>
+    </div>
+  </div>
+</div>
+

@@ -112,6 +112,7 @@ function startApp(user) {
     window.Settings.load();
     if (window.ChatManager) window.ChatManager.init();
     if (window.DriverMap) window.DriverMap.init();
+    if (window.initOrdersUI) window.initOrdersUI();
     window.__modulesStarted = true;
   }
 

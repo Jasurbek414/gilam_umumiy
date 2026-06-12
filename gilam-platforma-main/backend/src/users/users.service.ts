@@ -90,7 +90,7 @@ export class UsersService {
       softDeleted.role = dto.role as UserRole;
       softDeleted.companyId = dto.companyId as any;
       softDeleted.status = UserStatus.ACTIVE;
-      softDeleted.deletedAt = null;
+      softDeleted.deletedAt = null as any;
       softDeleted.birthDate = dto.birthDate ? new Date(dto.birthDate) : null;
       softDeleted.salary = dto.salary || 0;
       softDeleted.workSchedule = dto.workSchedule || 'MONTHLY';

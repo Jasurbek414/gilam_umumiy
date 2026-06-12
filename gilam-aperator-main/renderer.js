@@ -118,6 +118,7 @@ $$('.tab').forEach(tab => {
     if (tabName === 'calls') loadCallHistory();
     if (tabName === 'contacts') loadContacts();
     if (tabName === 'chat') loadDrivers();
+    if (tabName === 'orders' && window.loadOrders) window.loadOrders();
   });
 });
 

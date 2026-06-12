@@ -22,10 +22,15 @@ export class DriversService {
     const driver = await this.userRepo.findOne({ where: { id: driverId, role: UserRole.DRIVER } });
     if (!driver) throw new NotFoundException('Haydovchi topilmadi');
 
-    driver.isOnline = true;
-    driver.lastSeenAt = new Date();
-    driver.status = 'ACTIVE' as any;
-    await this.userRepo.save(driver);
+    await this.userRepo.update(driverId, {
+      isOnline: true,
+      lastSeenAt: new Date(),
+      status: 'ACTIVE' as any,
+    });
+
+    if (lat && lng) {
+      await this.updateLocation(driverId, { latitude: lat, longitude: lng });
+    }
 
     // Faol sessiya bormi?
     const active = await this.sessionRepo.findOne({
@@ -49,9 +54,10 @@ export class DriversService {
     const driver = await this.userRepo.findOne({ where: { id: driverId } });
     if (!driver) throw new NotFoundException('Haydovchi topilmadi');
 
-    driver.isOnline = false;
-    driver.status = 'OFFLINE' as any;
-    await this.userRepo.save(driver);
+    await this.userRepo.update(driverId, {
+      isOnline: false,
+      status: 'OFFLINE' as any,
+    });
 
     const session = await this.sessionRepo.findOne({
       where: { driverId, status: 'ACTIVE' },
@@ -101,13 +107,14 @@ export class DriversService {
     }
 
     // User yangilash
-    driver.currentLocation = `(${data.longitude},${data.latitude})`;
-    driver.lastSeenAt = new Date();
-    driver.lastAccuracy = (data.accuracy ?? null) as any;
-    driver.lastSpeed = (data.speed ?? null) as any;
-    driver.lastHeading = (data.heading ?? null) as any;
-    driver.batteryLevel = (data.battery ?? null) as any;
-    await this.userRepo.save(driver);
+    await this.userRepo.update(driverId, {
+      currentLocation: `(${data.longitude},${data.latitude})` as any,
+      lastSeenAt: new Date(),
+      lastAccuracy: (data.accuracy ?? null) as any,
+      lastSpeed: (data.speed ?? null) as any,
+      lastHeading: (data.heading ?? null) as any,
+      batteryLevel: (data.battery ?? null) as any,
+    });
 
     // Log saqlash
     await this.locationRepo.save({

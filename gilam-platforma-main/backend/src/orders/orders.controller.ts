@@ -45,9 +45,10 @@ export class OrdersController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @CurrentUser() user: User,
   ) {
-    // Security: Only allow users to see their own company's orders
+    // Security: Only SUPER_ADMIN can view any company's orders.
+    // All other roles (including OPERATOR) are restricted to their own company.
     const targetCompanyId =
-      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.ordersService.findAllByCompany(targetCompanyId);
   }
 
@@ -56,8 +57,9 @@ export class OrdersController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @CurrentUser() user: User,
   ) {
+    // Security: Only SUPER_ADMIN can view any company's stats.
     const targetCompanyId =
-      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.ordersService.getCompanyStats(targetCompanyId);
   }
 

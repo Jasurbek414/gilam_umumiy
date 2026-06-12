@@ -54,8 +54,25 @@ export class User {
   @Column({ name: 'password_hash' })
   passwordHash: string;
 
-  @Column({ type: 'point', name: 'current_location', nullable: true })
-  currentLocation: any; // Using basic simple type for now, can be string or PostGIS Point
+  @Column({ 
+    type: 'point', 
+    name: 'current_location', 
+    nullable: true,
+    transformer: {
+      from: (value) => value,
+      to: (value) => {
+        if (!value) return value;
+        if (typeof value === 'object' && 'x' in value && 'y' in value) {
+          return `${value.x},${value.y}`;
+        }
+        if (typeof value === 'string') {
+          return value.replace('(', '').replace(')', '');
+        }
+        return value;
+      }
+    }
+  })
+  currentLocation: any;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
