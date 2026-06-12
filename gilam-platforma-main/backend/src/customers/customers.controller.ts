@@ -23,7 +23,7 @@ export class CustomersController {
 
   @Post()
   create(@Body() dto: CreateCustomerDto, @CurrentUser() user: User) {
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.OPERATOR) {
+    if (user.role !== UserRole.SUPER_ADMIN) {
       dto.companyId = user.companyId;
     }
     return this.customersService.create(dto);
@@ -34,17 +34,17 @@ export class CustomersController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @CurrentUser() user: User,
   ) {
-    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+    if (user.role === UserRole.SUPER_ADMIN) {
       if (!companyId || companyId === 'null') return this.customersService.findAll();
     }
     const targetId =
-      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.customersService.findAllByCompany(targetId);
   }
 
   @Get()
   findAllGlobal(@CurrentUser() user: User) {
-    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+    if (user.role === UserRole.SUPER_ADMIN) {
       return this.customersService.findAll();
     }
     return this.customersService.findAllByCompany(user.companyId);
@@ -55,7 +55,7 @@ export class CustomersController {
     @Query('q') query: string,
     @CurrentUser() user: User,
   ) {
-    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+    if (user.role === UserRole.SUPER_ADMIN) {
       return this.customersService.search(null, query || '');
     }
     return this.customersService.search(user.companyId, query || '');
@@ -68,7 +68,7 @@ export class CustomersController {
     @CurrentUser() user: User,
   ) {
     const targetId =
-      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.customersService.search(targetId, query || '');
   }
 

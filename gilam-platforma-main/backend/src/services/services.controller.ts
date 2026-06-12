@@ -22,7 +22,7 @@ export class ServicesController {
 
   @Post()
   create(@Body() dto: CreateServiceDto, @CurrentUser() user: User) {
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.OPERATOR) {
+    if (user.role !== UserRole.SUPER_ADMIN) {
       dto.companyId = user.companyId;
     }
     return this.servicesService.create(dto);
@@ -33,17 +33,17 @@ export class ServicesController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @CurrentUser() user: User,
   ) {
-    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+    if (user.role === UserRole.SUPER_ADMIN) {
       if (!companyId || companyId === 'null') return this.servicesService.findAll();
     }
     const targetId =
-      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.servicesService.findAllByCompany(targetId);
   }
 
   @Get()
   findAllGlobal(@CurrentUser() user: User) {
-    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+    if (user.role === UserRole.SUPER_ADMIN) {
       return this.servicesService.findAll();
     }
     return this.servicesService.findAllByCompany(user.companyId);

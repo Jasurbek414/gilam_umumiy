@@ -164,7 +164,7 @@ export default function UsersPage() {
 
       // 2. Tab filtering logic
       if (activeTab === 'SYSTEM') {
-        return !user.companyId || user.role === 'SUPER_ADMIN' || user.role === 'OPERATOR';
+        return !user.companyId || user.role === 'SUPER_ADMIN';
       } else {
         return user.companyId === activeTab;
       }
@@ -208,7 +208,7 @@ export default function UsersPage() {
               <div className="flex gap-2 min-w-max p-1 bg-slate-50 border border-slate-100 rounded-2xl">
                  {userTabs.map(tab => {
                     const isActive = activeTab === tab.id;
-                    const count = users.filter(u => tab.id === 'SYSTEM' ? (!u.companyId || u.role === 'SUPER_ADMIN' || u.role === 'OPERATOR') : u.companyId === tab.id).length;
+                    const count = users.filter(u => tab.id === 'SYSTEM' ? (!u.companyId || u.role === 'SUPER_ADMIN') : u.companyId === tab.id).length;
                     
                     return (
                        <button
@@ -435,10 +435,10 @@ export default function UsersPage() {
                      <MdBusiness className="text-indigo-500 text-sm" /> Biriktirilgan Korxona
                    </label>
                    <select 
-                     className={`w-full px-5 py-4 rounded-2xl border border-slate-200 outline-none font-bold text-slate-800 transition-all appearance-none ${formData.role === 'OPERATOR' || formData.role === 'SUPER_ADMIN' ? 'bg-slate-100 cursor-not-allowed opacity-60' : 'bg-slate-50 focus:bg-white focus:border-indigo-500 cursor-pointer'}`}
-                     value={formData.role === 'OPERATOR' || formData.role === 'SUPER_ADMIN' ? '' : (formData.companyId || '')}
+                     className={`w-full px-5 py-4 rounded-2xl border border-slate-200 outline-none font-bold text-slate-800 transition-all appearance-none ${formData.role === 'SUPER_ADMIN' ? 'bg-slate-100 cursor-not-allowed opacity-60' : 'bg-slate-50 focus:bg-white focus:border-indigo-500 cursor-pointer'}`}
+                     value={formData.role === 'SUPER_ADMIN' ? '' : (formData.companyId || '')}
                      onChange={(e) => setFormData({...formData, companyId: e.target.value})}
-                     disabled={formData.role === 'OPERATOR' || formData.role === 'SUPER_ADMIN'}
+                     disabled={formData.role === 'SUPER_ADMIN'}
                    >
                      <option value="">Umumiy (Faqat Tizim Xodimi)</option>
                      {companies.map(c => (
