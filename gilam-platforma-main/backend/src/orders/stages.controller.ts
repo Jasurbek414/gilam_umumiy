@@ -10,8 +10,12 @@ export class StagesController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get('company/:companyId')
-  async getStages(@Param('companyId', ParseUUIDPipe) companyId: string) {
-    return this.ordersService.getFacilityStages(companyId);
+  async getStages(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @CurrentUser() user: User,
+  ) {
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.ordersService.getFacilityStages(targetId);
   }
 
   @Post()
@@ -19,8 +23,10 @@ export class StagesController {
     @Body('companyId') companyId: string,
     @Body('name') name: string,
     @Body('icon') icon: string,
+    @CurrentUser() user: User,
   ) {
-    return this.ordersService.createFacilityStage(companyId, name, icon);
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.ordersService.createFacilityStage(targetId, name, icon);
   }
 
   @Delete(':id')
@@ -32,7 +38,9 @@ export class StagesController {
   async reorderStages(
     @Body('companyId') companyId: string,
     @Body('stageIds') stageIds: string[],
+    @CurrentUser() user: User,
   ) {
-    return this.ordersService.reorderFacilityStages(companyId, stageIds);
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.ordersService.reorderFacilityStages(targetId, stageIds);
   }
 }

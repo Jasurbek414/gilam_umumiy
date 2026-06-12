@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('audit')
 @UseGuards(JwtAuthGuard)
@@ -14,11 +15,13 @@ export class AuditController {
   @Get('company/:companyId')
   findByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
+    @CurrentUser() user: any,
     @Query('entityType') entityType?: string,
     @Query('limit') limit?: string,
   ) {
+    const targetId = user.role === 'SUPER_ADMIN' ? companyId : user.companyId;
     return this.auditService.findByCompany(
-      companyId,
+      targetId,
       entityType,
       limit ? parseInt(limit) : 100,
     );

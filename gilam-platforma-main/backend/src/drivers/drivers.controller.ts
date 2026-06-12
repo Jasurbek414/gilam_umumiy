@@ -26,23 +26,27 @@ export class DriversController {
   }
 
   @Get('live')
-  async getLiveDrivers(@Query('companyId') companyId?: string) {
-    return this.driversService.getLiveDrivers(companyId);
+  async getLiveDrivers(@Req() req: any, @Query('companyId') companyId?: string) {
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.driversService.getLiveDrivers(targetId);
   }
 
   @Get('live/company/:companyId')
-  async getLiveByCompany(@Param('companyId') companyId: string) {
-    return this.driversService.getLiveDrivers(companyId);
+  async getLiveByCompany(@Req() req: any, @Param('companyId') companyId: string) {
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.driversService.getLiveDrivers(targetId);
   }
 
   @Get('status-summary')
-  async getStatusSummary(@Query('companyId') companyId?: string) {
-    return this.driversService.getStatusSummary(companyId);
+  async getStatusSummary(@Req() req: any, @Query('companyId') companyId?: string) {
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.driversService.getStatusSummary(targetId);
   }
 
   @Get('all-with-status')
-  async getAllWithStatus(@Query('companyId') companyId?: string) {
-    return this.driversService.getDriversWithStatus(companyId);
+  async getAllWithStatus(@Req() req: any, @Query('companyId') companyId?: string) {
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.driversService.getDriversWithStatus(targetId);
   }
 
   @Get(':id/location-history')

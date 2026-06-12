@@ -9,6 +9,9 @@ export class AdvancesController {
 
   @Post()
   async create(@Body() body: any, @Req() req: any) {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      body.companyId = req.user?.companyId;
+    }
     const userId = req.user?.id || req.user?.sub;
     return this.advancesService.create(body, userId);
   }
@@ -16,10 +19,12 @@ export class AdvancesController {
   @Get('company/:companyId')
   async findByCompany(
     @Param('companyId') companyId: string,
+    @Req() req: any,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.advancesService.findByCompany(companyId, startDate, endDate);
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.advancesService.findByCompany(targetId, startDate, endDate);
   }
 
   @Get('employee/:employeeId')
@@ -44,6 +49,7 @@ export class AdvancesController {
   @Patch(':id/cancel')
   async cancel(@Param('id') id: string, @Req() req: any, @Body() body: any) {
     const userId = req.user?.id || req.user?.sub;
-    return this.advancesService.cancel(id, userId, body.companyId);
+    const targetCompanyId = req.user?.role === 'SUPER_ADMIN' ? body.companyId : req.user?.companyId;
+    return this.advancesService.cancel(id, userId, targetCompanyId);
   }
 }

@@ -9,6 +9,9 @@ export class PaymentsController {
 
   @Post()
   async create(@Body() body: any, @Req() req: any) {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      body.companyId = req.user?.companyId;
+    }
     const userId = req.user?.id || req.user?.sub;
     return this.paymentsService.create(body, userId);
   }
@@ -16,10 +19,12 @@ export class PaymentsController {
   @Get('company/:companyId')
   async findByCompany(
     @Param('companyId') companyId: string,
+    @Req() req: any,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.paymentsService.findByCompany(companyId, startDate, endDate);
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.paymentsService.findByCompany(targetId, startDate, endDate);
   }
 
   @Get('employee/:employeeId')

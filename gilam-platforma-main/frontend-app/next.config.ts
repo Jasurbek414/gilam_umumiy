@@ -3,12 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Allow external domain tunnel proxy to load without cross-origin issues
   serverExternalPackages: ['googleapis'],
-  // Build optimizations: skip TS/ESLint checks to reduce RAM usage on server
+  // Build optimizations: skip TS checks to reduce RAM usage on server
   typescript: {
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   async redirects() {
     return [];

@@ -10,6 +10,9 @@ export class BonusesController {
   // ---- BONUSES ----
   @Post('bonuses')
   async createBonus(@Body() body: any, @Req() req: any) {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      body.companyId = req.user?.companyId;
+    }
     return this.bonusesService.createBonus(body, req.user?.id || req.user?.sub);
   }
 
@@ -19,13 +22,17 @@ export class BonusesController {
   }
 
   @Get('bonuses/company/:companyId')
-  async findBonusesByCompany(@Param('companyId') companyId: string) {
-    return this.bonusesService.findBonusesByCompany(companyId);
+  async findBonusesByCompany(@Param('companyId') companyId: string, @Req() req: any) {
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.bonusesService.findBonusesByCompany(targetId);
   }
 
   // ---- PENALTIES ----
   @Post('penalties')
   async createPenalty(@Body() body: any, @Req() req: any) {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      body.companyId = req.user?.companyId;
+    }
     return this.bonusesService.createPenalty(body, req.user?.id || req.user?.sub);
   }
 
@@ -35,7 +42,8 @@ export class BonusesController {
   }
 
   @Get('penalties/company/:companyId')
-  async findPenaltiesByCompany(@Param('companyId') companyId: string) {
-    return this.bonusesService.findPenaltiesByCompany(companyId);
+  async findPenaltiesByCompany(@Param('companyId') companyId: string, @Req() req: any) {
+    const targetId = req.user?.role === 'SUPER_ADMIN' ? companyId : req.user?.companyId;
+    return this.bonusesService.findPenaltiesByCompany(targetId);
   }
 }

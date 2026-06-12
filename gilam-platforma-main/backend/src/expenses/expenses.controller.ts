@@ -12,16 +12,21 @@ export class ExpensesController {
 
   @Post()
   create(@Body() data: Partial<Expense>, @CurrentUser() user: User) {
+    if (user.role !== 'SUPER_ADMIN') {
+      data.companyId = user.companyId;
+    }
     return this.expensesService.create(data, user?.id);
   }
 
   @Get('company/:companyId')
   findAll(
     @Param('companyId') companyId: string,
+    @CurrentUser() user: User,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.expensesService.findAllByCompany(companyId, startDate, endDate);
+    const targetId = user.role === 'SUPER_ADMIN' ? companyId : user.companyId;
+    return this.expensesService.findAllByCompany(targetId, startDate, endDate);
   }
 
   @Get('user/:userId')
