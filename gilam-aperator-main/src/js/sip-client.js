@@ -34,9 +34,10 @@ const SipClient = {
   mediaRecorder: null,
   recordedChunks: [],
   audioContext: null,
-  localStream: null,         // Mikrofon stream
+  localStream: null,         // Mikrofon stream (unused in UDP mode)
   remoteAudio: null,         // <audio> element
   callRecordings: JSON.parse(localStorage.getItem('call_recordings') || '[]'),
+  _cleanupInProgress: false, // Guard against double cleanup
 
   // ═══ INIT ═══════════════════════════════════════════════════════════════
   init() {
@@ -208,7 +209,12 @@ const SipClient = {
     });
 
     engine.on('callEnded', (data) => {
-      console.log(`[SIP] Call ended: ${data.reason}`);
+      console.log(`[SIP] Call ended event received:`, {
+        reason: data.reason,
+        target: data.target,
+        direction: data.direction,
+        currentSession: !!this.currentSession
+      });
       
       const type = data.direction === 'incoming' ? 'INCOMING' : 'OUTGOING';
       const dur = window.UI && window.UI.activeCallSeconds ? window.UI.activeCallSeconds : 0;
@@ -216,7 +222,6 @@ const SipClient = {
         window.UI.addCallToHistory(data.target, type, dur);
       }
       
-      this.currentSession = null;
       this._cleanupCall();
     });
 
@@ -236,14 +241,19 @@ const SipClient = {
     });
 
     engine.on('callFailed', (data) => {
-      console.log(`[SIP] Call failed: ${data.code} ${data.reason}`);
+      console.log(`[SIP] Call failed event received:`, {
+        code: data.code,
+        reason: data.reason,
+        target: data.target,
+        direction: data.direction,
+        currentSession: !!this.currentSession
+      });
       
       const type = data.direction === 'incoming' ? 'MISSED' : 'OUTGOING';
       if (data.target && window.UI && window.UI.addCallToHistory) {
         window.UI.addCallToHistory(data.target, type, 0); // missed calls have 0 duration
       }
       
-      this.currentSession = null;
       this._cleanupCall();
       Utils.showToast(`❌ Qo'ng'iroq rad etildi: ${data.reason}`, 'error');
     });
@@ -287,7 +297,11 @@ const SipClient = {
     });
 
     session.on('accepted', () => {
-      console.log('[SIP] Call accepted / established');
+      console.log('[SIP] Call accepted / established', {
+        session: !!session,
+        direction: session.direction,
+        target: session.currentCall?.targetExt
+      });
 
       // Backend API: Qo'ng'iroqqa javob berildi
       if (window.CRM && window.CRM.activeCallId && window.Api?.config?.token) {
@@ -306,15 +320,24 @@ const SipClient = {
     });
 
     session.on('ended', (data) => {
-      console.log('[SIP] Call ended:', data.cause);
+      console.log('[SIP] Call ended event:', {
+        cause: data.cause,
+        direction: session.direction,
+        target: session.currentCall?.targetExt,
+        callId: session.currentCall?.callId
+      });
       
       // Backend API: Qo'ng'iroq yakunlandi
       if (window.CRM && window.CRM.activeCallId && window.Api?.config?.token) {
         // Aslida order qilingan bo'lsa, order_id ni ham yuborish kerak.
-        // Bu joyda faqat callni yopamiz. (Agar buyurtma saqlangan bo'lsa, u order ni qanday bog'lash crm.js da).
+        // Bu joyda faqat callni yopamiz.
+        const crmNote = Utils.$('quick-crm-note')?.value || '';
+        const callNote = Utils.$('active-call-note')?.value || '';
+        const notes = callNote ? (crmNote ? `${callNote}\n${crmNote}` : callNote) : crmNote;
+        
         window.Api.request(`/calls/${window.CRM.activeCallId}/complete`, { 
           method: 'PUT',
-          body: JSON.stringify({ notes: Utils.$('quick-crm-note')?.value || '' })
+          body: JSON.stringify({ notes })
         }).catch(console.warn);
         
         // Qo'ng'iroq tugadi, ID ni tozalaymiz
@@ -327,7 +350,12 @@ const SipClient = {
     });
 
     session.on('failed', (data) => {
-      console.log('[SIP] Call failed:', data.cause);
+      console.log('[SIP] Call failed event:', {
+        cause: data.cause,
+        direction: session.direction,
+        target: session.currentCall?.targetExt,
+        callId: session.currentCall?.callId
+      });
 
       // Backend API: Qo'ng'iroq javobsiz / xato bilan tugadi
       if (session.direction === 'incoming' && window.CRM && window.CRM.activeCallId && window.Api?.config?.token) {
@@ -430,25 +458,36 @@ const SipClient = {
       console.log('[SIP] Rejecting incoming call');
       try {
         this.currentSession.rejectCall();
-      } catch(e) {
+      } catch (e) {
         console.error('[SIP] Reject error:', e);
+        this._cleanupCall();
       }
-      this.currentSession = null;
+      // NOTE: Don't nullify currentSession here - let the 'callEnded' event handler do it
+      // to ensure proper cleanup sequencing and avoid race conditions.
     }
     window.UI.hideIncomingCall();
   },
 
   // ═══ HANGUP (Qo'ng'iroqni tugatish) ═════════════════════════════════════
   hangup() {
-    if (this.currentSession) {
-      console.log('[SIP] Hanging up call');
-      try {
-        this.currentSession.hangup();
-      } catch(e) {
-        console.error('[SIP] Hangup error:', e);
+    try {
+      console.log('[SIP] Hangup button executed');
+      if (this.currentSession) {
+        console.log('[SIP] Hanging up call (sending BYE/CANCEL)');
+        try {
+          this.currentSession.hangup();
+        } catch (e) {
+          console.error('[SIP] Hangup error:', e);
+        }
+      } else {
+        console.warn('[SIP] Hangup called but no active session');
       }
+      
+      // Always cleanup UI immediately to prevent getting stuck, even if SIP engine fails
+      this._cleanupCall();
+    } catch (e) {
+      alert("Hangup click error: " + e.message);
     }
-    this._cleanupCall();
   },
 
   // ═══ MUTE / UNMUTE ══════════════════════════════════════════════════════
@@ -506,21 +545,57 @@ const SipClient = {
 
   // ═══ CLEANUP ════════════════════════════════════════════════════════════
   _cleanupCall() {
-    // Yozib olishni to'xtatish
-    this._stopRecording();
-    
-    this.currentSession = null;
-    this.isMuted = false;
-    this.isOnHold = false;
-    this.isRecording = false;
-    this._updateMuteHoldUI();
-    this._updateRecordUI();
-    window.UI.hideActiveCall();
-    window.UI.hideIncomingCall();
-    
-    // Remote audio tozalash
-    if (this.remoteAudio) {
-      this.remoteAudio.srcObject = null;
+    console.log('[SIP] _cleanupCall() - forcing UI cleanup');
+    try {
+      // Reset all state
+      this.currentSession = null;
+      this.isMuted = false;
+      this.isOnHold = false;
+      this.isRecording = false;
+
+      // Stop recording if active
+      try { this._stopRecording(); } catch(e) {}
+
+      // Update button states
+      try { this._updateMuteHoldUI(); } catch(e) {}
+      try { this._updateRecordUI(); } catch(e) {}
+
+      // FORCE hide both overlays
+      const activeOverlay = document.getElementById('active-call-overlay');
+      const incomingOverlay = document.getElementById('incoming-call-overlay');
+      if (activeOverlay) activeOverlay.style.display = 'none';
+      if (incomingOverlay) incomingOverlay.style.display = 'none';
+
+      // Also call UI methods as backup
+      try { window.UI.hideActiveCall(); } catch(e) {}
+      try { window.UI.hideIncomingCall(); } catch(e) {}
+      try { window.UI.stopCallTimer(); } catch(e) {}
+      try { window.UI.stopRingbackTone(); } catch(e) {}
+
+      // Stop ringtone audio element
+      try {
+        const ringtone = document.getElementById('ringtone');
+        if (ringtone) { ringtone.pause(); ringtone.currentTime = 0; }
+      } catch(e) {}
+
+      if (this.remoteAudio) {
+        try {
+          this.remoteAudio.pause();
+          this.remoteAudio.srcObject = null;
+          this.remoteAudio.load();
+        } catch (e) {}
+      }
+
+      // Notify CRM
+      try { if (window.CRM) window.CRM.onCallEnded(); } catch(e) {}
+
+      console.log('[SIP] _cleanupCall() done');
+    } catch (e) {
+      console.error('[SIP] FATAL ERROR IN CLEANUP:', e);
+      alert('Dasturda xatolik: ' + e.message);
+      // Emergency hide
+      document.getElementById('active-call-overlay').style.display = 'none';
+      document.getElementById('incoming-call-overlay').style.display = 'none';
     }
   },
 

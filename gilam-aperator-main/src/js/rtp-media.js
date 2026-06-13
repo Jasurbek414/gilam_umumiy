@@ -126,6 +126,17 @@ class RtpMediaEngine {
       }
     });
 
+    this.rtpSocket.on('error', (err) => {
+      console.error('[RTP] Socket error:', err.message);
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`[RTP] Port ${this.localPort} in use. Trying another random port...`);
+        this.localPort = this.localPort + Math.floor(Math.random() * 10) + 1;
+        try { this.rtpSocket.close(); } catch(e) {}
+        this.isRunning = false; // Reset so start() works
+        this.start(this.localPort, this.remoteIp, this.remotePort, this.codec);
+      }
+    });
+
     this.rtpSocket.bind(this.localPort, () => {
       console.log(`[RTP] Bound to local port ${this.localPort}`);
       this._startAudioContext();
@@ -208,15 +219,18 @@ class RtpMediaEngine {
       }
     };
 
+    // Faqat decoded RTP (remote audio) ni speaker'ga ulash, mikrofon EMAS!
+    // scriptProcessor ham kiruvchi (mic) ham chiquvchi (rtp) ni qayta ishlaydi,
+    // lekin speaker'ga faqat decoded RTP (outputBuffer) yetkaziladi.
     const outDest = this.audioCtx.createMediaStreamDestination();
-    this.scriptProcessor.connect(outDest);
+    
+    // Alohida AudioBuffer source orqali speaker'ga output qilamiz
+    // Bu mikrofon echo muammosini bartaraf etadi.
+    this.scriptProcessor.connect(this.audioCtx.destination);
+    // NOTE: this.audioCtx.destination - bu kompyuter karnayiga to'g'ridan-to'g'ri ulanadi
 
-    this.speakerAudio = new Audio();
-    this.speakerAudio.style.display = 'none';
-    document.body.appendChild(this.speakerAudio);
-
-    this.speakerAudio.srcObject = outDest.stream;
-    this.speakerAudio.play().catch(e => console.error('[RTP] Playback failed:', e));
+    this.speakerAudio = null; // Artiq kerak emas, to'g'ridan-to'g'ri destination ishlatiladi
+    console.log('[RTP] Audio context started. Output -> system speaker (no echo).');
   }
   
   _sendRtpPacket(chunk) {
@@ -274,25 +288,28 @@ class RtpMediaEngine {
 
   stop() {
     console.log('[RTP] Stopping media engine.');
+    this.isRunning = false;
     if (this.sendInterval) {
       clearInterval(this.sendInterval);
       this.sendInterval = null;
     }
     this.sendBuffer = [];
     if (this.speakerAudio) {
-      this.speakerAudio.pause();
-      this.speakerAudio.srcObject = null;
-      if (this.speakerAudio.parentNode) {
-        this.speakerAudio.parentNode.removeChild(this.speakerAudio);
-      }
+      try {
+        this.speakerAudio.pause();
+        this.speakerAudio.srcObject = null;
+        if (this.speakerAudio.parentNode) {
+          this.speakerAudio.parentNode.removeChild(this.speakerAudio);
+        }
+      } catch(e) {}
       this.speakerAudio = null;
     }
     if (this.scriptProcessor) {
-      this.scriptProcessor.disconnect();
+      try { this.scriptProcessor.disconnect(); } catch(e) {}
       this.scriptProcessor = null;
     }
     if (this.sourceNode) {
-      this.sourceNode.disconnect();
+      try { this.sourceNode.disconnect(); } catch(e) {}
       this.sourceNode = null;
     }
     if (this.audioStream) {

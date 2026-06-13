@@ -65,7 +65,10 @@
                 <span class="material-icons-round">person</span>
               </div>
             </div>
-            <div id="recording-indicator" style="display:none; text-align:center; margin-bottom:8px;">
+            <div class="call-overlay-status-input" style="margin-top: 10px; width: 100%; max-width: 200px;">
+              <input type="text" id="active-call-note" placeholder="Status / Izoh yozing..." class="crm-input" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); width: 100%; border-radius: 8px; padding: 8px 12px; font-size: 13px; text-align: center;">
+            </div>
+            <div id="recording-indicator" style="display:none; text-align:center; margin-top:8px; margin-bottom:8px;">
               <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 12px; background:rgba(239,68,68,0.15); border-radius:20px; font-size:11px; color:var(--red); font-weight:600;">
                 <span class="material-icons-round" style="font-size:12px; animation: pulse 1s infinite;">fiber_manual_record</span>
                 REC
@@ -84,7 +87,7 @@
                 <span class="material-icons-round">fiber_manual_record</span>
                 <span class="action-label">Yozish</span>
               </button>
-              <button class="btn-call-hangup" id="btn-hangup">
+              <button class="btn-call-hangup" id="btn-hangup" onclick="if(window.SipClient) window.SipClient.hangup()">
                 <span class="material-icons-round">call_end</span>
               </button>
             </div>
@@ -265,11 +268,19 @@
 
       <!-- ═══ SO'NGGI QO'NG'IROQLAR ═══ -->
       <div class="crm-card">
-        <div class="crm-card-head">
-          <span class="material-icons-round">history</span>
-          <span>So'nggi qo'ng'iroqlar</span>
+        <div class="crm-card-head" style="flex-direction: column; align-items: stretch; gap: 8px; height: auto; padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round">history</span>
+            <span>So'nggi qo'ng'iroqlar</span>
+          </div>
+          <div class="call-filters" style="display: flex; gap: 5px; font-size: 11px; overflow-x: auto; padding-bottom: 2px;">
+            <button class="call-filter-btn active" data-filter="all" onclick="window.UI.renderDashboardCalls('all', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">Barchasi</button>
+            <button class="call-filter-btn" data-filter="INCOMING" onclick="window.UI.renderDashboardCalls('INCOMING', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-secondary); cursor: pointer;">Kiruvchi</button>
+            <button class="call-filter-btn" data-filter="OUTGOING" onclick="window.UI.renderDashboardCalls('OUTGOING', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-secondary); cursor: pointer;">Chiquvchi</button>
+            <button class="call-filter-btn" data-filter="MISSED" onclick="window.UI.renderDashboardCalls('MISSED', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-secondary); cursor: pointer;">Olinmagan</button>
+          </div>
         </div>
-        <div id="dashboard-calls-list" class="crm-card-body">
+        <div id="dashboard-calls-list" class="crm-card-body" style="max-height: 300px; overflow-y: auto;">
           <div class="crm-empty">
             <span class="material-icons-round">phone_disabled</span>
             <span>Hozircha qo'ng'iroqlar yo'q</span>

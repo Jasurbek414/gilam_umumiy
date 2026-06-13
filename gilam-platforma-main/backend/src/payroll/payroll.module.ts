@@ -7,6 +7,7 @@ import { User } from '../users/entities/user.entity';
 import { PayrollService } from './payroll.service';
 import { PayrollController } from './payroll.controller';
 import { AdvancesModule } from '../advances/advances.module';
+import { BonusesModule } from '../bonuses/bonuses.module';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -14,6 +15,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([PayrollPeriod, PayrollItem, Attendance, User]),
     AdvancesModule,
+    BonusesModule,
     AuditModule,
     AuthModule,
   ],

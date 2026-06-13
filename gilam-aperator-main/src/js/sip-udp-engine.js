@@ -41,6 +41,7 @@ class SipUdpEngine extends EventEmitter {
     this.currentCall = null;
     this._pendingAuth = {};
     this.mediaEngine = new RtpMediaEngine();
+    this.recentCallIds = new Map();
   }
 
   // ═══ HELPERS ═════════════════════════════════════════════════════════════
@@ -157,7 +158,19 @@ class SipUdpEngine extends EventEmitter {
     this.username = config.username || config.extension;
     this.password = config.password;
     this.displayName = config.name || config.extension;
-    this.localPort = config.localPort || (5060 + Math.floor(Math.random() * 100) + 2);
+    
+    let savedPort = null;
+    try { savedPort = parseInt(localStorage.getItem('sip_local_port')); } catch(e) {}
+    
+    if (config.localPort) {
+      this.localPort = config.localPort;
+    } else if (savedPort && savedPort >= 5000 && savedPort <= 6000) {
+      this.localPort = savedPort;
+    } else {
+      this.localPort = 5060 + Math.floor(Math.random() * 500) + 2;
+      try { localStorage.setItem('sip_local_port', this.localPort); } catch(e) {}
+    }
+    
     this.localIp = this._getLocalIp();
     this.callId = this._callId();
     this.tag = this._tag();
@@ -172,19 +185,36 @@ class SipUdpEngine extends EventEmitter {
     }
 
     this.socket = dgram.createSocket('udp4');
-    
+    this._setupSocketListeners();
+
+    this.socket.bind(this.localPort, () => {
+      console.log(`[SIP-UDP] Socket bound to ${this.localPort}`);
+      this._register();
+    });
+  }
+
+  _setupSocketListeners() {
     this.socket.on('message', (msg, rinfo) => {
       this._handleMessage(msg.toString(), rinfo);
     });
 
     this.socket.on('error', (err) => {
       console.error('[SIP-UDP] Socket error:', err.message);
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`[SIP-UDP] Port ${this.localPort} is in use. Trying a new random port...`);
+        this.localPort = 5060 + Math.floor(Math.random() * 500) + 2;
+        try { localStorage.setItem('sip_local_port', this.localPort); } catch(e) {}
+        
+        try { this.socket.close(); } catch(e) {}
+        this.socket = dgram.createSocket('udp4');
+        this._setupSocketListeners();
+        this.socket.bind(this.localPort, () => {
+          console.log(`[SIP-UDP] Socket bound to fallback port ${this.localPort}`);
+          this._register();
+        });
+        return;
+      }
       this.emit('error', err);
-    });
-
-    this.socket.bind(this.localPort, () => {
-      console.log(`[SIP-UDP] Socket bound to ${this.localPort}`);
-      this._register();
     });
   }
 
@@ -287,12 +317,18 @@ class SipUdpEngine extends EventEmitter {
 
   // ═══ HANGUP (BYE / CANCEL) ═════════════════════════════════════════════════════
   hangup() {
-    if (!this.currentCall) return;
+    if (!this.currentCall) {
+      console.warn('[SIP-UDP] hangup() called but no active call');
+      this.mediaEngine.stop();
+      return;
+    }
     
     this.cseq++;
     const isUnanswered = (this.currentCall.state === 'CALLING' || this.currentCall.state === 'RINGING_REMOTE');
     const branch = isUnanswered ? this.currentCall.branch : this._branch();
     const method = isUnanswered ? 'CANCEL' : 'BYE';
+    
+    console.log(`[SIP-UDP] Hanging up call: method=${method}, state=${this.currentCall.state}, target=${this.currentCall.targetExt}, callId=${this.currentCall.callId}`);
     
     let msg = `${method} sip:${this.currentCall.targetExt}@${this.sipServer} SIP/2.0\r\n`;
     msg += `Via: SIP/2.0/UDP ${this.localIp}:${this.localPort};rport;branch=${branch}\r\n`;
@@ -308,7 +344,9 @@ class SipUdpEngine extends EventEmitter {
     this._send(msg);
     const lastCall = this.currentCall;
     this.currentCall = null;
+    console.log('[SIP-UDP] Stopping media engine...');
     this.mediaEngine.stop();
+    console.log('[SIP-UDP] Emitting callEnded event');
     this.emit('callEnded', { reason: 'local_hangup', target: lastCall?.targetExt, direction: lastCall?.direction });
   }
 
@@ -359,6 +397,13 @@ class SipUdpEngine extends EventEmitter {
     this._send(msg);
     const lastCall = this.currentCall;
     this.currentCall = null;
+    
+    // Save to recent calls to handle INVITE retransmissions
+    if (lastCall && lastCall.callId) {
+      this.recentCallIds.set(lastCall.callId, msg);
+      setTimeout(() => this.recentCallIds.delete(lastCall.callId), 60000);
+    }
+    
     this.mediaEngine.stop();
     this.emit('callEnded', { reason: 'rejected', target: lastCall?.targetExt, direction: lastCall?.direction });
   }
@@ -607,8 +652,56 @@ class SipUdpEngine extends EventEmitter {
         callerNumber: this.currentCall.targetExt,
         callerName: callerDisplayMatch ? callerDisplayMatch[1] : '',
       });
+    } else if (method === 'CANCEL') {
+      console.log('[SIP-UDP] <-- CANCEL received (remote cancel)');
+      const callIdMatch = data.match(/Call-ID:\s*(.*)/i);
+      const viaMatch = data.match(/Via:\s*(.*)/i);
+      const fromMatch = data.match(/From:\s*(.*)/i);
+      const toMatch = data.match(/To:\s*(.*)/i);
+      const cseqMatch = data.match(/CSeq:\s*(\d+)\s+CANCEL/i);
+
+      // 1. Send 200 OK for CANCEL
+      let ok = `SIP/2.0 200 OK\r\n`;
+      ok += `Via: ${viaMatch ? viaMatch[1].trim() : ''}\r\n`;
+      ok += `From: ${fromMatch ? fromMatch[1].trim() : ''}\r\n`;
+      ok += `To: ${toMatch ? toMatch[1].trim() : ''}\r\n`;
+      ok += `Call-ID: ${callIdMatch ? callIdMatch[1].trim() : ''}\r\n`;
+      ok += `CSeq: ${cseqMatch ? cseqMatch[1] : '1'} CANCEL\r\n`;
+      ok += `User-Agent: GilamOperator/2.0\r\n`;
+      ok += `Content-Length: 0\r\n\r\n`;
+      this._send(ok);
+
+      // 2. Send 487 Request Terminated for original INVITE
+      if (this.currentCall && this.currentCall.callId === (callIdMatch ? callIdMatch[1].trim() : '')) {
+        let term = `SIP/2.0 487 Request Terminated\r\n`;
+        term += `Via: ${this.currentCall.via}\r\n`;
+        term += `From: ${this.currentCall.from}\r\n`;
+        term += `To: ${this.currentCall.to};tag=${this.tag}\r\n`;
+        term += `Call-ID: ${this.currentCall.callId}\r\n`;
+        term += `CSeq: ${this.currentCall.cseq} INVITE\r\n`;
+        term += `User-Agent: GilamOperator/2.0\r\n`;
+        term += `Content-Length: 0\r\n\r\n`;
+        this._send(term);
+
+        const lastCall = this.currentCall;
+        console.log('[SIP-UDP] Remote CANCEL - stopping media engine and emitting callEnded', {
+          target: lastCall?.targetExt,
+          direction: lastCall?.direction,
+          callId: lastCall?.callId
+        });
+        this.currentCall = null;
+        
+        if (lastCall && lastCall.callId) {
+          this.recentCallIds.set(lastCall.callId, term);
+          setTimeout(() => this.recentCallIds.delete(lastCall.callId), 60000);
+        }
+        
+        this.mediaEngine.stop();
+        this.emit('callEnded', { reason: 'remote_cancel', target: lastCall?.targetExt, direction: lastCall?.direction });
+      }
     } else if (method === 'BYE') {
       // Remote hangup
+      console.log('[SIP-UDP] <-- BYE received (remote hangup)');
       const callIdMatch = data.match(/Call-ID:\s*(.*)/i);
       const viaMatch = data.match(/Via:\s*(.*)/i);
       const fromMatch = data.match(/From:\s*(.*)/i);
@@ -627,6 +720,11 @@ class SipUdpEngine extends EventEmitter {
       
       this._send(ok);
       const lastCall = this.currentCall;
+      console.log('[SIP-UDP] Remote hangup - stopping media engine and emitting callEnded', {
+        target: lastCall?.targetExt,
+        direction: lastCall?.direction,
+        callId: lastCall?.callId
+      });
       this.currentCall = null;
       this.mediaEngine.stop();
       this.emit('callEnded', { reason: 'remote_hangup', target: lastCall?.targetExt, direction: lastCall?.direction });

@@ -70,4 +70,26 @@ export class BonusesService {
       order: { date: 'DESC' },
     });
   }
+
+  async getEmployeeBonusTotal(employeeId: string, startDate: string, endDate: string): Promise<number> {
+    const result = await this.bonusRepo
+      .createQueryBuilder('b')
+      .select('COALESCE(SUM(b.amount), 0)', 'total')
+      .where('b.employee_id = :employeeId', { employeeId })
+      .andWhere('b.date >= :startDate', { startDate })
+      .andWhere('b.date <= :endDate', { endDate })
+      .getRawOne();
+    return parseFloat(result?.total || '0');
+  }
+
+  async getEmployeePenaltyTotal(employeeId: string, startDate: string, endDate: string): Promise<number> {
+    const result = await this.penaltyRepo
+      .createQueryBuilder('p')
+      .select('COALESCE(SUM(p.amount), 0)', 'total')
+      .where('p.employee_id = :employeeId', { employeeId })
+      .andWhere('p.date >= :startDate', { startDate })
+      .andWhere('p.date <= :endDate', { endDate })
+      .getRawOne();
+    return parseFloat(result?.total || '0');
+  }
 }

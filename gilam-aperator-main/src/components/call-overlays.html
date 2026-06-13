@@ -22,10 +22,10 @@
       </div>
     </div>
     <div class="incoming-actions">
-      <button class="btn-reject" id="btn-reject-call">
+      <button class="btn-reject" id="btn-reject-call" onclick="if(window.SipClient) window.SipClient.reject()">
         <span class="material-icons-round">call_end</span>
       </button>
-      <button class="btn-answer" id="btn-answer-call">
+      <button class="btn-answer" id="btn-answer-call" onclick="if(window.SipClient) window.SipClient.answer()">
         <span class="material-icons-round">call</span>
       </button>
     </div>

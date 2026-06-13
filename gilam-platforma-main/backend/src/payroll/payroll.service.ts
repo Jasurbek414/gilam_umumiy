@@ -6,6 +6,7 @@ import { PayrollItem } from './entities/payroll-item.entity';
 import { Attendance } from '../attendance/entities/attendance.entity';
 import { User } from '../users/entities/user.entity';
 import { AdvancesService } from '../advances/advances.service';
+import { BonusesService } from '../bonuses/bonuses.service';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class PayrollService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly advancesService: AdvancesService,
+    private readonly bonusesService: BonusesService,
     private readonly auditService: AuditService,
   ) {}
 
@@ -65,6 +67,8 @@ export class PayrollService {
       });
 
       const advances = await this.advancesService.getEmployeeTotal(emp.id, startDate, endDate);
+      const totalBonuses = await this.bonusesService.getEmployeeBonusTotal(emp.id, startDate, endDate);
+      const totalPenalties = await this.bonusesService.getEmployeePenaltyTotal(emp.id, startDate, endDate);
       const schedule = emp.workSchedule || 'MONTHLY';
 
       let baseSalary = 0;
@@ -123,7 +127,7 @@ export class PayrollService {
         absentDays = attendances.filter(a => a.status === 'ABSENT').length;
       }
 
-      const netPay = Math.max(0, baseSalary - deductions - advances);
+      const netPay = Math.max(0, baseSalary - deductions - advances + totalBonuses - totalPenalties);
 
       const item = this.itemRepo.create({
         periodId: period.id,
@@ -135,8 +139,8 @@ export class PayrollService {
         workedHours,
         absentDays,
         totalAdvances: advances,
-        bonuses: 0,
-        penalties: 0,
+        bonuses: totalBonuses,
+        penalties: totalPenalties,
         deductions,
         netPay,
         status: 'CALCULATED',

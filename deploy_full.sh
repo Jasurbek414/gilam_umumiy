@@ -74,7 +74,7 @@ cp -rf "$REPO/backend/src/audit/." "$BACK/src/audit/"
 cp -rf "$REPO/backend/src/expenses/." "$BACK/src/expenses/"
 cp -rf "$REPO/backend/src/attendance/." "$BACK/src/attendance/"
 # YANGI MODULLAR
-for module in advances payroll payments bonuses drivers; do
+for module in advances payroll payments bonuses drivers messages gateway; do
   rm -rf "$BACK/src/$module"
   mkdir -p "$BACK/src/$module"
   cp -rf "$REPO/backend/src/$module/." "$BACK/src/$module/"

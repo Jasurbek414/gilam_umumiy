@@ -153,8 +153,7 @@ const UI = {
       }
     });
 
-    // Hangup — event delegation uchun (component dinamik yuklanadi)
-    // Hangup — event delegation uchun (component dinamik yuklanadi)
+    // Hangup — event delegation (component dynamically loaded)
     document.addEventListener('click', (e) => {
       // Hangup
       const hangupBtn = e.target.closest('#btn-hangup');
@@ -162,7 +161,8 @@ const UI = {
         console.log('[UI] Hangup button clicked');
         this.stopRingbackTone();
         if (window.SipClient) window.SipClient.hangup();
-        this.hideActiveCall();
+        // NOTE: UI cleanup (hideActiveCall) is now handled by SipClient._cleanupCall()
+        // via the 'callEnded' event to ensure SIP transaction completes first.
         return;
       }
 
@@ -178,12 +178,18 @@ const UI = {
         }
         return;
       }
+      // Answer
+      if (e.target.closest('#btn-answer-call')) {
+        if (window.SipClient) window.SipClient.answer();
+        return;
+      }
+      
+      // Reject
+      if (e.target.closest('#btn-reject-call')) {
+        if (window.SipClient) window.SipClient.reject();
+        return;
+      }
     });
-
-    // Answer
-    Utils.$('btn-answer-call')?.addEventListener('click', () => window.SipClient.answer());
-    // Reject
-    Utils.$('btn-reject-call')?.addEventListener('click', () => window.SipClient.reject());
 
     // Transfer, Hold, Mute bindings are handled in sip-client.js 
 
@@ -352,6 +358,9 @@ const UI = {
     if (o) o.style.display = 'flex';
     
     this.activeCallSeconds = 0;
+    
+    const noteEl = Utils.$('active-call-note');
+    if (noteEl) noteEl.value = '';
 
     // Ringback tone boshlash (faqat chaqirilayotganda operator eshitsin)
     if (statusLabel === 'Chaqirilmoqda...') {
@@ -599,7 +608,7 @@ const UI = {
     // BACKEND INTEGRATION: Fetch securely mapped records natively if authenticated
     if (window.Api && window.Api.config.token) {
       try {
-        const res = await window.Api.request(`/calls?limit=100${filter !== 'all' ? `&status=${filter}` : ''}`);
+        const res = await window.Api.request(`/calls?limit=100`);
         // Backend returns a raw array (not {data: [...]})
         const records = Array.isArray(res) ? res : (res?.data || []);
         if (records.length > 0) {
@@ -624,10 +633,12 @@ const UI = {
       } catch(e) {}
     }
     
-    // Local Filter (har doim ishlaydi, backend qanaqa javob qaytarishidan qat'iy nazar)
     let filtered = history;
     if (filter !== 'all') {
-      filtered = history.filter(h => h.type === filter || (!h.type && filter === 'INCOMING'));
+      filtered = history.filter(h => 
+        (h.type && h.type.toUpperCase() === filter.toUpperCase()) || 
+        (!h.type && filter.toUpperCase() === 'INCOMING')
+      );
     }
 
     const emptyHtml = `<div class="empty-state">
@@ -642,12 +653,11 @@ const UI = {
 
     if (filtered.length === 0) {
       if (list) list.innerHTML = emptyHtml;
-      if (dashboardList) dashboardList.innerHTML = dashboardEmptyHtml;
+      if (dashboardList && filter === 'all') dashboardList.innerHTML = dashboardEmptyHtml;
       return;
     }
 
     if (list) list.innerHTML = '';
-    if (dashboardList) dashboardList.innerHTML = '';
     
     filtered.forEach((call, index) => {
       const date = new Date(call.date);
@@ -719,31 +729,112 @@ const UI = {
         `;
         list.appendChild(div);
       }
+    });
+    
+    // Preserve active filter on dashboard
+    let activeFilter = 'all';
+    const activeBtn = document.querySelector('.call-filters .call-filter-btn.active');
+    if (activeBtn) activeFilter = activeBtn.dataset.filter || 'all';
+    
+    // Asynchronous call renderDashboardCalls
+    if (typeof this.renderDashboardCalls === 'function') {
+      this.renderDashboardCalls(activeFilter);
+    }
+  },
 
-      // 2. Populate dashboard shortcut (limit to 5)
-      if (dashboardList && index < 5) {
-        const dDiv = document.createElement('div');
-        dDiv.className = 'crm-history-item';
-        dDiv.style.display = 'flex';
-        dDiv.style.alignItems = 'center';
-        dDiv.style.justifyContent = 'space-between';
-        dDiv.style.padding = '8px 0';
-        dDiv.style.borderBottom = '1px solid var(--border-light)';
-        
-        dDiv.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="material-icons-round" style="color: ${typeCol}; font-size: 16px;">${typeIcon}</span>
-            <div style="display: flex; flex-direction: column;">
-              <span style="font-size: 13px; font-weight: 500;">${contactName}</span>
-              <span style="font-size: 11px; color: var(--text-muted);">${timeStr} • ${durStr}</span>
-            </div>
-          </div>
-          <button class="btn-icon" onclick="document.getElementById('dial-number').value='${call.target}';" style="transform: scale(0.8);">
-            <span class="material-icons-round" style="color: var(--success)">call</span>
-          </button>
-        `;
-        dashboardList.appendChild(dDiv);
+  renderDashboardCalls(filter = 'all', btn = null) {
+    if (btn) {
+      const parent = btn.parentElement;
+      if (parent) {
+        parent.querySelectorAll('.call-filter-btn').forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'transparent';
+          b.style.color = 'var(--text-secondary)';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'rgba(255,255,255,0.1)';
+        btn.style.color = 'white';
       }
+    }
+    
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem('call_recordings')) || [];
+    } catch(e) {}
+    
+    const dashboardList = Utils.$('dashboard-calls-list');
+    if (!dashboardList) return;
+    
+    let filtered = history;
+    if (filter !== 'all') {
+      filtered = history.filter(h => 
+        (h.type && h.type.toUpperCase() === filter.toUpperCase()) || 
+        (!h.type && filter.toUpperCase() === 'INCOMING')
+      );
+    }
+    
+    if (filtered.length === 0) {
+      dashboardList.innerHTML = `<div class="crm-empty"><span class="material-icons-round">phone_disabled</span><span>Hozircha qo'ng'iroqlar yo'q</span></div>`;
+      return;
+    }
+    
+    dashboardList.innerHTML = '';
+    
+    filtered.slice(0, 50).forEach((call, index) => {
+      const date = new Date(call.date);
+      let timeStr = '', dateStr = '';
+      try {
+        timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        dateStr = date.toLocaleDateString();
+      } catch(e) {
+        timeStr = call.date.split(' ')[1] || '';
+        dateStr = call.date.split(' ')[0] || call.date;
+      }
+      const durStr = call.duration || '00:00';
+      
+      let typeIcon = 'call_received';
+      let typeCol = 'var(--green)';
+      let isMissed = false;
+      
+      if (call.type === 'OUTGOING') { 
+        typeIcon = 'call_made'; typeCol = '#3b82f6';
+      } else if (call.type === 'MISSED') { 
+        typeIcon = 'call_missed'; typeCol = 'var(--red)'; isMissed = true;
+      }
+      
+      let contactName = call.target || "Noma'lum";
+      if (window.CRM && window.CRM.allContacts) {
+        const found = window.CRM.allContacts.find(c => c.phone1 === call.target || c.phone2 === call.target);
+        if (found) {
+          contactName = found.fullName || call.target;
+        }
+      }
+      
+      const dDiv = document.createElement('div');
+      dDiv.className = 'crm-history-item';
+      dDiv.style.display = 'flex';
+      dDiv.style.alignItems = 'center';
+      dDiv.style.justifyContent = 'space-between';
+      dDiv.style.padding = '8px 0';
+      dDiv.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+      dDiv.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="material-icons-round" style="font-size:16px; color:${typeCol}">${typeIcon}</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; ${isMissed ? 'color:var(--red);' : 'color:white'}">${contactName}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${dateStr} • ${timeStr}</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:11px; font-family:monospace; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px; color:var(--text-secondary)">
+            ${call.duration && call.duration !== '00:00' ? durStr : 'Javobsiz'}
+          </div>
+          <button class="btn-icon history-call-btn" onclick="document.getElementById('dial-number').value='${call.target}'; window.UI.switchTab('dialer');" title="Qong'iroq qilish" style="padding:4px;">
+            <span class="material-icons-round" style="font-size:16px;">call</span>
+          </button>
+        </div>
+      `;
+      dashboardList.appendChild(dDiv);
     });
   },
   
