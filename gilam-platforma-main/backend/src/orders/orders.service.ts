@@ -114,7 +114,7 @@ export class OrdersService {
         const finalOrder = await manager.save(savedOrder);
 
         // Side Effect: Notification (Post-transaction or safe async)
-        this.notificationsService
+        await this.notificationsService
           .create({
             companyId: finalOrder.companyId,
             title: 'Yangi buyurtma',
@@ -561,7 +561,7 @@ export class OrdersService {
     order.totalAmount = totalAmount;
     const saved = await this.orderRepository.save(order);
 
-    this.notificationsService
+    await this.notificationsService
       .create({
         companyId: order.companyId,
         title: 'Buyurtma narxi belgilandi',

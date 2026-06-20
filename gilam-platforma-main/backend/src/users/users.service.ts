@@ -132,7 +132,18 @@ export class UsersService {
 
     // Boshqa fieldlarni yangilash
     if (dto.fullName) user.fullName = dto.fullName;
-    if (dto.phone) user.phone = dto.phone;
+    if (dto.phone) {
+      const normalizedPhone = dto.phone.replace(/[\s\-\(\)]/g, '').trim();
+      if (normalizedPhone !== user.phone) {
+        const existing = await this.findByPhoneWithDeleted(normalizedPhone);
+        if (existing && existing.id !== id) {
+          throw new ConflictException(
+            `Bu telefon raqam allaqachon boshqa foydalanuvchida ro'yxatdan o'tgan: ${normalizedPhone}`,
+          );
+        }
+        user.phone = normalizedPhone;
+      }
+    }
     if (dto.role) user.role = dto.role;
     if (dto.status) user.status = dto.status;
     
