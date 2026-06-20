@@ -18,9 +18,7 @@ def load_env_file(filepath=".env"):
 load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
 
 GILAM_TOKEN = os.getenv("GILAM_TOKEN", "eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiYzk4ZmU3YmQtZDJhMi00MmFmLWI3YzItMTcwNWE1NGExMjQ3IiwicyI6Ik16WmpOVFU0TmpZdE5EaGhPUzAwTTJObExUaG1ZMlV0TmpneE56Y3lNVFUwTlRNME56Sm1ZVGcxT0dFdE1HSTJZaTAwTVRZM0xXSTRaamt0TnpjMVpHUm1Zemt4T1RSayJ9")
-MAKTAB_TOKEN = os.getenv("MAKTAB_TOKEN", "eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiNTAxY2FmZGMtZmNmZi00NmExLTk4MjctMmU3MTRmMGRjODMwIiwicyI6Ik1XSXdPV0l4TURJdE16QmxNUzAwWW1RekxXSXhZek10TkdJelpUazRZV0pqTmpsbCJ9")
 GILAM_DIR = "/root/gilam-platforma"
-MAKTAB_DIR = "/root/maktab-platforma"
 
 
 proxy = subprocess.Popen(
@@ -53,9 +51,6 @@ print("=== 1. XIZMATLARNI YOQISH ===")
 run(ssh, "service postgresql start")
 run(ssh, "service nginx start")
 
-print("\n=== 2. MAKTAB PLATFORMA ===")
-run(ssh, "pkill -f 'java -jar' 2>/dev/null")
-fire(ssh, f"cd {MAKTAB_DIR}/backend && nohup java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.datasource.url=jdbc:postgresql://localhost:5432/maktabdb --spring.datasource.username=postgres --spring.datasource.password= --spring.jpa.hibernate.ddl-auto=update > /var/log/maktab-backend.log 2>&1 &")
 
 print("\n=== 3. GILAM PLATFORMA ===")
 run(ssh, "pkill -f 'node dist/main' 2>/dev/null; pkill -f 'next start' 2>/dev/null")
@@ -63,10 +58,9 @@ fire(ssh, f"cd {GILAM_DIR}/backend && DB_HOST=localhost DB_PORT=5432 DB_USER=pos
 time.sleep(5)
 fire(ssh, f"cd {GILAM_DIR}/frontend-app && BACKEND_URL=http://localhost:3000 PORT=3001 nohup npx next start -p 3001 > /var/log/gilam-frontend.log 2>&1 &")
 
-print("\n=== 4. CLOUDFLARE TUNNELS ===")
-run(ssh, "killall -9 cloudflared 2>/dev/null; > /var/log/gilam-tunnel.log; > /var/log/maktab-tunnel.log")
+print("\n=== 4. CLOUDFLARE TUNNEL ===")
+run(ssh, "killall -9 cloudflared 2>/dev/null; > /var/log/gilam-tunnel.log")
 fire(ssh, f"nohup cloudflared tunnel run --token {GILAM_TOKEN} >> /var/log/gilam-tunnel.log 2>&1 &")
-fire(ssh, f"nohup cloudflared tunnel run --token {MAKTAB_TOKEN} >> /var/log/maktab-tunnel.log 2>&1 &")
 
 print("\nKutish (15s)...")
 time.sleep(15)
@@ -74,10 +68,8 @@ time.sleep(15)
 print("\n=== YAKUNIY HOLAT ===")
 run(ssh, "pgrep -af 'node dist/main' || echo 'Gilam Backend: OFF'")
 run(ssh, "pgrep -af 'next start' || echo 'Gilam Frontend: OFF'")
-run(ssh, "pgrep -af 'java -jar' || echo 'Maktab Backend: OFF'")
 run(ssh, "pgrep -c cloudflared && echo ' tunnels running'")
 run(ssh, "curl -s -o /dev/null -w 'Gilam Frontend: %{http_code}\n' http://localhost:3001/")
-run(ssh, "curl -s -o /dev/null -w 'Maktab Frontend: %{http_code}\n' http://localhost/")
 
 ssh.close()
 proxy.terminate()

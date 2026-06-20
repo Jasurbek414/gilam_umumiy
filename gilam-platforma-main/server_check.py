@@ -30,16 +30,13 @@ try:
     print("\n=== JARAYONLAR (PROCESSES) ===")
     run(ssh, "pgrep -af 'node dist/main' || echo 'Gilam Backend: OFF'")
     run(ssh, "pgrep -af 'next start' || echo 'Gilam Frontend: OFF'")
-    run(ssh, "pgrep -af 'java -jar' || echo 'Maktab Backend: OFF'")
     run(ssh, "pgrep -af 'cloudflared tunnel' || echo 'Tunnels: OFF'")
     run(ssh, "service nginx status | grep Active")
     run(ssh, "service postgresql status | grep Active")
     
     print("\n=== XIZMATLAR TEKSHIRUVI (CURL) ===")
     run(ssh, "curl -s -o /dev/null -w 'Gilam Frontend (3001): %{http_code}\n' http://localhost:3001/ || echo 'Gilam Frontend: FAIL'")
-    run(ssh, "curl -s -o /dev/null -w 'Gilam Backend (3000): %{http_code}\n' http://localhost:3000/api || echo 'Gilam Backend: FAIL'")
-    run(ssh, "curl -s -o /dev/null -w 'Maktab Frontend (80): %{http_code}\n' http://localhost/ || echo 'Maktab Frontend: FAIL'")
-    run(ssh, "curl -s -o /dev/null -w 'Maktab Backend (8080): %{http_code}\n' http://localhost:8080/api/auth/me || echo 'Maktab Backend: FAIL'")
+    run(ssh, "curl -s -o /dev/null -w 'Gilam Backend (8081): %{http_code}\n' http://localhost:8081/api || echo 'Gilam Backend: FAIL'")
     
     ssh.close()
 except Exception as e:
