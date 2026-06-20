@@ -716,11 +716,33 @@ export default function CompanyFinancePage() {
         <div className="space-y-3">
           {filteredOrders.filter(o => ['DELIVERED','COMPLETED'].includes(o.status)).map((o: any) => (
             <div key={o.id} className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-              <div><p className="text-sm font-bold text-slate-800">#{o.id?.substring(0,8)}</p><p className="text-xs text-slate-400">{new Date(o.createdAt).toLocaleDateString()}</p></div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">#{o.id?.substring(0,8)}</p>
+                <p className="text-xs text-slate-400">
+                  {new Date(o.createdAt).toLocaleDateString('uz-UZ')} {new Date(o.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
               <span className="text-sm font-black text-emerald-600">{Number(o.totalAmount || 0).toLocaleString()} so'm</span>
             </div>
           ))}
           {filteredOrders.filter(o => ['DELIVERED','COMPLETED'].includes(o.status)).length === 0 && <p className="text-center text-slate-400 py-8">Hozircha tushum yo'q</p>}
+        </div>
+      </DetailDrawer>
+
+      <DetailDrawer isOpen={detailType === 'expected'} onClose={() => setDetailType(null)} title="Kutilayotgan Tushum Tahlili" icon="🚐" color="from-blue-500 to-indigo-500">
+        <div className="space-y-3">
+          {filteredOrders.filter(o => !['DELIVERED','COMPLETED','CANCELLED'].includes(o.status)).map((o: any) => (
+            <div key={o.id} className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-100">
+              <div>
+                <p className="text-sm font-bold text-slate-800">#{o.id?.substring(0,8)}</p>
+                <p className="text-xs text-slate-400">
+                  {new Date(o.createdAt).toLocaleDateString('uz-UZ')} {new Date(o.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <span className="text-sm font-black text-blue-600">{Number(o.totalAmount || 0).toLocaleString()} so'm</span>
+            </div>
+          ))}
+          {filteredOrders.filter(o => !['DELIVERED','COMPLETED','CANCELLED'].includes(o.status)).length === 0 && <p className="text-center text-slate-400 py-8">Kutilayotgan buyurtmalar yo'q</p>}
         </div>
       </DetailDrawer>
 
