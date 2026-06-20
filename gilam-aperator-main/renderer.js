@@ -1007,7 +1007,11 @@ function renderSipAccounts() {
 }
 
 window.showAddSipModal = function() {
-  $('modal-add-sip').style.display = 'flex';
+  const m = $('modal-add-sip');
+  if (m) {
+    m.style.display = 'flex';
+    m.classList.remove('hidden');
+  }
 }
 
 window.saveSipAccount = function() {
@@ -1031,7 +1035,11 @@ window.saveSipAccount = function() {
   sipAccounts.push(newAccount);
   localStorage.setItem('sip_accounts', JSON.stringify(sipAccounts));
   
-  $('modal-add-sip').style.display = 'none';
+  const m = $('modal-add-sip');
+  if (m) {
+    m.style.display = 'none';
+    m.classList.add('hidden');
+  }
   showToast('Yangi SIP liniya qoshildi!', 'success');
   
   renderSipAccounts();

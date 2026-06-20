@@ -5,6 +5,40 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const logFilePath = path.join(require('process').cwd(), 'renderer_console.log');
+  fs.writeFileSync(logFilePath, '--- RENDERER CONSOLE LOGS STARTED ---\n');
+
+  function logToFile(type, args) {
+    const time = new Date().toISOString();
+    const message = args.map(arg => {
+      if (typeof arg === 'object') {
+        try { return JSON.stringify(arg); } catch (e) { return String(arg); }
+      }
+      return String(arg);
+    }).join(' ');
+    fs.appendFileSync(logFilePath, `[${time}] [${type}] ${message}\n`);
+  }
+
+  const originalLog = console.log;
+  console.log = function(...args) {
+    originalLog.apply(console, args);
+    logToFile('LOG', args);
+  };
+  
+  const originalError = console.error;
+  console.error = function(...args) {
+    originalError.apply(console, args);
+    logToFile('ERROR', args);
+  };
+
+  const originalWarn = console.warn;
+  console.warn = function(...args) {
+    originalWarn.apply(console, args);
+    logToFile('WARN', args);
+  };
+
   console.log('[App] Starting Gilam Operator...');
   
   // Electron oynasi yangilangandan keyin fokus yo'qolishining oldini olish
@@ -49,6 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Dasturning tepasidagi (Qizil X, - va Kattalashtirish) tugmalarini doimiy ulash
   window.UI.bindWindowControls();
+
+  // Dynamic Tailwind initialization for injected components
+  if (window.tailwind) {
+    try {
+      tailwind.config = tailwind.config;
+    } catch (e) {
+      console.warn('[Tailwind] config refresh error:', e);
+    }
+  }
 
   // ═══ LOGIN ════════════════════════════════════════════════════════════
   Utils.$('login-form')?.addEventListener('submit', async (e) => {
@@ -102,45 +145,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ═══ START APP ═════════════════════════════════════════════════════════════
 function startApp(user) {
-  window.UI.showScreen('app');
-
-  // Modullarni faqat Dastur yonganda 1 marta ishga tushuramiz (Ctrl+R xatolarini yopish uchun)
-  if (!window.__modulesStarted) {
-    window.UI.init();
-    window.SipClient.init();
-    window.CRM.init();
-    window.Settings.load();
-    if (window.ChatManager) window.ChatManager.init();
-    if (window.DriverMap) window.DriverMap.init();
-    if (window.initOrdersUI) window.initOrdersUI();
-    window.__modulesStarted = true;
-  }
-
-  // WebSocket ga ulanish (backend mavjud bo'lsagina)
   try {
-    if (window.Api && window.Api.connectSocket && window.Api.config.token !== 'mock_token') {
-      window.Api.connectSocket();
-    }
-  } catch(e) {
-    console.warn('[App] Backend WebSocket ulanishi imkonsiz:', e.message);
-  }
+    window.UI.showScreen('app');
 
-  // Chat WebSocket ga ulanish
+    // Modullarni faqat Dastur yonganda 1 marta ishga tushuramiz (Ctrl+R xatolarini yopish uchun)
+    if (!window.__modulesStarted) {
+      window.UI.init();
+      window.SipClient.init();
+      window.CRM.init();
+      window.Settings.load();
+      if (window.ChatManager) window.ChatManager.init();
+      if (window.DriverMap) window.DriverMap.init();
+      if (window.initOrdersUI) window.initOrdersUI();
+      if (window.loadOrders) window.loadOrders();
+      window.__modulesStarted = true;
+    }
+
+    // WebSocket ga ulanish (backend mavjud bo'lsagina)
+    try {
+      if (window.Api && window.Api.connectSocket && window.Api.config.token !== 'mock_token') {
+        window.Api.connectSocket();
+      }
+    } catch(e) {
+      console.warn('[App] Backend WebSocket ulanishi imkonsiz:', e.message);
+    }
+
+    // Chat WebSocket ga ulanish
+    try {
+      if (window.ChatManager && window.Api.config.token !== 'mock_token') {
+        window.ChatManager.connect();
+      }
+    } catch(e) {
+      console.warn('[App] Chat WebSocket ulanishi imkonsiz:', e.message);
+    }
+
+    // Operator info
+    console.log('[App] startApp executed with user:', user);
+  let fullName = 'Operator';
   try {
-    if (window.ChatManager && window.Api.config.token !== 'mock_token') {
-      window.ChatManager.connect();
-    }
-  } catch(e) {
-    console.warn('[App] Chat WebSocket ulanishi imkonsiz:', e.message);
+    fullName = user?.fullName || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '') || user?.phone || 'Operator';
+  } catch (e) {
+    console.error('[App] Error formatting name:', e);
   }
-
-  // Operator info
   const nameEl = Utils.$('operator-name');
-  if (nameEl) nameEl.textContent = user.fullName || user.phone || 'Operator';
+  if (nameEl) nameEl.textContent = fullName;
 
   // Settings info
   const sName = Utils.$('settings-name');
-  if (sName) sName.textContent = user.fullName || '—';
+  if (sName) sName.textContent = fullName;
   
   const sPhone = Utils.$('settings-phone');
   if (sPhone) sPhone.textContent = user.phone || '—';
@@ -149,14 +201,20 @@ function startApp(user) {
   if (sRole) sRole.textContent = user.role || '—';
   
   const sComp = Utils.$('settings-company');
-  if (sComp) sComp.textContent = user.companyName || user.companyId || '—';
+  let compName = '—';
+  if (user.company && user.company.name) compName = user.company.name;
+  else if (user.companyName) compName = user.companyName;
+  else if (user.companyId) compName = user.companyId;
+  if (sComp) sComp.textContent = compName;
+
+  const sAvatarLetter = Utils.$('settings-avatar-letter');
+  if (sAvatarLetter) sAvatarLetter.textContent = fullName.charAt(0).toUpperCase();
 
   // Auto-connect SIP liniyalar
   console.log('[App] Auto-connecting SIP accounts...');
   window.SipClient.autoConnectAll();
 
-  // Audio qurilmalarni yuklash
-  loadAudioDevices();
+  // Audio qurilmalar Settings.load() ichida avtomatik yuklanadi
 
   // CRM ma'lumotlarni yuklash
   try {
@@ -166,6 +224,9 @@ function startApp(user) {
   }
 
   console.log('[App] ✅ Application started successfully');
+  } catch (err) {
+    console.error('[App] CRITICAL STARTUP ERROR:', err.stack || err.message || err);
+  }
 }
 
 // ═══ AUDIO DEVICES ════════════════════════════════════════════════════════

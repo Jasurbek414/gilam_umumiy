@@ -356,6 +356,9 @@ export default function CompanyDashboardPage() {
                       <td className="px-6 py-4">
                         <p className="text-sm font-bold text-slate-800">#{order.id.split('-')[0].substring(0,6).toUpperCase()}</p>
                         <p className="text-xs text-slate-500 mt-0.5">{order.customer?.fullName || 'Noma&apos;lum'}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-1">
+                          {new Date(order.createdAt).toLocaleDateString('uz-UZ')} {new Date(order.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter bg-${color}-100 text-${color}-700 border border-${color}-200`}>

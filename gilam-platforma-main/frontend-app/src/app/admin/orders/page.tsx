@@ -167,7 +167,9 @@ export default function AdminOrdersPage() {
                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-5 px-8">
                     <div className="flex flex-col">
-                      <span className="font-black text-slate-800 text-sm">{new Date(order.createdAt).toLocaleDateString('uz-UZ', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      <span className="font-black text-slate-800 text-sm">
+                        {new Date(order.createdAt).toLocaleDateString('uz-UZ', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(order.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                       <span className="text-slate-400 text-xs font-bold mt-1 uppercase">#{order.id.split('-')[0].substring(0, 6)}</span>
                     </div>
                   </td>

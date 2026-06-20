@@ -157,12 +157,12 @@ const CRM = {
     });
 
     Utils.$('btn-add-contact')?.addEventListener('click', () => {
-      Utils.$('modal-new-customer').style.display = 'flex';
+      Utils.showModal('modal-new-customer');
       Utils.$('new-customer-phone1').value = Utils.$('dial-number').value || '';
     });
 
-    Utils.$('btn-close-customer-modal')?.addEventListener('click', () => Utils.$('modal-new-customer').style.display = 'none');
-    Utils.$('btn-cancel-customer')?.addEventListener('click', () => Utils.$('modal-new-customer').style.display = 'none');
+    Utils.$('btn-close-customer-modal')?.addEventListener('click', () => Utils.hideModal('modal-new-customer'));
+    Utils.$('btn-cancel-customer')?.addEventListener('click', () => Utils.hideModal('modal-new-customer'));
 
     // Kampaniya tanlanganda unga tegishli Xizmatlarni filtrlash
     Utils.$('quick-crm-campaign')?.addEventListener('change', (e) => {
@@ -205,7 +205,7 @@ const CRM = {
           body: JSON.stringify(data),
         });
         Utils.showToast("Mijoz qo'shildi!", 'success');
-        Utils.$('modal-new-customer').style.display = 'none';
+        Utils.hideModal('modal-new-customer');
         Utils.$('form-new-customer').reset();
         this.loadContacts();
       } catch (err) {
@@ -279,11 +279,9 @@ const CRM = {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        const modal = Utils.$('modal-new-customer');
-        if (modal && modal.style.display !== 'none') modal.style.display = 'none';
-        
-        const sipModal = Utils.$('modal-add-sip');
-        if (sipModal && sipModal.style.display !== 'none') sipModal.style.display = 'none';
+        Utils.hideModal('modal-new-customer');
+        Utils.hideModal('modal-add-sip');
+        Utils.hideModal('modal-order-details');
       }
     });
   },
@@ -472,10 +470,6 @@ const CRM = {
       Utils.showToast('Telefon raqam kerak!', 'warning');
       return;
     }
-    if (!serviceId) {
-      Utils.showToast('Xizmatni tanlang!', 'warning');
-      return;
-    }
 
     try {
       // Haydovchi yoki xizmat orqali kompaniyani aniqlash
@@ -530,18 +524,21 @@ const CRM = {
         }
       }
 
+      const items = [];
+      if (serviceId) {
+        items.push({
+          serviceId: serviceId,
+          quantity: qty,
+          notes: note
+        });
+      }
+
       const orderData = {
         companyId: targetCompanyId,
         customerId: customerId,
         operatorId: window.Api.config.currentUser.id,
         notes: note,
-        items: [
-          {
-            serviceId: serviceId,
-            quantity: qty,
-            notes: note
-          }
-        ]
+        items
       };
 
       const newOrder = await window.Api.request('/orders', {

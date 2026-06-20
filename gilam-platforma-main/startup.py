@@ -1,10 +1,27 @@
 import paramiko, subprocess, time, os
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
-GILAM_TOKEN = "eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiYzk4ZmU3YmQtZDJhMi00MmFmLWI3YzItMTcwNWE1NGExMjQ3IiwicyI6Ik16WmpOVFU0TmpZdE5EaGhPUzAwTTJObExUaG1ZMlV0TmpneE56Y3lNVFUwTlRNME56Sm1ZVGcxT0dFdE1HSTJZaTAwTVRZM0xXSTRaamt0TnpjMVpHUm1Zemt4T1RSayJ9"
-MAKTAB_TOKEN = "eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiNTAxY2FmZGMtZmNmZi00NmExLTk4MjctMmU3MTRmMGRjODMwIiwicyI6Ik1XSXdPV0l4TURJdE16QmxNUzAwWW1RekxXSXhZek10TkdJelpUazRZV0pqTmpsbCJ9"
+# Dependency-free custom .env parser
+def load_env_file(filepath=".env"):
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        key, val = line.split("=", 1)
+                        os.environ[key.strip()] = val.strip().strip('"').strip("'")
+        except Exception as e:
+            print(f"Warning: Could not parse {filepath}: {e}")
+
+# Load .env in the script's directory if present
+load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
+
+GILAM_TOKEN = os.getenv("GILAM_TOKEN", "eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiYzk4ZmU3YmQtZDJhMi00MmFmLWI3YzItMTcwNWE1NGExMjQ3IiwicyI6Ik16WmpOVFU0TmpZdE5EaGhPUzAwTTJObExUaG1ZMlV0TmpneE56Y3lNVFUwTlRNME56Sm1ZVGcxT0dFdE1HSTJZaTAwTVRZM0xXSTRaamt0TnpjMVpHUm1Zemt4T1RSayJ9")
+MAKTAB_TOKEN = os.getenv("MAKTAB_TOKEN", "eyJhIjoiMDI5NDc1MzY0YWNjNDEzY2Q2Y2YzNWVkOGU0MjEzNGIiLCJ0IjoiNTAxY2FmZGMtZmNmZi00NmExLTk4MjctMmU3MTRmMGRjODMwIiwicyI6Ik1XSXdPV0l4TURJdE16QmxNUzAwWW1RekxXSXhZek10TkdJelpUazRZV0pqTmpsbCJ9")
 GILAM_DIR = "/root/gilam-platforma"
 MAKTAB_DIR = "/root/maktab-platforma"
+
 
 proxy = subprocess.Popen(
     ["cloudflared", "access", "tcp", "--hostname", "server.uzinc.uz", "--url", "localhost:2222"],

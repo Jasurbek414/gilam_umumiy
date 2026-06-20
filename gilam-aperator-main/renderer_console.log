@@ -1,0 +1,37 @@
+--- RENDERER CONSOLE LOGS STARTED ---
+[2026-06-14T10:52:40.909Z] [LOG] [App] Starting Gilam Operator...
+[2026-06-14T10:52:40.910Z] [LOG] [Components] ✅ titlebar.html yuklandi
+[2026-06-14T10:52:40.911Z] [LOG] [Components] ✅ login.html yuklandi
+[2026-06-14T10:52:40.912Z] [LOG] [Components] ✅ tab-bar.html yuklandi
+[2026-06-14T10:52:40.913Z] [LOG] [Components] ✅ tab-dialer.html yuklandi
+[2026-06-14T10:52:40.915Z] [LOG] [Components] ✅ tabs-content.html yuklandi
+[2026-06-14T10:52:40.916Z] [LOG] [Components] ✅ operator-bar.html yuklandi
+[2026-06-14T10:52:40.916Z] [LOG] [Components] ✅ call-overlays.html yuklandi
+[2026-06-14T10:52:40.917Z] [LOG] [Components] ✅ modals.html yuklandi
+[2026-06-14T10:52:40.918Z] [LOG] [App] Existing session found, auto-login
+[2026-06-14T10:52:40.924Z] [LOG] [SIP] Initialized. Accounts: 0
+[2026-06-14T10:52:40.927Z] [LOG] [Settings] ✅ Loaded: {"autoAnswer":false,"autoRecord":true,"notifications":true,"ringVolume":80}
+[2026-06-14T10:52:40.928Z] [LOG] [API] Connecting WebSocket to: https://gilam-api.ecos.uz/calls
+[2026-06-14T10:52:40.948Z] [LOG] [App] startApp executed with user: {"id":"ef0befcf-7c84-4f59-9674-828c474cb954","companyId":"ade3de5d-992e-4e00-acce-bd5986410b10","company":{"id":"ade3de5d-992e-4e00-acce-bd5986410b10","name":"Jasurbek","phoneNumber":"+998906998588","sipCredentials":null,"status":"ACTIVE","subscriptionEndDate":null,"settings":{},"createdAt":"2026-06-12T14:07:06.908Z","updatedAt":"2026-06-12T14:07:06.908Z"},"role":"OPERATOR","fullName":"olimjon","phone":"+998970504202","currentLocation":{"x":71.6744034,"y":40.9093258},"status":"ACTIVE","expoPushToken":"dO0aR-ukT6q_RzwRWpx0yO:APA91bFjObg0iy2NqV5Z0YJpObb1pZiVIzjje_1dbfBar7UVndJaRgFMOyivz7jRIHuGGtUjKoppJhFAc9hvB771y6YhezTaBPNddjgweTNyA-xtDYBjioo","birthDate":null,"salary":"0.00","workSchedule":"MONTHLY","lunchBreakMinutes":60,"birthPlace":null,"photoUrl":null,"fatherName":null,"department":null,"branch":null,"positionTitle":null,"hireDate":null,"hourlyRate":"0.00","dailyRate":"0.00","weeklyRate":"0.00","isOnline":false,"lastSeenAt":null,"vehicleNumber":null,"lastAccuracy":null,"lastSpeed":null,"lastHeading":null,"locationPermission":null,"deviceInfo":null,"batteryLevel":null,"createdAt":"2026-05-06T22:16:53.735Z","updatedAt":"2026-06-12T15:54:33.990Z","deletedAt":null}
+[2026-06-14T10:52:40.948Z] [LOG] [App] Auto-connecting SIP accounts...
+[2026-06-14T10:52:40.948Z] [LOG] [SIP] Auto-connecting 0 accounts...
+[2026-06-14T10:52:40.949Z] [LOG] [App] ✅ Application started successfully
+[2026-06-14T10:52:41.057Z] [WARN] %cElectron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+[2026-06-14T10:52:42.719Z] [LOG] [API] WebSocket ulangan (Calls namespace)
+[2026-06-14T10:52:43.827Z] [LOG] [Chat] /chat namespace ga ulandi
+[2026-06-14T22:00:30.483Z] [LOG] [API] WebSocket uzildi
+[2026-06-14T22:00:44.544Z] [ERROR] [DriverMap] Xatolik: {}
+[2026-06-14T22:01:29.988Z] [ERROR] [Chat] Ulanish xatoligi: websocket error
+[2026-06-14T22:01:30.454Z] [ERROR] [DriverMap] Xatolik: {}
+[2026-06-14T22:01:35.924Z] [ERROR] [Chat] Ulanish xatoligi: websocket error
+[2026-06-14T22:01:41.943Z] [ERROR] [Chat] Ulanish xatoligi: websocket error
+[2026-06-14T22:01:47.946Z] [ERROR] [Chat] Ulanish xatoligi: websocket error
+[2026-06-14T22:01:58.026Z] [ERROR] [Chat] Ulanish xatoligi: websocket error
+[2026-06-14T22:02:19.382Z] [ERROR] [DriverMap] Xatolik: {}

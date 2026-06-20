@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell, dialog, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -32,6 +32,20 @@ function createWindow() {
 
   mainWindow.webContents.session.setPermissionCheckHandler(() => true);
   mainWindow.webContents.session.setPermissionRequestHandler((_, __, cb) => cb(true));
+
+  mainWindow.webContents.on('did-finish-load', async () => {
+    try {
+      const sipAccounts = await mainWindow.webContents.executeJavaScript("localStorage.getItem('sip_accounts')");
+      const serverUrl = await mainWindow.webContents.executeJavaScript("localStorage.getItem('serverUrl')");
+      const user = await mainWindow.webContents.executeJavaScript("localStorage.getItem('user')");
+      const token = await mainWindow.webContents.executeJavaScript("localStorage.getItem('token')");
+      
+      const debugData = { sipAccounts, serverUrl, user, token };
+      fs.writeFileSync(path.join(__dirname, '..', 'localstorage_debug.json'), JSON.stringify(debugData, null, 2));
+    } catch (err) {
+      fs.writeFileSync(path.join(__dirname, '..', 'localstorage_debug_error.txt'), err.message);
+    }
+  });
 
   mainWindow.on('close', (e) => {
     e.preventDefault();
@@ -73,6 +87,38 @@ ipcMain.on('window-maximize', () => {
 ipcMain.on('window-close', () => mainWindow && mainWindow.hide());
 ipcMain.on('window-quit', () => app.exit(0));
 ipcMain.on('open-external', (_, url) => shell.openExternal(url));
+
+// ── SIP Password Security ──
+ipcMain.handle('encrypt-password', (_, password) => {
+  try {
+    if (!safeStorage || !safeStorage.isEncryptionAvailable()) {
+      return Buffer.from(password).toString('base64');
+    }
+    const encrypted = safeStorage.encryptString(password);
+    return encrypted.toString('base64');
+  } catch (err) {
+    console.error('[safeStorage] Encryption failed, falling back to base64:', err);
+    return Buffer.from(password).toString('base64');
+  }
+});
+
+ipcMain.handle('decrypt-password', (_, encryptedB64) => {
+  try {
+    if (!safeStorage || !safeStorage.isEncryptionAvailable()) {
+      return Buffer.from(encryptedB64, 'base64').toString('utf-8');
+    }
+    const buffer = Buffer.from(encryptedB64, 'base64');
+    return safeStorage.decryptString(buffer);
+  } catch (err) {
+    // If decryption fails, it might have been saved in plain base64 format (older profiles)
+    try {
+      return Buffer.from(encryptedB64, 'base64').toString('utf-8');
+    } catch (fallbackErr) {
+      return encryptedB64;
+    }
+  }
+});
+
 
 // ── Rasm tanlash (native dialog) ──
 ipcMain.handle('pick-image', async () => {

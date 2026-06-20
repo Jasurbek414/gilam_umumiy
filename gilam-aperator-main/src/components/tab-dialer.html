@@ -172,122 +172,208 @@
         </div>
       </div>
 
-      <!-- ═══ MIJOZ MA'LUMOTLARI ═══ -->
-      <div class="crm-card">
-        <div class="crm-card-head">
-          <span class="material-icons-round">person_add</span>
-          <span>Mijoz</span>
-        </div>
-        <div class="crm-card-body">
-          <div class="crm-field-row">
-            <div class="crm-field">
-              <span class="material-icons-round crm-field-icon">badge</span>
-              <input type="text" id="quick-crm-name" class="crm-input" placeholder="Ism familiya">
+      <!-- 2-Column CRM Layout -->
+      <div class="crm-double-col">
+        <!-- ═══ MIJOZ MA'LUMOTLARI ═══ -->
+        <div id="crm-card-mijoz" class="crm-card" style="display: flex !important; flex-direction: column !important; margin-bottom: 0px !important;">
+            <div class="crm-card-head" style="flex-shrink: 0 !important; padding: 6px 10px !important;">
+              <span class="material-icons-round text-brand" style="font-size: 15px !important;">person_add</span>
+              <span style="font-size: 11.5px !important; font-weight: 700 !important;">Mijoz</span>
             </div>
-            <div class="crm-field" style="width:200px; flex-shrink:0;">
-              <span class="material-icons-round crm-field-icon">call</span>
-              <input type="text" id="quick-crm-phone" class="crm-input" placeholder="+998...">
+            <div class="crm-card-body" style="padding: 8px 10px !important; gap: 6px !important;">
+              <div class="crm-field-row">
+                <div class="crm-field">
+                  <span class="material-icons-round crm-field-icon">badge</span>
+                  <input type="text" id="quick-crm-name" class="crm-input" placeholder="Ism familiya">
+                </div>
+              </div>
+              <div class="crm-field-row">
+                <div class="crm-field">
+                  <span class="material-icons-round crm-field-icon">call</span>
+                  <input type="text" id="quick-crm-phone" class="crm-input" placeholder="Telefon (+998...)">
+                </div>
+              </div>
+              <div class="crm-field-row">
+                <div class="crm-field">
+                  <span class="material-icons-round crm-field-icon">location_on</span>
+                  <input type="text" id="quick-crm-address" class="crm-input" placeholder="Manzil">
+                  <button class="crm-loc-btn" id="btn-pick-location" title="Xaritadan belgilash">
+                    <span class="material-icons-round">map</span>
+                  </button>
+                </div>
+              </div>
+              <div class="crm-field-row">
+                <div class="crm-field">
+                  <span class="material-icons-round crm-field-icon">place</span>
+                  <input type="text" id="quick-crm-landmark" class="crm-input" placeholder="Mo'ljal (metro, bino)">
+                </div>
+              </div>
+              <!-- Lokatsiya koordinatalari (yashirin) -->
+              <input type="hidden" id="quick-crm-lat" value="">
+              <input type="hidden" id="quick-crm-lng" value="">
+              <div id="location-status" class="crm-loc-status" style="display:none; margin-top: 2px;">
+                <span class="material-icons-round">gps_fixed</span>
+                <span id="location-text">Lokatsiya belgilandi</span>
+              </div>
             </div>
           </div>
-          <div class="crm-field-row">
-            <div class="crm-field" style="flex:1;">
-              <span class="material-icons-round crm-field-icon">location_on</span>
-              <input type="text" id="quick-crm-address" class="crm-input" placeholder="Manzil">
-              <button class="crm-loc-btn" id="btn-pick-location" title="Xaritadan belgilash">
-                <span class="material-icons-round">map</span>
-              </button>
-            </div>
-          </div>
-          <div class="crm-field-row">
-            <div class="crm-field" style="flex:1;">
-              <span class="material-icons-round crm-field-icon">place</span>
-              <input type="text" id="quick-crm-landmark" class="crm-input" placeholder="Mo'ljal (masalan: metro yonida)">
-            </div>
-          </div>
-          <!-- Lokatsiya koordinatalari (yashirin) -->
-          <input type="hidden" id="quick-crm-lat" value="">
-          <input type="hidden" id="quick-crm-lng" value="">
-          <div id="location-status" class="crm-loc-status" style="display:none;">
-            <span class="material-icons-round">gps_fixed</span>
-            <span id="location-text">Lokatsiya belgilandi</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- ═══ BUYURTMA ═══ -->
-      <div class="crm-card">
-        <div class="crm-card-head">
-          <span class="material-icons-round">shopping_cart</span>
-          <span>Buyurtma</span>
-        </div>
-        <div class="crm-card-body">
-          <div class="crm-field-row">
-            <div class="crm-field" style="flex:2;">
-              <span class="material-icons-round crm-field-icon">inventory_2</span>
-              <select id="quick-order-product" class="crm-input">
-                <option value="">Xizmat tanlang</option>
-              </select>
+          <!-- ═══ BUYURTMA ═══ -->
+          <div id="crm-card-buyurtma" class="crm-card" style="display: flex !important; flex-direction: column !important;">
+            <div class="crm-card-head" style="flex-shrink: 0 !important; padding: 6px 10px !important;">
+              <span class="material-icons-round text-brand" style="font-size: 15px !important;">shopping_cart</span>
+              <span style="font-size: 11.5px !important; font-weight: 700 !important;">Buyurtma</span>
             </div>
-            <div class="crm-field" style="width:70px; flex-shrink:0;">
-              <input type="number" id="quick-order-qty" class="crm-input" placeholder="Soni" min="1" value="1" style="text-align:center;">
-            </div>
-            <div class="crm-field" style="flex:1;">
-              <input type="text" id="quick-order-price" class="crm-input" placeholder="Narx">
+            <div class="crm-card-body" style="padding: 8px 10px !important; gap: 6px !important;">
+              <div class="crm-field-row">
+                <div class="crm-field" style="flex: 2.2;">
+                  <span class="material-icons-round crm-field-icon">inventory_2</span>
+                  <select id="quick-order-product" class="crm-input">
+                    <option value="">Xizmat tanlang</option>
+                  </select>
+                </div>
+                <div class="crm-field" style="flex: 1;">
+                  <input type="number" id="quick-order-qty" class="crm-input" placeholder="Soni" min="1" value="1" style="text-align: center;">
+                </div>
+              </div>
+              <div class="crm-field-row">
+                <div class="crm-field" style="flex: 1.2;">
+                  <span class="material-icons-round crm-field-icon">payments</span>
+                  <input type="text" id="quick-order-price" class="crm-input" placeholder="Narx">
+                </div>
+                <div class="crm-field" style="flex: 1;">
+                  <span class="material-icons-round crm-field-icon">event</span>
+                  <select id="quick-crm-campaign" class="crm-input">
+                    <option value="">Kampaniya...</option>
+                  </select>
+                </div>
+              </div>
+              <div class="crm-field-row">
+                <div class="crm-field" style="flex: 1;">
+                  <span class="material-icons-round crm-field-icon">local_shipping</span>
+                  <select id="quick-order-driver" class="crm-input">
+                    <option value="">Haydovchi...</option>
+                  </select>
+                </div>
+                <div class="crm-field" style="flex: 1;">
+                  <span class="material-icons-round crm-field-icon">notes</span>
+                  <input type="text" id="quick-crm-note" class="crm-input" placeholder="Izoh...">
+                </div>
+              </div>
+              <div class="crm-actions" style="margin-top: 2px !important; padding-top: 2px !important; flex-shrink: 0 !important; display: flex !important; gap: 6px !important;">
+                <button class="btn-crm btn-crm-secondary" onclick="window.CRM.saveQuickCustomer()" style="flex: 1 !important; justify-content: center !important; font-size: 10.5px !important; padding: 5px 8px !important;">
+                  <span class="material-icons-round" style="font-size: 13px !important;">person_add</span> Saqlash
+                </button>
+                <button class="btn-crm btn-crm-primary" onclick="window.CRM.saveQuickOrder()" style="flex: 1.2 !important; justify-content: center !important; font-size: 10.5px !important; padding: 5px 8px !important;">
+                  <span class="material-icons-round" style="font-size: 13px !important;">add_shopping_cart</span> Buyurtma
+                </button>
+              </div>
             </div>
           </div>
-          <div class="crm-field-row">
-            <div class="crm-field" style="flex:1;">
-              <span class="material-icons-round crm-field-icon">event</span>
-              <select id="quick-crm-campaign" class="crm-input">
-                <option value="">Kampaniya tanlang...</option>
-              </select>
-            </div>
-          </div>
-          <div class="crm-field-row">
-            <div class="crm-field" style="flex:1;">
-              <span class="material-icons-round crm-field-icon">local_shipping</span>
-              <select id="quick-order-driver" class="crm-input">
-                <option value="">Haydovchi tanlang...</option>
-              </select>
-            </div>
-          </div>
-          <div class="crm-field">
-            <span class="material-icons-round crm-field-icon">notes</span>
-            <textarea id="quick-crm-note" class="crm-input" placeholder="Izoh..." rows="2" style="resize:none;"></textarea>
-          </div>
-          <div class="crm-actions">
-            <button class="btn-crm btn-crm-secondary" onclick="window.CRM.saveQuickCustomer()">
-              <span class="material-icons-round">person_add</span> Mijoz saqlash
-            </button>
-            <button class="btn-crm btn-crm-primary" onclick="window.CRM.saveQuickOrder()">
-              <span class="material-icons-round">add_shopping_cart</span> Buyurtma
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <!-- ═══ SO'NGGI QO'NG'IROQLAR ═══ -->
-      <div class="crm-card">
-        <div class="crm-card-head" style="flex-direction: column; align-items: stretch; gap: 8px; height: auto; padding: 12px 16px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="material-icons-round">history</span>
-            <span>So'nggi qo'ng'iroqlar</span>
-          </div>
-          <div class="call-filters" style="display: flex; gap: 5px; font-size: 11px; overflow-x: auto; padding-bottom: 2px;">
-            <button class="call-filter-btn active" data-filter="all" onclick="window.UI.renderDashboardCalls('all', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">Barchasi</button>
-            <button class="call-filter-btn" data-filter="INCOMING" onclick="window.UI.renderDashboardCalls('INCOMING', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-secondary); cursor: pointer;">Kiruvchi</button>
-            <button class="call-filter-btn" data-filter="OUTGOING" onclick="window.UI.renderDashboardCalls('OUTGOING', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-secondary); cursor: pointer;">Chiquvchi</button>
-            <button class="call-filter-btn" data-filter="MISSED" onclick="window.UI.renderDashboardCalls('MISSED', this)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-secondary); cursor: pointer;">Olinmagan</button>
-          </div>
-        </div>
-        <div id="dashboard-calls-list" class="crm-card-body" style="max-height: 300px; overflow-y: auto;">
-          <div class="crm-empty">
-            <span class="material-icons-round">phone_disabled</span>
-            <span>Hozircha qo'ng'iroqlar yo'q</span>
-          </div>
-        </div>
-      </div>
+          <!-- ═══ SO'NGGI QO'NG'IROQLAR ═══ -->
+          <div id="crm-card-history" class="crm-card" style="display: flex !important; flex-direction: column !important; min-height: 0 !important;">
+            <div class="crm-card-head" style="flex-direction: column; align-items: stretch; gap: 8px; height: auto; padding: 12px 14px; flex-shrink: 0 !important;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="material-icons-round text-brand" style="font-size: 15px !important;">history</span>
+                  <span style="font-size: 11.5px !important; font-weight: 700 !important;">So'nggi qo'ng'iroqlar</span>
+                </div>
+              </div>
 
+              <!-- Search Bar -->
+              <div class="enterprise-search-wrapper" style="width: 100%;">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[14px] text-gray-400">search</span>
+                <input type="text" id="dashboard-calls-search" placeholder="Qidirish (Ism, telefon)..." class="enterprise-search-input" oninput="window.UI.onCallsSearch(this.value)">
+                <button id="dashboard-calls-search-clear" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white bg-transparent border-0 cursor-pointer hidden flex items-center justify-center p-0" title="Tozalash" onclick="window.UI.clearCallsSearch()">
+                  <span class="material-icons-round text-[14px]">close</span>
+                </button>
+              </div>
+
+              <!-- Premium Segmented Control -->
+              <div class="enterprise-segments-wrapper" style="width: 100%;">
+                <div class="enterprise-segments">
+                  <button class="segment-btn active" data-filter="all" onclick="window.UI.renderDashboardCalls('all', this)">Barchasi</button>
+                  <button class="segment-btn" data-filter="INCOMING" onclick="window.UI.renderDashboardCalls('INCOMING', this)">Kiruvchi</button>
+                  <button class="segment-btn" data-filter="OUTGOING" onclick="window.UI.renderDashboardCalls('OUTGOING', this)">Chiquvchi</button>
+                  <button class="segment-btn" data-filter="MISSED" onclick="window.UI.renderDashboardCalls('MISSED', this)">Olinmagan</button>
+                  <button class="segment-btn" data-filter="TODAY" onclick="window.UI.renderDashboardCalls('TODAY', this)">Bugun</button>
+                </div>
+              </div>
+            </div>
+            <div id="dashboard-calls-list" class="crm-card-body flex flex-col gap-3" style="flex: 1 !important; overflow-y: auto !important; padding: 12px 14px;">
+              <div class="crm-empty">
+                <span class="material-icons-round">phone_disabled</span>
+                <span>Hozircha qo'ng'iroqlar yo'q</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ BUYURTMALAR HOLATI WIDGET ═══ -->
+          <div id="crm-card-status" class="crm-card" style="display: flex !important; flex-direction: column !important; height: 100% !important; min-height: 0 !important;">
+            <div class="crm-card-head">
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="material-icons-round text-brand" style="font-size: 16px !important; color: #3b82f6;">assignment</span>
+                  <span class="font-extrabold text-xs text-white uppercase tracking-wider">Buyurtmalar Holati</span>
+                </div>
+                <button onclick="window.loadOrders()" class="text-gray-400 hover:text-white transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center p-1" style="outline: none;" title="Yangilash">
+                  <span class="material-icons-round text-[16px]">refresh</span>
+                </button>
+              </div>
+              
+              <!-- Dialer orders stats -->
+              <div id="dialer-orders-stats" class="enterprise-stats-grid">
+                <!-- JavaScript dynamically fills this -->
+              </div>
+ 
+              <!-- Search & Filter Bar -->
+              <div class="enterprise-filter-row flex items-center justify-between gap-3 w-full flex-wrap xl:flex-nowrap">
+                <div class="enterprise-search-wrapper flex-grow min-w-[200px]">
+                  <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[15px] text-gray-400">search</span>
+                  <input type="text" id="dialer-orders-search" placeholder="Qidirish (Ism, telefon)..." class="enterprise-search-input">
+                  <button id="dialer-orders-search-clear" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white bg-transparent border-0 cursor-pointer hidden flex items-center justify-center p-0" title="Tozalash">
+                    <span class="material-icons-round text-[15px]">close</span>
+                  </button>
+                </div>
+
+                <!-- Hidden select for compatibility -->
+                <select id="dialer-orders-status" style="display: none !important;">
+                  <option value="ALL" selected>Barcha Holatlar</option>
+                  <option value="NEW">🆕 Yangi</option>
+                  <option value="DRIVER_ASSIGNED">🚗 Haydovchi kutilyapti</option>
+                  <option value="PICKED_UP">📦 Olib ketildi</option>
+                  <option value="AT_FACILITY">🏭 Korxonada</option>
+                  <option value="WASHING">🧺 Yuvilmoqda</option>
+                  <option value="DRYING">💨 Quritilmoqda</option>
+                  <option value="FINISHED">✅ Tayyor</option>
+                  <option value="OUT_FOR_DELIVERY">🛵 Yetkazilmoqda</option>
+                  <option value="DELIVERED">🎉 Yetkazildi</option>
+                  <option value="CANCELLED">❌ Bekor qilingan</option>
+                </select>
+
+                <!-- Premium Segmented Control -->
+                <div class="enterprise-segments-wrapper flex-shrink-0">
+                  <div class="enterprise-segments">
+                    <button class="segment-btn active" onclick="window.selectDialerStatusFilter('ALL', this)">Barchasi</button>
+                    <button class="segment-btn" onclick="window.selectDialerStatusFilter('NEW', this)">Yangi</button>
+                    <button class="segment-btn" onclick="window.selectDialerStatusFilter('ACTIVE', this)">Faol</button>
+                    <button class="segment-btn" onclick="window.selectDialerStatusFilter('DELIVERED', this)">Yetkazildi</button>
+                    <button class="segment-btn" onclick="window.selectDialerStatusFilter('CANCELLED', this)">Bekor</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="dialer-orders-list" class="crm-card-body space-y-1.5" style="flex: 1 !important; overflow-y: auto !important; padding: 8px 10px; min-height: 0 !important;">
+              <!-- JavaScript will populate this -->
+              <div class="crm-empty">
+                <span class="material-icons-round text-gray-500 mb-1.5 text-[20px]">assignment_late</span>
+                <span class="text-xs">Buyurtmalar yuklanmoqda...</span>
+              </div>
+            </div>
+          </div>
+
+      </div>
     </div>
   </div>
 </div>

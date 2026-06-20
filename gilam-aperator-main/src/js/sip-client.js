@@ -117,7 +117,7 @@ const SipClient = {
   },
 
   // ═══ CONNECT (REGISTER) ═════════════════════════════════════════════════
-  connect(acc) {
+  async connect(acc) {
     // Agar allaqachon ulangan bo'lsa, avval uzamiz
     if (this.activeSipLines[acc.id] && this.activeSipLines[acc.id].phone) {
       try { this.activeSipLines[acc.id].phone.disconnect(); } catch(e) {}
@@ -204,6 +204,12 @@ const SipClient = {
       console.log(`[SIP] Call connected: ${data.target}`);
       window.UI.showActiveCall(data.target, 'Suhbat ketyapti');
       window.UI.startCallTimer();
+      
+      // Backend API: Qo'ng'iroqqa javob berildi
+      if (window.CRM && window.CRM.activeCallId && window.Api?.config?.token) {
+        window.Api.request(`/calls/${window.CRM.activeCallId}/answer`, { method: 'PUT' }).catch(console.warn);
+      }
+
       // Yozib olishni boshlash
       setTimeout(() => this._startRecording(), 1000);
     });
@@ -220,6 +226,26 @@ const SipClient = {
       const dur = window.UI && window.UI.activeCallSeconds ? window.UI.activeCallSeconds : 0;
       if (data.target && window.UI && window.UI.addCallToHistory) {
         window.UI.addCallToHistory(data.target, type, dur);
+      }
+
+      // Backend API: Qo'ng'iroq yakunlandi va notelar yozildi
+      if (window.CRM && window.CRM.activeCallId && window.Api?.config?.token) {
+        const crmNote = Utils.$('quick-crm-note')?.value || '';
+        const callNote = Utils.$('active-call-note')?.value || '';
+        const notes = callNote ? (crmNote ? `${callNote}\n${crmNote}` : callNote) : crmNote;
+        
+        window.Api.request(`/calls/${window.CRM.activeCallId}/complete`, { 
+          method: 'PUT',
+          body: JSON.stringify({ notes })
+        }).then(() => {
+          // Clear notes inputs after successful completion
+          const cn = Utils.$('active-call-note');
+          const qn = Utils.$('quick-crm-note');
+          if (cn) cn.value = '';
+          if (qn) qn.value = '';
+        }).catch(console.warn);
+        
+        window.CRM.activeCallId = null;
       }
       
       this._cleanupCall();
@@ -253,6 +279,12 @@ const SipClient = {
       if (data.target && window.UI && window.UI.addCallToHistory) {
         window.UI.addCallToHistory(data.target, type, 0); // missed calls have 0 duration
       }
+
+      // Backend API: Qo'ng'iroq javobsiz qoldi / rad etildi
+      if (data.direction === 'incoming' && window.CRM && window.CRM.activeCallId && window.Api?.config?.token) {
+        window.Api.request(`/calls/${window.CRM.activeCallId}/miss`, { method: 'PUT' }).catch(console.warn);
+        window.CRM.activeCallId = null;
+      }
       
       this._cleanupCall();
       Utils.showToast(`❌ Qo'ng'iroq rad etildi: ${data.reason}`, 'error');
@@ -262,8 +294,14 @@ const SipClient = {
     try {
       let decodedPassword = acc.password;
       try {
-        decodedPassword = atob(acc.password);
-      } catch(e) {} // Fallback for backward compatibility
+        const { ipcRenderer } = require('electron');
+        decodedPassword = await ipcRenderer.invoke('decrypt-password', acc.password);
+      } catch(e) {
+        // Fallback for older profiles or non-electron test env
+        try {
+          decodedPassword = atob(acc.password);
+        } catch(err) {}
+      }
 
       engine.connect({
         domain: acc.domain,
@@ -746,8 +784,9 @@ const SipClient = {
     }
   },
 
+
   // ═══ ACCOUNT MANAGEMENT ═════════════════════════════════════════════════
-  saveAccount() {
+  async saveAccount() {
     const campaignName = document.getElementById('sip-campaign')?.value?.trim() || 'Umumiy Kampaniya';
     const name = document.getElementById('sip-name')?.value?.trim() || `Liniya ${this.sipAccounts.length + 1}`;
     const domain = document.getElementById('sip-domain')?.value?.trim();
@@ -762,6 +801,14 @@ const SipClient = {
       return;
     }
 
+    let encryptedPassword = btoa(password);
+    try {
+      const { ipcRenderer } = require('electron');
+      encryptedPassword = await ipcRenderer.invoke('encrypt-password', password);
+    } catch (e) {
+      console.warn('[SIP] Encryption helper failed, falling back to base64:', e);
+    }
+
     const newAccount = {
       id: 'sip_' + Date.now(),
       campaignName,
@@ -769,7 +816,7 @@ const SipClient = {
       domain,
       extension,
       username,
-      password: btoa(password), // Obfuscate dynamically
+      password: encryptedPassword,
       transport,
       autoConnect
     };
@@ -778,8 +825,7 @@ const SipClient = {
     localStorage.setItem('sip_accounts', JSON.stringify(this.sipAccounts));
 
     // Modalni yopish va formani tozalash
-    const modal = document.getElementById('modal-add-sip');
-    if (modal) modal.style.display = 'none';
+    Utils.hideModal('modal-add-sip');
     
     ['sip-campaign', 'sip-name', 'sip-domain', 'sip-extension', 'sip-username', 'sip-password'].forEach(id => {
       const el = document.getElementById(id);
@@ -826,6 +872,7 @@ const SipClient = {
     }
   },
 
+
   // ═══ RENDER ACCOUNTS UI ═════════════════════════════════════════════════
   renderAccounts() {
     const container = document.getElementById('sip-accounts-list');
@@ -833,10 +880,10 @@ const SipClient = {
 
     if (this.sipAccounts.length === 0) {
       container.innerHTML = `
-        <div class="empty-state" style="padding: 30px; text-align: center;">
-          <span class="material-icons-round" style="font-size: 40px; color: var(--text-muted);">headset_off</span>
-          <p style="margin-top: 10px; color: var(--text-secondary);">SIP raqam ulanmagan</p>
-          <p style="font-size: 12px; color: var(--text-muted);">Yuqoridagi "Yangi Liniya" tugmasini bosing</p>
+        <div class="flex flex-col items-center justify-center py-8 text-gray-500 bg-[#0a0a14]/65 rounded-xl border border-dashed border-gray-800/80 text-center">
+          <span class="material-icons-round text-4xl opacity-20 mb-2 text-brand">headset_off</span>
+          <p class="text-xs font-semibold m-0 text-gray-300">SIP liniya topilmadi</p>
+          <span class="text-[10px] text-gray-550 mt-1">Liniya yaratish uchun "Qo'shish" tugmasini bosing</span>
         </div>`;
       this._updateGlobalStatus(false);
       return;
@@ -847,49 +894,56 @@ const SipClient = {
       const isOnline = line && line.isRegistered;
       const statusIcon = isOnline ? 'check_circle' : 'cancel';
       const statusText = isOnline ? 'Ulangan' : 'Ulanmagan';
-      const statusColor = isOnline ? 'var(--green)' : 'var(--red)';
+      const statusColorClass = isOnline ? 'text-green-400' : 'text-red-400';
+      const statusBgClass = isOnline ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
       const btnText = isOnline ? 'Uzish' : 'Ulanish';
-      const btnClass = isOnline ? 'btn-secondary' : 'btn-primary';
+      const btnClass = isOnline ? 'bg-[#1b1b36] hover:bg-[#252549] text-gray-300 border border-solid border-gray-750/80' : 'bg-brand hover:bg-brand-dark text-white shadow-brand/20';
       const wsUrl = this._buildWsUrl(acc);
+      
+      let activeExt = '';
+      try {
+        const activeObj = JSON.parse(localStorage.getItem('sip_account') || '{}');
+        activeExt = activeObj.extension || activeObj.username || '';
+      } catch(e) {}
+      const isActiveLine = (acc.extension === activeExt);
+
+      const borderClass = isActiveLine ? 'border-brand/60 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : (isOnline ? 'border-green-500/20 shadow-green-500/5' : 'border-gray-800/60');
 
       return `
-        <div class="sip-account-card" style="
-          background: rgba(255,255,255,0.02); 
-          padding: 16px; 
-          border-radius: 12px; 
-          margin-bottom: 12px; 
-          border: 1px solid ${isOnline ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)'};
-          transition: all 0.3s ease;
-        ">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="material-icons-round" style="font-size:18px; color:${statusColor};">${statusIcon}</span>
-              <strong style="font-size:14px;">${acc.name}</strong>
+        <div class="bg-gray-900/40 backdrop-blur-md p-5 rounded-2xl mb-4 border border-solid ${borderClass} transition-all duration-300 relative overflow-hidden group shadow-md hover:shadow-brand/5">
+          ${isActiveLine ? '<div class="absolute top-0 left-0 w-1.5 h-full bg-brand"></div>' : ''}
+          
+          <div class="flex justify-between items-center mb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="material-icons-round text-[20px] ${statusColorClass} animate-pulse">${statusIcon}</span>
+              <strong class="text-sm text-white font-bold tracking-wide">${acc.name}</strong>
+              ${isActiveLine ? '<span class="text-[9px] bg-brand text-white px-2 py-0.5 rounded-md ml-1.5 font-bold tracking-wider uppercase border border-solid border-brand/20">Asosiy</span>' : ''}
             </div>
-            <span style="
-              color:${statusColor}; 
-              font-size:11px; 
-              font-weight:600;
-              padding: 3px 10px;
-              border-radius: 20px;
-              background: ${isOnline ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};
-            ">${statusText}</span>
+            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-lg border ${statusColorClass} ${statusBgClass} uppercase tracking-wider">${statusText}</span>
           </div>
           
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:12px; color:var(--text-secondary); margin-bottom: 12px;">
-            <div>🌐 Server: <span style="color:var(--text-primary)">${acc.domain}</span></div>
-            <div>📞 Extension: <span style="color:var(--text-primary)">${acc.extension}</span></div>
-            <div>🔌 Transport: <span style="color:var(--text-primary)">${acc.transport.toUpperCase()}</span></div>
-            <div>🔗 WS: <span style="color:var(--text-muted); font-size:10px;">${wsUrl.substring(0, 30)}...</span></div>
+          <div class="grid grid-cols-2 gap-2 text-[11px] text-gray-400 mb-4 bg-[#0a0a14]/60 p-3 rounded-xl border border-solid border-gray-800/40 font-medium">
+            <div><span class="text-gray-500 font-semibold">Server:</span> <span class="text-gray-300 font-bold">${acc.domain}</span></div>
+            <div><span class="text-gray-500 font-semibold">Extension:</span> <span class="text-gray-300 font-bold">${acc.extension}</span></div>
+            <div><span class="text-gray-550 font-semibold">Transport:</span> <span class="text-gray-300 font-bold">${acc.transport.toUpperCase()}</span></div>
+            <div class="truncate" title="${wsUrl}"><span class="text-gray-550 font-semibold">WS URL:</span> <span class="text-gray-300 font-bold text-[10px]">${wsUrl.substring(0, 15)}...</span></div>
           </div>
           
-          <div style="display:flex; justify-content:flex-end; gap:8px;">
-            <button class="btn-secondary btn-sm" onclick="window.SipClient.deleteAccount('${acc.id}')" 
-              style="background:rgba(239,68,68,0.08); color:var(--red); border:1px solid rgba(239,68,68,0.15); font-size:12px;">
-              <span class="material-icons-round" style="font-size:14px; vertical-align:middle; margin-right:3px;">delete</span>O'chirish
+          <div class="flex justify-end gap-2 items-center">
+            <button onclick="window.SipClient.deleteAccount('${acc.id}')" 
+              class="text-[11px] font-bold bg-red-950/10 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 border border-solid border-red-900/30 active:scale-95 cursor-pointer">
+              <span class="material-icons-round text-[14px]">delete</span> O'chirish
             </button>
-            <button class="${btnClass} btn-sm" onclick="window.SipClient.toggleAccount('${acc.id}')" style="font-size:12px;">
-              <span class="material-icons-round" style="font-size:14px; vertical-align:middle; margin-right:3px;">${isOnline ? 'link_off' : 'link'}</span>${btnText}
+            
+            ${!isActiveLine ? `
+            <button onclick="window.UI.setActiveLine('${acc.extension}')" 
+              class="text-[11px] font-bold bg-[#1b1b36] hover:bg-brand text-gray-300 hover:text-white px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 border border-solid border-gray-750/80 active:scale-95 cursor-pointer">
+              <span class="material-icons-round text-[14px]">check_circle_outline</span> Asosiy qilish
+            </button>` : ''}
+            
+            <button onclick="window.SipClient.toggleAccount('${acc.id}')" 
+              class="text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1 active:scale-95 cursor-pointer ${btnClass}">
+              <span class="material-icons-round text-[14px]">${isOnline ? 'link_off' : 'link'}</span> ${btnText}
             </button>
           </div>
         </div>
@@ -902,7 +956,7 @@ const SipClient = {
     this._updateGlobalStatus(anyOnline);
   },
 
-  _updateGlobalStatus(online) {
+    _updateGlobalStatus(online) {
     const ind = document.getElementById('sip-indicator');
     const dot = document.getElementById('sip-status-dot');
     const txt = document.getElementById('sip-status-text');
@@ -935,3 +989,6 @@ const SipClient = {
 };
 
 window.SipClient = SipClient;
+window.showAddSipModal = function() {
+  window.Utils.showModal('modal-add-sip');
+};

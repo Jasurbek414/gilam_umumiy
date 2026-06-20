@@ -18,6 +18,8 @@ const ORDER_STATUSES = {
 let allOrders = [];
 let ordersFilterStatus = 'ALL';
 let ordersSearchQuery   = '';
+let dialerOrdersFilterStatus = 'ALL';
+let dialerOrdersSearchQuery   = '';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDateTime(iso) {
@@ -64,6 +66,7 @@ async function loadOrders() {
     // Security safeguard: explicitly filter by operator's company ID in the frontend
     const currentCompanyId = window.Api.config.currentUser.companyId;
     allOrders = raw.filter(o => o.companyId === currentCompanyId);
+    window.allOrders = allOrders;
     
     renderOrders();
     renderStatsRow();
@@ -83,33 +86,54 @@ async function loadOrders() {
 // ── Stats row ─────────────────────────────────────────────────────────────────
 function renderStatsRow() {
   const row = document.getElementById('orders-stats-row');
-  if (!row) return;
+  const dialerRow = document.getElementById('dialer-orders-stats');
 
   const total     = allOrders.length;
   const active    = allOrders.filter(o => !['DELIVERED','CANCELLED'].includes(o.status)).length;
   const delivered = allOrders.filter(o => o.status === 'DELIVERED').length;
   const cancelled = allOrders.filter(o => o.status === 'CANCELLED').length;
 
-  const card = (icon, label, value, colorClass) => `
-    <div class="flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm border" style="background:var(--bg-1); border-color:var(--border);">
-      <div class="w-9 h-9 rounded-lg ${colorClass} flex items-center justify-center flex-shrink-0">
-        <span class="material-icons-round text-white text-[18px]">${icon}</span>
-      </div>
-      <div>
-        <p class="text-xl font-black leading-none" style="color:var(--t1);">${value}</p>
-        <p class="text-[10px] font-semibold mt-1" style="color:var(--t3); text-transform: uppercase; letter-spacing: 0.04em;">${label}</p>
-      </div>
-    </div>`;
+  if (row) {
+    const card = (icon, label, value, colorClass) => `
+      <div class="flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm border animate-fade-in" style="background:var(--bg-1); border-color:var(--border);">
+        <div class="w-9 h-9 rounded-lg ${colorClass} flex items-center justify-center flex-shrink-0">
+          <span class="material-icons-round text-white text-[18px]">${icon}</span>
+        </div>
+        <div>
+          <p class="text-xl font-black leading-none" style="color:var(--t1);">${value}</p>
+          <p class="text-[10px] font-semibold mt-1" style="color:var(--t3); text-transform: uppercase; letter-spacing: 0.04em;">${label}</p>
+        </div>
+      </div>`;
 
-  row.innerHTML =
-    card('assignment', 'Jami', total,     'bg-indigo-500/80') +
-    card('pending',    'Faol', active,    'bg-amber-500/80') +
-    card('check_circle','Yetkazildi',      delivered, 'bg-emerald-500/80') +
-    card('cancel',     'Bekor qilingan',   cancelled, 'bg-red-500/80');
+    row.innerHTML =
+      card('assignment', 'Jami Buyurtmalar', total,     'bg-indigo-500/80') +
+      card('pending',    'Faol Buyurtmalar', active,    'bg-amber-500/80') +
+      card('check_circle','Yetkazilgan',      delivered, 'bg-emerald-500/80') +
+      card('cancel',     'Bekor Qilingan',   cancelled, 'bg-red-500/80');
+  }
+
+  if (dialerRow) {
+    const cardDialer = (icon, label, value, cardType, iconType) => `
+      <div class="enterprise-stat-card ${cardType}">
+        <div class="enterprise-stat-icon ${iconType}">
+          <span class="material-icons-round text-white text-[16px]">${icon}</span>
+        </div>
+        <div class="min-w-0 flex-1 flex flex-col justify-center">
+          <p class="text-sm font-black leading-tight text-white">${value}</p>
+          <p class="text-[8px] font-bold mt-0.5 text-gray-400 uppercase tracking-wider leading-none truncate" title="${label}">${label}</p>
+        </div>
+      </div>`;
+
+    dialerRow.innerHTML =
+      cardDialer('assignment', 'Jami Buyurtmalar', total, 'stat-total', 'icon-blue') +
+      cardDialer('pending',    'Faol Buyurtmalar', active, 'stat-active', 'icon-orange') +
+      cardDialer('check_circle','Yetkazilgan',      delivered, 'stat-delivered', 'icon-green') +
+      cardDialer('cancel',     'Bekor Qilingan',   cancelled, 'stat-cancelled', 'icon-red');
+  }
 }
 
 // ── Render list ───────────────────────────────────────────────────────────────
-function renderOrders() {
+function renderMainOrders() {
   const container = document.getElementById('orders-list');
   if (!container) return;
 
@@ -138,6 +162,107 @@ function renderOrders() {
   }
 
   container.innerHTML = filtered.map(order => orderCard(order)).join('');
+}
+
+function renderDialerOrders() {
+  const container = document.getElementById('dialer-orders-list');
+  if (!container) return;
+
+  // Filter
+  let filtered = allOrders;
+  if (dialerOrdersFilterStatus !== 'ALL') {
+    if (dialerOrdersFilterStatus === 'ACTIVE') {
+      filtered = filtered.filter(o => !['DELIVERED','CANCELLED'].includes(o.status));
+    } else {
+      filtered = filtered.filter(o => o.status === dialerOrdersFilterStatus);
+    }
+  }
+  if (dialerOrdersSearchQuery) {
+    const q = dialerOrdersSearchQuery.toLowerCase();
+    filtered = filtered.filter(o =>
+      (o.id && o.id.toLowerCase().includes(q)) ||
+      (o.customer?.fullName && o.customer.fullName.toLowerCase().includes(q)) ||
+      (o.customer?.phone1 && o.customer.phone1.includes(q))
+    );
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-10" style="color:var(--t3);">
+        <span class="material-icons-round mb-2 text-[32px]" style="opacity:0.2;">assignment_late</span>
+        <p class="font-semibold text-xs">Buyurtmalar topilmadi</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(order => dialerOrderCard(order)).join('');
+}
+
+function renderOrders() {
+  renderMainOrders();
+  renderDialerOrders();
+}
+
+function dialerOrderCard(order) {
+  const shortId  = (order.id || '').split('-')[0].substring(0, 8).toUpperCase() || 'N/A';
+  const st       = ORDER_STATUSES[order.status] || { label: order.status, emoji: '❓', badge: 'bg-slate-800/80 text-slate-300 ring-slate-700/50' };
+  const name     = order.customer?.fullName || "Noma'lum";
+  const phone    = order.customer?.phone1   || '—';
+
+  // Determine urgency highlight class
+  let urgencyClass = '';
+  if (order.deliveryDate && order.status !== 'DELIVERED') {
+    const diff = new Date(order.deliveryDate) - Date.now();
+    if (diff < 0) {
+      urgencyClass = 'urgency-red';
+    } else if (diff < 3 * 3600 * 1000) {
+      urgencyClass = 'urgency-amber';
+    }
+  }
+
+  let premiumBadgeClass = 'status-active';
+  if (order.status === 'NEW') {
+    premiumBadgeClass = 'status-new';
+  } else if (order.status === 'DELIVERED') {
+    premiumBadgeClass = 'status-completed';
+  } else if (order.status === 'CANCELLED') {
+    premiumBadgeClass = 'status-cancelled';
+  }
+
+  return `
+    <div onclick="showOrderDetails('${order.id}')" class="dialer-order-card ${urgencyClass}">
+      <!-- Header: ID + Status + Actions -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="order-card-id">#${shortId}</span>
+          <span class="status-badge-premium ${premiumBadgeClass}">${st.label}</span>
+        </div>
+        <div class="order-card-actions" onclick="event.stopPropagation();">
+          <button class="order-action-icon-btn" onclick="showOrderDetails('${order.id}')" title="Ko'rish">
+            <span class="material-icons-round">visibility</span>
+          </button>
+          <button class="order-action-icon-btn btn-call-order" onclick="if('${phone}' !== '—') { window.SipClient && window.SipClient.makeCall('${phone}'); } else { window.Utils && window.Utils.showToast('Telefon raqami mavjud emas', 'warning'); }" title="Qo'ng'iroq">
+            <span class="material-icons-round">call</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body: Customer Name -->
+      <div class="order-card-name">${escapeHtml(name)}</div>
+
+      <!-- Footer: Phone & Date -->
+      <div class="order-card-phone flex items-center justify-between gap-1.5 text-gray-400 mt-1">
+        <div class="flex items-center gap-1.5">
+          <span class="material-icons-round">phone</span>
+          <span>${escapeHtml(phone)}</span>
+        </div>
+        <div class="flex items-center gap-1 text-[9px] text-gray-500 font-bold">
+          <span class="material-icons-round text-[10px]">access_time</span>
+          <span>${formatDate(order.createdAt)} ${formatTime(order.createdAt)}</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // ── Single order card (Compact List Item View) ────────────────────────────────
@@ -228,7 +353,7 @@ async function showOrderDetails(orderId) {
       <span class="material-icons-round text-[36px] mb-2 animate-spin" style="color:var(--accent);">refresh</span>
       <p class="text-xs">Yuklanmoqda...</p>
     </div>`;
-  modal.style.display = 'flex';
+  window.Utils.showModal('modal-order-details');
 
   try {
     const order = await window.Api.request(`/orders/${orderId}`);
@@ -411,7 +536,7 @@ function initOrdersUI() {
     searchInput.addEventListener('input', function () {
       clearTimeout(timeout);
       ordersSearchQuery = this.value.trim();
-      timeout = setTimeout(renderOrders, 300);
+      timeout = setTimeout(renderMainOrders, 300);
     });
   }
 
@@ -419,7 +544,47 @@ function initOrdersUI() {
   if (statusFilter) {
     statusFilter.addEventListener('change', function () {
       ordersFilterStatus = this.value;
-      renderOrders();
+      renderMainOrders();
+    });
+  }
+
+  const dialerSearch = document.getElementById('dialer-orders-search');
+  const dialerSearchClear = document.getElementById('dialer-orders-search-clear');
+  if (dialerSearch) {
+    let timeout;
+    
+    const toggleClearBtn = () => {
+      if (dialerSearchClear) {
+        if (dialerSearch.value.trim().length > 0) {
+          dialerSearchClear.classList.remove('hidden');
+        } else {
+          dialerSearchClear.classList.add('hidden');
+        }
+      }
+    };
+
+    dialerSearch.addEventListener('input', function () {
+      clearTimeout(timeout);
+      dialerOrdersSearchQuery = this.value.trim();
+      toggleClearBtn();
+      timeout = setTimeout(renderDialerOrders, 300);
+    });
+
+    if (dialerSearchClear) {
+      dialerSearchClear.addEventListener('click', function () {
+        dialerSearch.value = '';
+        dialerOrdersSearchQuery = '';
+        toggleClearBtn();
+        renderDialerOrders();
+      });
+    }
+  }
+
+  const dialerStatus = document.getElementById('dialer-orders-status');
+  if (dialerStatus) {
+    dialerStatus.addEventListener('change', function () {
+      dialerOrdersFilterStatus = this.value;
+      renderDialerOrders();
     });
   }
 }
@@ -430,6 +595,22 @@ window.initOrdersUI = initOrdersUI;
 window.formatTime   = formatTime;
 window.formatDate   = formatDate;
 window.showOrderDetails = showOrderDetails;
+
+window.selectDialerStatusFilter = (statusVal, buttonEl) => {
+  dialerOrdersFilterStatus = statusVal;
+  const select = document.getElementById('dialer-orders-status');
+  if (select) {
+    select.value = statusVal;
+  }
+  renderDialerOrders();
+  
+  if (buttonEl) {
+    buttonEl.parentElement.querySelectorAll('.segment-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    buttonEl.classList.add('active');
+  }
+};
 
 // Real-time socket.io update handler (order:new / order:updated)
 document.addEventListener('DOMContentLoaded', () => {

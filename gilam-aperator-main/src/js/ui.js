@@ -733,7 +733,7 @@ const UI = {
     
     // Preserve active filter on dashboard
     let activeFilter = 'all';
-    const activeBtn = document.querySelector('.call-filters .call-filter-btn.active');
+    const activeBtn = document.querySelector('#crm-card-history .segment-btn.active');
     if (activeBtn) activeFilter = activeBtn.dataset.filter || 'all';
     
     // Asynchronous call renderDashboardCalls
@@ -746,14 +746,10 @@ const UI = {
     if (btn) {
       const parent = btn.parentElement;
       if (parent) {
-        parent.querySelectorAll('.call-filter-btn').forEach(b => {
+        parent.querySelectorAll('.segment-btn').forEach(b => {
           b.classList.remove('active');
-          b.style.background = 'transparent';
-          b.style.color = 'var(--text-secondary)';
         });
         btn.classList.add('active');
-        btn.style.background = 'rgba(255,255,255,0.1)';
-        btn.style.color = 'white';
       }
     }
     
@@ -765,20 +761,77 @@ const UI = {
     const dashboardList = Utils.$('dashboard-calls-list');
     if (!dashboardList) return;
     
+    history.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
     let filtered = history;
+    
     if (filter !== 'all') {
-      filtered = history.filter(h => 
-        (h.type && h.type.toUpperCase() === filter.toUpperCase()) || 
-        (!h.type && filter.toUpperCase() === 'INCOMING')
-      );
+      if (filter === 'TODAY') {
+        const todayStr = new Date().toDateString();
+        filtered = history.filter(h => {
+          try {
+            return new Date(h.date).toDateString() === todayStr;
+          } catch(e) {
+            return false;
+          }
+        });
+      } else if (filter === 'MISSED') {
+        filtered = history.filter(h => 
+          h.type === 'MISSED' || 
+          (h.type === 'INCOMING' && (!h.duration || h.duration === '00:00'))
+        );
+      } else if (filter === 'INCOMING') {
+        filtered = history.filter(h => 
+          h.type === 'INCOMING' && h.duration && h.duration !== '00:00'
+        );
+      } else {
+        filtered = history.filter(h => 
+          h.type && h.type.toUpperCase() === filter.toUpperCase()
+        );
+      }
+    }
+    
+    if (this.callsSearchQuery) {
+      const q = this.callsSearchQuery.toLowerCase();
+      filtered = filtered.filter(call => {
+        let contactName = call.target || "Noma'lum";
+        if (window.CRM && window.CRM.allContacts) {
+          const found = window.CRM.allContacts.find(c => c.phone1 === call.target || c.phone2 === call.target);
+          if (found) contactName = found.fullName || call.target;
+        }
+        return (call.target && call.target.toLowerCase().includes(q)) || 
+               (contactName && contactName.toLowerCase().includes(q));
+      });
     }
     
     if (filtered.length === 0) {
-      dashboardList.innerHTML = `<div class="crm-empty"><span class="material-icons-round">phone_disabled</span><span>Hozircha qo'ng'iroqlar yo'q</span></div>`;
+      dashboardList.innerHTML = `<div class="crm-empty"><span class="material-icons-round">phone_disabled</span><span>Mos qo'ng'iroqlar topilmadi</span></div>`;
       return;
     }
     
     dashboardList.innerHTML = '';
+    
+    const formatRelativeTime = (dateInput) => {
+      const date = new Date(dateInput);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      
+      if (isNaN(date.getTime())) return dateInput;
+      if (diffMins < 1) return 'Hozirgina';
+      if (diffMins < 60) return `${diffMins} daqiqa oldin`;
+      if (diffHours < 24) {
+        if (date.getDate() === now.getDate()) {
+          return `Bugun, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        }
+        return `Kecha, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      }
+      if (diffDays === 1) return `Kecha, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      if (diffDays < 7) return `${diffDays} kun oldin`;
+      return date.toLocaleDateString();
+    };
     
     filtered.slice(0, 50).forEach((call, index) => {
       const date = new Date(call.date);
@@ -792,50 +845,234 @@ const UI = {
       }
       const durStr = call.duration || '00:00';
       
-      let typeIcon = 'call_received';
-      let typeCol = 'var(--green)';
-      let isMissed = false;
+      let statusClass = 'status-new';
+      let statusIcon = 'call_received';
+      let statusLabel = 'Kiruvchi';
+      let typeCol = '#10b981';
+      let avatarBg = 'bg-emerald-500/10 text-emerald-400';
       
-      if (call.type === 'OUTGOING') { 
-        typeIcon = 'call_made'; typeCol = '#3b82f6';
-      } else if (call.type === 'MISSED') { 
-        typeIcon = 'call_missed'; typeCol = 'var(--red)'; isMissed = true;
+      if (call.type === 'IN_PROGRESS' || call.status === 'IN_PROGRESS') {
+        statusClass = 'status-active';
+        statusIcon = 'ring_volume';
+        statusLabel = 'Jarayonda';
+        typeCol = '#f59e0b';
+        avatarBg = 'bg-amber-500/10 text-amber-400';
+      } else if (call.type === 'OUTGOING') {
+        statusClass = 'status-new';
+        statusIcon = 'call_made';
+        statusLabel = 'Chiquvchi';
+        typeCol = '#3b82f6';
+        avatarBg = 'bg-blue-500/10 text-blue-400';
+      } else if (call.type === 'MISSED' || (call.type === 'INCOMING' && (!call.duration || call.duration === '00:00'))) {
+        statusClass = 'status-cancelled';
+        statusIcon = 'call_missed';
+        statusLabel = 'Olinmagan';
+        typeCol = '#ef4444';
+        avatarBg = 'bg-red-500/10 text-red-400';
+      } else {
+        statusClass = 'status-delivered';
+        statusIcon = 'call_received';
+        statusLabel = 'Kiruvchi';
+        typeCol = '#10b981';
+        avatarBg = 'bg-emerald-500/10 text-emerald-400';
       }
       
       let contactName = call.target || "Noma'lum";
+      let matchedContact = null;
       if (window.CRM && window.CRM.allContacts) {
-        const found = window.CRM.allContacts.find(c => c.phone1 === call.target || c.phone2 === call.target);
-        if (found) {
-          contactName = found.fullName || call.target;
+        matchedContact = window.CRM.allContacts.find(c => c.phone1 === call.target || c.phone2 === call.target);
+        if (matchedContact) {
+          contactName = matchedContact.fullName || call.target;
         }
       }
       
+      let orderCount = 0;
+      if (window.allOrders && Array.isArray(window.allOrders)) {
+        orderCount = window.allOrders.filter(o => {
+          const p1 = o.customer?.phone1 || '';
+          const p2 = o.customer?.phone2 || '';
+          const op = o.phone || '';
+          return (p1 && call.target.includes(p1)) || 
+                 (p2 && call.target.includes(p2)) ||
+                 (op && call.target.includes(op));
+        }).length;
+      }
+      
+      const isVip = contactName.toLowerCase().includes('vip') || 
+                    orderCount >= 3 || 
+                    (call.target && (call.target.endsWith('77') || call.target.endsWith('00')));
+      
+      const hasAudio = (call.data || call.recordingUrl) ? true : false;
+      
       const dDiv = document.createElement('div');
-      dDiv.className = 'crm-history-item';
-      dDiv.style.display = 'flex';
-      dDiv.style.alignItems = 'center';
-      dDiv.style.justifyContent = 'space-between';
-      dDiv.style.padding = '8px 0';
-      dDiv.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+      dDiv.className = 'dashboard-call-card';
+      dDiv.onclick = () => {
+        const dialInput = document.getElementById('dial-number');
+        if (dialInput) {
+          dialInput.value = call.target;
+          dialInput.focus();
+        }
+      };
+      
+      let initialChar = contactName.charAt(0).toUpperCase();
+      if (initialChar === '+' || !/[A-ZА-Яa-zа-я]/.test(initialChar)) {
+        initialChar = '#';
+      }
+      
+      const lastInteraction = formatRelativeTime(call.date);
+      
       dDiv.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span class="material-icons-round" style="font-size:16px; color:${typeCol}">${typeIcon}</span>
-          <div>
-            <div style="font-size:13px; font-weight:500; ${isMissed ? 'color:var(--red);' : 'color:white'}">${contactName}</div>
-            <div style="font-size:11px; color:var(--text-muted);">${dateStr} • ${timeStr}</div>
+        <div class="call-card-top">
+          <span class="status-badge-premium ${statusClass}">
+            <span class="material-icons-round">${statusIcon}</span>
+            ${statusLabel}
+          </span>
+          <span class="call-time">${dateStr} • ${timeStr}</span>
+        </div>
+
+        <div class="call-card-body-row">
+          <div class="avatar-wrap ${avatarBg}">
+            ${initialChar}
+            <span class="avatar-status-dot" style="background-color: ${typeCol};"></span>
+          </div>
+
+          <div class="contact-info">
+            <div class="contact-name-row">
+              <span class="contact-name">${contactName}</span>
+              ${isVip ? `<span class="vip-badge">VIP</span>` : ''}
+              ${orderCount > 0 ? `<span class="order-count-badge">Buyurtmalar: ${orderCount}</span>` : ''}
+            </div>
+            <div class="contact-phone">${call.target}</div>
+          </div>
+
+          <div class="duration-wrap">
+            ${call.duration && call.duration !== '00:00' 
+              ? `<div class="duration-badge bg-[#1e293b]/70 border border-solid border-gray-800 text-gray-300"><span class="material-icons-round text-[10px] text-gray-400">schedule</span>${durStr}</div>` 
+              : `<div class="duration-badge bg-red-950/20 border border-solid border-red-900/30 text-red-400 font-bold">Javobsiz</div>`
+            }
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div style="font-size:11px; font-family:monospace; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px; color:var(--text-secondary)">
-            ${call.duration && call.duration !== '00:00' ? durStr : 'Javobsiz'}
-          </div>
-          <button class="btn-icon history-call-btn" onclick="document.getElementById('dial-number').value='${call.target}'; window.UI.switchTab('dialer');" title="Qong'iroq qilish" style="padding:4px;">
-            <span class="material-icons-round" style="font-size:16px;">call</span>
+
+        <div class="last-interaction-row">
+          <span class="update-time"><span class="material-icons-round">update</span> So'nggi aloqa: ${lastInteraction}</span>
+          ${hasAudio ? `
+          <button class="play-recording-btn" onclick="event.stopPropagation(); window.UI.playRecording('${call.id}')">
+            <span class="material-icons-round text-[10px]">play_arrow</span> Eshitish
+          </button>` : ''}
+        </div>
+
+        <div class="call-card-actions" onclick="event.stopPropagation();">
+          <button class="call-action-btn btn-call-main" onclick="window.UI.recentCallAction('call', '${call.target}')" title="Qayta qo'ng'iroq qilish">
+            <span class="material-icons-round text-[11px]">phone</span> Qayta qo'ng'iroq
+          </button>
+          <button class="call-action-btn btn-call-icon" onclick="window.UI.recentCallAction('view', '${call.target}', '${contactName}')" title="Mijoz ma'lumotlarini to'ldirish">
+            <span class="material-icons-round">person</span>
+          </button>
+          <button class="call-action-btn btn-call-icon" onclick="window.UI.recentCallAction('history', '${call.target}')" title="Tarixni ko'rish">
+            <span class="material-icons-round">history</span>
+          </button>
+          <button class="call-action-btn btn-call-order" onclick="window.UI.recentCallAction('order', '${call.target}', '${contactName}')" title="Buyurtma yaratish">
+            <span class="material-icons-round">shopping_cart</span>
           </button>
         </div>
       `;
       dashboardList.appendChild(dDiv);
     });
+  },
+
+  callsSearchQuery: '',
+
+  onCallsSearch(query) {
+    this.callsSearchQuery = (query || '').trim();
+    const clearBtn = Utils.$('dashboard-calls-search-clear');
+    if (clearBtn) {
+      if (this.callsSearchQuery) {
+        clearBtn.classList.remove('hidden');
+        clearBtn.style.display = 'flex';
+      } else {
+        clearBtn.classList.add('hidden');
+        clearBtn.style.display = 'none';
+      }
+    }
+    let activeFilter = 'all';
+    const activeBtn = document.querySelector('#crm-card-history .segment-btn.active');
+    if (activeBtn) activeFilter = activeBtn.dataset.filter || 'all';
+    this.renderDashboardCalls(activeFilter);
+  },
+
+  clearCallsSearch() {
+    const searchInput = Utils.$('dashboard-calls-search');
+    if (searchInput) {
+      searchInput.value = '';
+    }
+    this.onCallsSearch('');
+  },
+
+  async recentCallAction(action, phone, name = '') {
+    if (!phone) {
+      Utils.showToast("Raqam mavjud emas!", 'warning');
+      return;
+    }
+
+    if (action === 'call') {
+      this.switchTab('dialer');
+      const dialInput = document.getElementById('dial-number');
+      if (dialInput) {
+        dialInput.value = phone;
+      }
+      if (window.CRM && typeof window.CRM.callContact === 'function') {
+        window.CRM.callContact(phone);
+      } else if (window.SipClient && typeof window.SipClient.makeCall === 'function') {
+        window.SipClient.makeCall(phone);
+      } else {
+        Utils.showToast("Qo'ng'iroq qilish tizimi faol emas!", 'error');
+      }
+    } else if (action === 'view') {
+      if (Utils.$('quick-crm-phone')) Utils.$('quick-crm-phone').value = phone;
+      const found = window.CRM?.allContacts?.find(c => c.phone1 === phone || c.phone2 === phone);
+      if (found) {
+        if (Utils.$('quick-crm-name')) Utils.$('quick-crm-name').value = found.fullName || '';
+        if (Utils.$('quick-crm-address')) Utils.$('quick-crm-address').value = found.address || '';
+      } else {
+        if (Utils.$('quick-crm-name')) Utils.$('quick-crm-name').value = name || '';
+        if (Utils.$('quick-crm-address')) Utils.$('quick-crm-address').value = '';
+      }
+      
+      const body = Utils.$('crm-panel-body');
+      const arrow = Utils.$('crm-panel-arrow');
+      if (body) body.style.display = 'block';
+      if (arrow) arrow.style.transform = 'rotate(180deg)';
+      Utils.showToast("Mijoz ma'lumotlari CRM paneliga to'ldirildi", 'info');
+    } else if (action === 'history') {
+      this.switchTab('contacts');
+      const searchInput = document.getElementById('contacts-search');
+      if (searchInput) {
+        searchInput.value = phone;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        searchInput.focus();
+      }
+    } else if (action === 'order') {
+      if (Utils.$('quick-crm-phone')) Utils.$('quick-crm-phone').value = phone;
+      const found = window.CRM?.allContacts?.find(c => c.phone1 === phone || c.phone2 === phone);
+      if (found) {
+        if (Utils.$('quick-crm-name')) Utils.$('quick-crm-name').value = found.fullName || '';
+        if (Utils.$('quick-crm-address')) Utils.$('quick-crm-address').value = found.address || '';
+      } else {
+        if (Utils.$('quick-crm-name')) Utils.$('quick-crm-name').value = name || '';
+        if (Utils.$('quick-crm-address')) Utils.$('quick-crm-address').value = '';
+      }
+
+      const body = Utils.$('crm-panel-body');
+      const arrow = Utils.$('crm-panel-arrow');
+      if (body) body.style.display = 'block';
+      if (arrow) arrow.style.transform = 'rotate(180deg)';
+
+      const prodSelect = Utils.$('quick-order-product');
+      if (prodSelect) {
+        prodSelect.focus();
+      }
+      Utils.showToast("Mijoz ma'lumotlari to'ldirildi. Xizmatni tanlab buyurtma yarating.", 'info');
+    }
   },
   
   playRecording(id) {

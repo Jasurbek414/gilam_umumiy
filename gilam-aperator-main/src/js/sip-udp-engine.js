@@ -890,6 +890,10 @@ class SipUdpEngine extends EventEmitter {
 
     this._send(msg);
   }
+
+  sendDTMF(digit) {
+    return this.sendDtmf(digit);
+  }
 }
 
 module.exports = SipUdpEngine;

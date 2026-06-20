@@ -391,7 +391,7 @@ const ChatManager = {
     const statusEl = document.getElementById('chat-attach-status');
     if (statusEl) statusEl.textContent = '';
 
-    modal.style.display = 'flex';
+    window.Utils.showModal('chat-attach-modal');
 
     // Mijozlarni yuklash
     await this._loadCustomers();
@@ -403,8 +403,7 @@ const ChatManager = {
   },
 
   _closeAttachModal() {
-    const modal = document.getElementById('chat-attach-modal');
-    if (modal) modal.style.display = 'none';
+    window.Utils.hideModal('chat-attach-modal');
     this._attachCoords = null;
     this._attachSelectedCustomerId = null;
   },
@@ -526,7 +525,7 @@ const ChatManager = {
     const statusEl = document.getElementById('chat-forward-status');
     if (statusEl) statusEl.textContent = '';
 
-    modal.style.display = 'flex';
+    window.Utils.showModal('chat-forward-modal');
 
     await this._loadForwardDrivers();
     this._renderForwardDrivers(this._allDriversArray);
@@ -536,8 +535,7 @@ const ChatManager = {
   },
 
   _closeForwardModal() {
-    const modal = document.getElementById('chat-forward-modal');
-    if (modal) modal.style.display = 'none';
+    window.Utils.hideModal('chat-forward-modal');
     this._forwardMessageText = null;
     this._forwardSelectedUserId = null;
   },

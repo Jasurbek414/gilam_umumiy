@@ -6,6 +6,24 @@ const Utils = {
   $(id) { return document.getElementById(id); },
   $$(sel) { return document.querySelectorAll(sel); },
   
+  showModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      modal.style.display = '';
+    }
+  },
+
+  hideModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+      modal.style.display = '';
+    }
+  },
+  
   showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -24,7 +42,7 @@ const Utils = {
   },
 
   formatDuration(seconds) {
-    if (!seconds || seconds <= 0) return '—';
+    if (seconds === null || seconds === undefined || seconds < 0) return '00:00';
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;

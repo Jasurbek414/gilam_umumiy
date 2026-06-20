@@ -125,14 +125,8 @@ const Settings = (() => {
       save();
     });
 
-    // Logout
-    el('btn-logout')?.addEventListener('click', () => {
-      if (!confirm("Hisobdan chiqishni xohlaysizmi?")) return;
-      if (window.SipClient) window.SipClient.disconnectAll();
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('gilam-user');
-      window.location.reload();
-    });
+    // Logout bound dynamically as fallback
+    el('btn-logout')?.addEventListener('click', () => logout());
 
     // Audio Selectors Persistence
     ['audio-input', 'audio-output', 'audio-ring'].forEach(id => {
@@ -246,8 +240,8 @@ const Settings = (() => {
 
     try {
       btn.classList.add('active');
-      btn.innerHTML = '<span class="material-icons-round">stop</span> To\'xtat';
-      meter.style.display = 'block';
+      btn.innerHTML = '<span class="material-icons-round text-[14px]">stop</span> To\'xtat';
+      meter.classList.remove('hidden');
 
       // Tanlangan mikrofonni olish
       const selectedMicId = get('audio-input');
@@ -312,9 +306,9 @@ const Settings = (() => {
     const meter = document.getElementById('mic-meter');
     if (btn) {
       btn.classList.remove('active');
-      btn.innerHTML = '<span class="material-icons-round">graphic_eq</span> Test';
+      btn.innerHTML = '<span class="material-icons-round text-[14px]">graphic_eq</span> Test';
     }
-    if (meter) meter.style.display = 'none';
+    if (meter) meter.classList.add('hidden');
   }
 
   // ───────────────────────────────────────────────────────
@@ -349,13 +343,13 @@ const Settings = (() => {
 
       setTimeout(() => {
         btn.classList.remove('active');
-        btn.innerHTML = '<span class="material-icons-round">play_arrow</span> Test';
+        btn.innerHTML = '<span class="material-icons-round text-[14px]">play_arrow</span> Test';
         Utils.showToast('Dinamik test muvaffaqiyatli (Moslama tanlandi)', 'success');
       }, 900);
     } catch (err) {
       console.error('[Settings] Speaker test error:', err);
       btn.classList.remove('active');
-      btn.innerHTML = '<span class="material-icons-round">play_arrow</span> Test';
+      btn.innerHTML = '<span class="material-icons-round text-[14px]">play_arrow</span> Test';
       Utils.showToast('Dinamik test xatosi', 'error');
     }
   }
@@ -376,7 +370,7 @@ const Settings = (() => {
     [apiStatus, wsStatus, pbxStatus].forEach(el => {
       if (el) {
         el.textContent = '...';
-        el.className = 's-net-status';
+        el.className = 'text-sm font-bold text-gray-400';
       }
     });
 
@@ -398,14 +392,12 @@ const Settings = (() => {
       const ping = Date.now() - start;
       if (apiStatus) {
         apiStatus.textContent = `✓ ${ping}ms`;
-        apiStatus.classList.add('s-net-ok');
-        apiStatus.classList.remove('s-net-fail');
+        apiStatus.className = 'text-sm font-bold text-green-400';
       }
     } catch (e) {
       if (apiStatus) {
-        apiStatus.textContent = "✗ Ulanib bo'lmadi";
-        apiStatus.classList.add('s-net-fail');
-        apiStatus.classList.remove('s-net-ok');
+        apiStatus.textContent = "✗ Xato";
+        apiStatus.className = 'text-sm font-bold text-red-400';
       }
     }
 
@@ -413,12 +405,12 @@ const Settings = (() => {
     if (window.Api && window.Api.socket && window.Api.socket.connected) {
       if (wsStatus) {
         wsStatus.textContent = '✓ Ulangan';
-        wsStatus.classList.add('s-net-ok');
+        wsStatus.className = 'text-sm font-bold text-green-400';
       }
     } else {
       if (wsStatus) {
         wsStatus.textContent = '✗ Ulanmagan';
-        wsStatus.classList.add('s-net-fail');
+        wsStatus.className = 'text-sm font-bold text-red-400';
       }
     }
 
@@ -431,13 +423,13 @@ const Settings = (() => {
     if (pbxStatus) {
       if (sipConnected) {
         pbxStatus.textContent = '✓ Registered';
-        pbxStatus.classList.add('s-net-ok');
+        pbxStatus.className = 'text-sm font-bold text-green-400';
       } else if (sipAccounts.length > 0) {
         pbxStatus.textContent = '✗ Ulanmagan';
-        pbxStatus.classList.add('s-net-fail');
+        pbxStatus.className = 'text-sm font-bold text-red-400';
       } else {
         pbxStatus.textContent = '— SIP yo\'q';
-        pbxStatus.classList.add('s-net-warn');
+        pbxStatus.className = 'text-sm font-bold text-yellow-400';
       }
     }
 
@@ -478,6 +470,25 @@ const Settings = (() => {
     }
   }
 
+  function logout() {
+    if (!confirm("Hisobdan chiqishni xohlaysizmi?")) return;
+    try {
+      if (window.SipClient && window.SipClient.activeSipLines) {
+        Object.values(window.SipClient.activeSipLines).forEach(line => {
+          if (line && line.phone && typeof line.phone.disconnect === 'function') {
+            line.phone.disconnect();
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('SIP disconnect error:', e);
+    }
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('gilam-user');
+    if (window.Api) window.Api.logout();
+    window.location.reload();
+  }
+
   // Public API
   return {
     load,
@@ -487,6 +498,7 @@ const Settings = (() => {
     testSpeaker,
     runNetTest,
     clearCache,
+    logout,
   };
 })();
 

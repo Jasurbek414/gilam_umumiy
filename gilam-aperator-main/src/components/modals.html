@@ -1,122 +1,170 @@
 <!-- ═══ MODALS ══════════════════════════════════════════════════════════ -->
 
 <!-- NEW CUSTOMER MODAL -->
-<div id="modal-new-customer" class="modal" style="display:none;">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>Yangi mijoz qo'shish</h3>
-      <button class="btn-icon" id="btn-close-customer-modal">
-        <span class="material-icons-round">close</span>
+<div id="modal-new-customer" class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm items-center justify-center p-4 hidden">
+  <div class="bg-gray-900 border border-solid border-gray-800 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-lg overflow-hidden">
+    <!-- Header -->
+    <div class="flex justify-between items-center px-6 py-4 border-b border-solid border-gray-800 bg-gray-800/50">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <span class="material-icons-round text-brand">person_add</span> Yangi mijoz qo'shish
+      </h3>
+      <button type="button" id="btn-close-customer-modal" class="text-gray-400 hover:text-white hover:bg-gray-700 p-1.5 rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer flex items-center justify-center">
+        <span class="material-icons-round text-xl">close</span>
       </button>
     </div>
-    <form id="form-new-customer">
-      <div class="form-group">
-        <label>To'liq ism</label>
-        <input type="text" id="new-customer-name" placeholder="Ism familiya" required>
+    
+    <!-- Body -->
+    <form id="form-new-customer" class="m-0">
+      <div class="p-6 space-y-5">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">To'liq ism</label>
+          <input type="text" id="new-customer-name" placeholder="Ism familiya" required autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
+        </div>
+        
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Telefon 1</label>
+            <input type="text" id="new-customer-phone1" placeholder="+998..." required autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Telefon 2</label>
+            <input type="text" id="new-customer-phone2" placeholder="+998... (ixtiyoriy)" autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Manzil</label>
+          <textarea id="new-customer-address" placeholder="Manzil" rows="3" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500 resize-none"></textarea>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Telefon 1</label>
-        <input type="text" id="new-customer-phone1" placeholder="+998..." required>
-      </div>
-      <div class="form-group">
-        <label>Telefon 2</label>
-        <input type="text" id="new-customer-phone2" placeholder="+998... (ixtiyoriy)">
-      </div>
-      <div class="form-group">
-        <label>Manzil</label>
-        <textarea id="new-customer-address" placeholder="Manzil" rows="2"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary" id="btn-cancel-customer">Bekor</button>
-        <button type="submit" class="btn-primary">Saqlash</button>
+      
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-800/80 border-t border-solid border-gray-800 flex justify-end gap-3">
+        <button type="button" id="btn-cancel-customer" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer">
+          Bekor qilish
+        </button>
+        <button type="submit" class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none shadow-sm shadow-brand/10 transition-all flex items-center gap-2 cursor-pointer">
+          <span class="material-icons-round text-sm">save</span> Saqlash
+        </button>
       </div>
     </form>
   </div>
 </div>
 
+
 <!-- ADD SIP MODAL -->
-<div id="modal-add-sip" style="display:none;" class="modal-overlay">
-  <div class="modal-content" style="max-width: 480px;">
-    <div class="modal-header">
-      <h3><span class="material-icons-round" style="vertical-align:middle; margin-right:8px; color:var(--accent);">phone_in_talk</span>Yangi SIP Liniya Qo'shish</h3>
-      <button class="btn-icon" onclick="document.getElementById('modal-add-sip').style.display='none'">
-        <span class="material-icons-round">close</span>
+<div id="modal-add-sip" class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm items-center justify-center p-4 hidden">
+  <div class="bg-gray-900 border border-solid border-gray-800 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-lg overflow-hidden">
+    <!-- Header -->
+    <div class="flex justify-between items-center px-6 py-4 border-b border-solid border-gray-800 bg-gray-800/50">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <span class="material-icons-round text-brand">phone_in_talk</span> Yangi SIP Liniya
+      </h3>
+      <button onclick="window.Utils.hideModal('modal-add-sip')" class="text-gray-400 hover:text-white hover:bg-gray-700 p-1.5 rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer flex items-center justify-center">
+        <span class="material-icons-round text-xl">close</span>
       </button>
     </div>
-    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
-      <div style="display: flex; gap: 12px;">
-        <div class="form-group" style="flex:1;">
-          <label>Kampaniya</label>
-          <select id="sip-campaign" style="width:100%; padding:10px 12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:8px; font-size:13px;">
+    
+    <!-- Body -->
+    <div class="p-6 space-y-5">
+      <div class="flex gap-4">
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Kampaniya</label>
+          <select id="sip-campaign" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 appearance-none">
             <option value="Umumiy Kampaniya" selected>Umumiy Kampaniya</option>
           </select>
         </div>
-        <div class="form-group" style="flex:1;">
-          <label>Nomi (ixtiyoriy)</label>
-          <input type="text" id="sip-name" placeholder="Asosiy liniya" autocomplete="off">
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Nomi (ixtiyoriy)</label>
+          <input type="text" id="sip-name" placeholder="Asosiy liniya" autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
         </div>
       </div>
-      <div class="form-group">
-        <label>PBX Server (IP yoki Domen)</label>
-        <input type="text" id="sip-domain" placeholder="Masalan: 10.100.100.1" autocomplete="off">
-        <small style="color:var(--text-muted); font-size:11px; margin-top:4px; display:block;">
-          ⓘ Asterisk/FreePBX uchun faqat IP kiriting. WebSocket port avtomatik (8088) qo'shiladi.
-        </small>
+      
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">PBX Server (IP yoki Domen)</label>
+        <input type="text" id="sip-domain" placeholder="Masalan: 10.100.100.1 yoki 10.100.100.1:8090" autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
+        <p class="mt-2 text-[11px] text-gray-500 flex items-start gap-1">
+          <span class="material-icons-round text-[13px] text-brand shrink-0">info</span>
+          Agar port kiritilmasa avtomatik 8088 olinadi. Maxsus port uchun IP:PORT (masalan 192.168.1.1:8090) shaklida kiriting.
+        </p>
       </div>
-      <div style="display: flex; gap: 12px;">
-        <div class="form-group" style="flex:1;">
-          <label>Extension (Raqam)</label>
-          <input type="text" id="sip-extension" placeholder="101" autocomplete="off">
+      
+      <div class="flex gap-4">
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Extension (Raqam)</label>
+          <input type="text" id="sip-extension" placeholder="101" autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
         </div>
-        <div class="form-group" style="flex:1;">
-          <label>Username (Auth)</label>
-          <input type="text" id="sip-username" placeholder="101 (standart)" autocomplete="off">
-          <small style="color:var(--text-muted); font-size:10px; margin-top:2px; display:block;">Bo'sh qolsa, Extension ishlatiladi</small>
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Username (Auth)</label>
+          <input type="text" id="sip-username" placeholder="101 (standart)" autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
+          <p class="mt-1 text-[10px] text-gray-500">Bo'sh qolsa, Extension ishlatiladi</p>
         </div>
       </div>
-      <div class="form-group">
-        <label>Parol (Secret)</label>
-        <input type="password" id="sip-password" placeholder="SIP parol" autocomplete="off">
+      
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Parol (Secret)</label>
+        <input type="password" id="sip-password" placeholder="SIP parol" autocomplete="off" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 placeholder-gray-500">
       </div>
-      <div style="display: flex; gap: 12px; align-items:flex-end;">
-        <div class="form-group" style="flex:1;">
-          <label>Transport</label>
-          <select id="sip-transport" style="width:100%; padding:10px 12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:8px; font-size:13px;">
-            <option value="ws" selected>WS (Lokal tarmoq)</option>
-            <option value="wss">WSS (Internet/SSL)</option>
-          </select>
+      
+      <div class="flex items-end gap-4">
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Transport</label>
+          <div class="relative">
+            <select id="sip-transport" class="w-full bg-[#0e0e1c] border border-solid border-gray-700/60 text-white text-sm rounded-lg focus:border-brand focus:outline-none block p-2.5 appearance-none">
+              <option value="ws" selected>WS (Lokal tarmoq)</option>
+              <option value="wss">WSS (Internet/SSL)</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+              <span class="material-icons-round text-sm">expand_more</span>
+            </div>
+          </div>
         </div>
-        <div style="flex:1; padding-bottom:8px;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
-            <input type="checkbox" id="sip-autoconnect" checked style="width:16px; height:16px;"> Avto-ulanish
+        <div class="flex-1 pb-2 pl-2">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="sip-autoconnect" checked class="sr-only peer">
+            <div class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand shadow-inner"></div>
+            <span class="ml-3 text-sm font-medium text-gray-300">Avto-ulanish</span>
           </label>
         </div>
       </div>
     </div>
-    <div class="modal-footer" style="margin-top:20px;">
-      <button class="btn-secondary" onclick="document.getElementById('modal-add-sip').style.display='none'">Bekor qilish</button>
-      <button class="btn-primary" onclick="window.SipClient.saveAccount()" style="display:flex; align-items:center; gap:6px;">
-        <span class="material-icons-round" style="font-size:18px;">link</span> Saqlash va Ulash
+    
+    <!-- Footer -->
+    <div class="px-6 py-4 bg-gray-800/80 border-t border-solid border-gray-800 flex justify-end gap-3">
+      <button onclick="window.Utils.hideModal('modal-add-sip')" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer">
+        Bekor qilish
+      </button>
+      <button onclick="window.SipClient.saveAccount()" class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none shadow-sm shadow-brand/10 transition-all flex items-center gap-2 cursor-pointer">
+        <span class="material-icons-round text-sm">link</span> Saqlash va Ulash
       </button>
     </div>
   </div>
 </div>
+
 
 <!-- ORDER DETAILS MODAL -->
-<div id="modal-order-details" style="display:none;" class="modal-overlay">
-  <div class="modal-content" style="max-width: 620px; width: 95%;">
-    <div class="modal-header">
-      <h3 style="color:var(--t1);"><span class="material-icons-round" style="vertical-align:middle; margin-right:8px; color:var(--accent);">receipt_long</span>Buyurtma Tafsilotlari</h3>
-      <button class="btn-icon" onclick="document.getElementById('modal-order-details').style.display='none'">
-        <span class="material-icons-round">close</span>
+<div id="modal-order-details" class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm items-center justify-center p-4 hidden">
+  <div class="bg-gray-900 border border-solid border-gray-800 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-2xl overflow-hidden">
+    <!-- Header -->
+    <div class="flex justify-between items-center px-6 py-4 border-b border-solid border-gray-800 bg-gray-800/50">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <span class="material-icons-round text-brand">receipt_long</span> Buyurtma Tafsilotlari
+      </h3>
+      <button onclick="window.Utils.hideModal('modal-order-details')" class="text-gray-400 hover:text-white hover:bg-gray-700 p-1.5 rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer flex items-center justify-center">
+        <span class="material-icons-round text-xl">close</span>
       </button>
     </div>
-    <div class="modal-body" style="max-height: 65vh; overflow-y: auto; padding: 20px; color:var(--t2);">
+    
+    <!-- Body -->
+    <div class="p-6 overflow-y-auto max-h-[60vh] text-gray-300">
       <div id="order-details-content" class="space-y-4"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="document.getElementById('modal-order-details').style.display='none'">Yopish</button>
+    
+    <!-- Footer -->
+    <div class="px-6 py-4 bg-gray-800/80 border-t border-solid border-gray-800 flex justify-end gap-3">
+      <button onclick="window.Utils.hideModal('modal-order-details')" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer">
+        Yopish
+      </button>
     </div>
   </div>
 </div>
-

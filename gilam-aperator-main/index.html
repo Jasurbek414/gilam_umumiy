@@ -8,21 +8,7 @@
   <!-- Google Fonts: Inter was removed for eye comfort on Windows screens -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <!-- Tailwind CSS Play CDN — faqat orders tab uchun ishlatiladi -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      important: '#tab-orders',
-      theme: {
-        extend: {
-          colors: {
-            brand: { DEFAULT: '#6366f1', dark: '#4f46e5' }
-          }
-        }
-      },
-      corePlugins: { preflight: false }
-    }
-  </script>
+  <link rel="stylesheet" href="tailwind.css">
 </head>
 <body>
 
@@ -40,27 +26,34 @@
   </audio>
 
   <!-- ═══ MAP MODAL ═══════════════════════════════════════════════════ -->
-  <div id="map-modal" class="map-modal" style="display:none;">
-    <div class="map-modal-content">
-      <div class="map-modal-header">
-        <div class="map-modal-title">
-          <span class="material-icons-round">location_on</span>
-          <span>Lokatsiyani tanlang</span>
-        </div>
-        <button class="map-modal-close" id="map-modal-close">
-          <span class="material-icons-round">close</span>
+  <!-- ═══ MAP MODAL ═══════════════════════════════════════════════════ -->
+  <div id="map-modal" class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm items-center justify-center p-4 hidden">
+    <div class="bg-gray-900 border border-solid border-gray-800 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-2xl h-[70vh] max-h-[550px] flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div class="flex justify-between items-center px-6 py-4 border-b border-solid border-gray-800 bg-gray-800/50">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <span class="material-icons-round text-brand">location_on</span> Lokatsiyani tanlang
+        </h3>
+        <button id="map-modal-close" class="text-gray-400 hover:text-white hover:bg-gray-700 p-1.5 rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer flex items-center justify-center">
+          <span class="material-icons-round text-xl">close</span>
         </button>
       </div>
-      <div id="map-container" class="map-container"></div>
-      <div class="map-modal-footer">
-        <div class="map-coords">
-          <span class="material-icons-round">gps_fixed</span>
+      
+      <!-- Body (Map container) -->
+      <div id="map-container" class="flex-grow min-h-0 bg-[#0e0e1c]"></div>
+      
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-800/80 border-t border-solid border-gray-800 flex justify-between items-center gap-3">
+        <div class="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
+          <span class="material-icons-round text-sm text-brand">gps_fixed</span>
           <span id="map-coords-text">Xaritadan joy tanlang</span>
         </div>
-        <div class="map-actions">
-          <button class="btn-crm btn-crm-secondary" id="map-cancel">Bekor</button>
-          <button class="btn-crm btn-crm-primary" id="map-confirm">
-            <span class="material-icons-round">check</span> Tasdiqlash
+        <div class="flex gap-2">
+          <button id="map-cancel" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none transition-colors cursor-pointer">
+            Bekor
+          </button>
+          <button id="map-confirm" class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg border-0 outline-none focus:outline-none shadow-sm shadow-brand/10 transition-all flex items-center gap-2 cursor-pointer">
+            <span class="material-icons-round text-sm">check</span> Tasdiqlash
           </button>
         </div>
       </div>

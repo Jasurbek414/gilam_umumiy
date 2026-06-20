@@ -453,7 +453,7 @@ export default function CompanyOrdersPage() {
                         #{order.id.split('-')[0].substring(0, 8).toUpperCase()}
                       </span>
                       <span className="text-xs font-bold text-slate-400 mt-1">
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {new Date(order.createdAt).toLocaleDateString('uz-UZ')} {new Date(order.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </td>

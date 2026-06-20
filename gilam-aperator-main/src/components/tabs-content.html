@@ -6,7 +6,7 @@
     <div class="tab-header">
       <h2>Kampaniya Liniyalari</h2>
       <div style="display: flex; gap: 8px;">
-        <button class="btn-primary btn-sm" onclick="document.getElementById('modal-add-sip').style.display='flex'">
+        <button class="btn-primary btn-sm" onclick="window.Utils.showModal('modal-add-sip')">
           <span class="material-icons-round">add</span>
           Yangi liniya
         </button>
@@ -25,50 +25,45 @@
 </div>
 
 <!-- CALLS HISTORY TAB -->
-<div class="tab-content" id="tab-calls">
-  <div class="list-container-centered">
-    <div class="tab-header">
-      <h2>Qo'ng'iroqlar tarixi</h2>
-      <button class="btn-icon-sm" id="btn-refresh-calls" title="Yangilash">
-        <span class="material-icons-round">refresh</span>
+<div class="tab-content" id="tab-calls" style="background: var(--bg-0); overflow-y: auto;">
+  <div class="w-full px-8 py-8 flex flex-col gap-6">
+    
+    <!-- Tab Header -->
+    <div class="flex items-center justify-between border-b border-solid border-gray-800/60 pb-5">
+      <div>
+        <h2 class="text-xl font-black tracking-tight text-white flex items-center gap-2.5 m-0">
+          <span class="material-icons-round text-brand text-2xl">history</span> Qo'ng'iroqlar tarixi
+        </h2>
+        <p class="text-xs text-gray-400 font-medium mt-1.5 m-0">Barcha kiruvchi, chiquvchi va javobsiz qo'ng'iroqlarni kuzatish</p>
+      </div>
+      <button 
+        class="flex items-center justify-center w-9 h-9 rounded-xl bg-gray-800/40 hover:bg-gray-700/80 text-gray-300 hover:text-white border-0 transition-all cursor-pointer active:scale-95" 
+        id="btn-refresh-calls" 
+        title="Yangilash"
+      >
+        <span class="material-icons-round text-lg">refresh</span>
       </button>
     </div>
-    <div class="calls-filters">
-      <button class="filter-btn active" data-filter="all">Barchasi</button>
-      <button class="filter-btn" data-filter="INCOMING">Kiruvchi</button>
-      <button class="filter-btn" data-filter="OUTGOING">Chiquvchi</button>
-      <button class="filter-btn" data-filter="MISSED">Javobsiz</button>
+
+    <!-- Filters -->
+    <div class="flex items-center gap-1.5 bg-gray-800/20 p-1.5 rounded-xl border border-solid border-gray-700/30">
+      <button class="filter-btn active flex-grow py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-0 text-center" data-filter="all">Barchasi</button>
+      <button class="filter-btn flex-grow py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-0 text-center" data-filter="INCOMING">Kiruvchi</button>
+      <button class="filter-btn flex-grow py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-0 text-center" data-filter="OUTGOING">Chiquvchi</button>
+      <button class="filter-btn flex-grow py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer border-0 text-center" data-filter="MISSED">Javobsiz</button>
     </div>
-    <div id="calls-list" class="calls-list">
-      <div class="empty-state">
-        <span class="material-icons-round">history</span>
-        <p>Qo'ng'iroqlar tarixi bo'sh</p>
+
+    <!-- Calls List -->
+    <div id="calls-list" class="flex flex-col gap-3">
+      <div class="flex flex-col items-center justify-center py-24 text-gray-500 bg-gray-800/10 rounded-2xl border border-dashed border-gray-700/20">
+        <span class="material-icons-round text-5xl opacity-20 mb-3">history</span>
+        <p class="text-sm font-semibold m-0">Qo'ng'iroqlar tarixi yuklanmoqda...</p>
       </div>
     </div>
+
   </div>
 </div>
 
-<!-- RECORDINGS TAB -->
-<div class="tab-content" id="tab-recordings">
-  <div class="list-container-centered">
-    <div class="tab-header">
-      <h2>Audio yozuvlar</h2>
-      <button class="btn-icon-sm" id="btn-refresh-recordings" title="Yangilash">
-        <span class="material-icons-round">refresh</span>
-      </button>
-    </div>
-    <div class="search-bar">
-      <span class="material-icons-round">search</span>
-      <input type="text" id="recordings-search" placeholder="Raqam yoki sana qidirish..." autocomplete="off">
-    </div>
-    <div id="recordings-list" class="calls-list">
-      <div class="empty-state">
-        <span class="material-icons-round">library_music</span>
-        <p>Hozircha audio yozuvlar yo'q</p>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- CONTACTS TAB -->
 <div class="tab-content" id="tab-contacts">
@@ -196,361 +191,301 @@
   </div>
 </div>
 
-<!-- ORDERS TAB -->
-<div class="tab-content" id="tab-orders">
-  <div style="height:100%; overflow-y:auto; padding: 20px; box-sizing: border-box; background:var(--bg-0);">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-5">
-      <div>
-        <h1 class="text-xl font-black tracking-tight" style="color:var(--t1);">
-          📋 Buyurtmalar Holati
-        </h1>
-        <p class="text-xs mt-0.5 font-medium" style="color:var(--t3);">Barcha buyurtmalarni kuzating va holatini tekshiring</p>
-      </div>
-      <button
-        id="btn-refresh-orders"
-        class="flex items-center gap-2 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all duration-200 active:scale-95"
-        style="background:var(--accent); box-shadow:0 2px 10px rgba(99,102,241,.3);"
-        title="Yangilash"
-        onmouseover="this.style.background='var(--accent-h)'"
-        onmouseout="this.style.background='var(--accent)'"
-      >
-        <span class="material-icons-round" style="font-size:16px;">refresh</span>
-        Yangilash
-      </button>
-    </div>
-
-    <!-- Stats Row -->
-    <div id="orders-stats-row" class="grid grid-cols-4 gap-3 mb-5"></div>
-
-    <!-- Search & Filter Bar -->
-    <div class="flex flex-row gap-3 mb-4">
-      <!-- Search -->
-      <div class="relative flex-1">
-        <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[18px]" style="color:var(--t3);">search</span>
-        <input
-          type="text"
-          id="orders-search"
-          placeholder="Mijoz ismi, telefon yoki ID bo'yicha qidiring..."
-          autocomplete="off"
-          class="w-full pl-9 pr-4 py-2 rounded-lg text-xs font-medium outline-none transition-all"
-          style="background:var(--bg-input); border:1px solid var(--border); color:var(--t1);"
-          onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 2px var(--accent-bg)'"
-          onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
-        >
-      </div>
-      <!-- Filter -->
-      <div class="relative">
-        <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[16px]" style="color:var(--t3);">filter_list</span>
-        <select
-          id="orders-status-filter"
-          class="pl-9 pr-4 py-2 rounded-lg text-xs font-bold outline-none cursor-pointer appearance-none min-w-[190px]"
-          style="background:var(--bg-input); border:1px solid var(--border); color:var(--t1);"
-        >
-          <option value="ALL">Barcha Holatlar</option>
-          <option value="NEW">🆕 Yangi</option>
-          <option value="DRIVER_ASSIGNED">🚗 Haydovchi kutilyapti</option>
-          <option value="PICKED_UP">📦 Olib ketildi</option>
-          <option value="AT_FACILITY">🏭 Korxonada</option>
-          <option value="WASHING">🧺 Yuvilmoqda</option>
-          <option value="DRYING">💨 Quritilmoqda</option>
-          <option value="FINISHED">✅ Tayyor (yetkazishga)</option>
-          <option value="OUT_FOR_DELIVERY">🛵 Yetkazilmoqda</option>
-          <option value="DELIVERED">🎉 Yetkazildi</option>
-          <option value="CANCELLED">❌ Bekor qilingan</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Orders List Container -->
-    <div id="orders-list" class="space-y-2">
-      <div class="flex flex-col items-center justify-center py-20" style="color:var(--t3);">
-        <span class="material-icons-round mb-3" style="font-size:48px; opacity:0.2;">assignment</span>
-        <p class="font-semibold text-sm">Buyurtmalar topilmadi</p>
-      </div>
-    </div>
-
-  </div>
-</div>
-
 <!-- SETTINGS TAB -->
-<div class="tab-content" id="tab-settings">
-  <div class="settings-scroll">
-    <div class="settings-container">
+<div class="tab-content" id="tab-settings" style="background: var(--bg-0); overflow-y: auto;">
+  <div class="w-full px-8 py-8 flex flex-col gap-6">
 
-      <!-- â”€â”€â”€ Profile Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-card s-profile">
-        <div class="s-profile-top">
-          <div class="s-avatar" id="settings-avatar">
-            <span class="material-icons-round">person</span>
-          </div>
-          <div class="s-profile-info">
-            <h3 class="s-profile-name" id="settings-name">â€”</h3>
-            <span class="s-profile-role" id="settings-role">â€”</span>
-          </div>
-          <div class="s-profile-badge" id="settings-status-badge">
-            <span class="s-dot online"></span>
-            <span>Online</span>
-          </div>
-        </div>
-        <div class="s-profile-details">
-          <div class="s-detail">
-            <span class="material-icons-round">phone</span>
-            <span class="s-detail-label">Telefon</span>
-            <span class="s-detail-value" id="settings-phone">â€”</span>
-          </div>
-          <div class="s-detail">
-            <span class="material-icons-round">business</span>
-            <span class="s-detail-label">Kompaniya</span>
-            <span class="s-detail-value" id="settings-company">â€”</span>
-          </div>
-        </div>
-      </section>
+    <!-- Tab Header -->
+    <div class="flex items-center justify-between border-b border-solid border-gray-800/50 pb-5 mb-6">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight text-white flex items-center gap-3 m-0">
+          <span class="material-icons-round text-brand text-3xl">settings</span> Tizim Sozlamalari
+        </h2>
+        <p class="text-xs text-gray-400 font-semibold mt-2 m-0">Operator profili, SIP aloqa liniyalari, audio qurilmalar va tarmoq diagnostikasi parametrlari</p>
+      </div>
+    </div>
 
-      <!-- â”€â”€â”€ SIP Lines â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section">
-        <div class="s-section-head">
-          <div class="s-section-title">
-            <span class="material-icons-round">phone_in_talk</span>
-            <span>SIP Liniyalar</span>
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- LEFT COLUMN: Profile & Info -->
+      <div class="flex flex-col gap-6">
+        
+        <!-- Profile Card -->
+        <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-6 flex flex-col gap-5 relative overflow-hidden group shadow-lg">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full filter blur-2xl translate-x-12 -translate-y-12 transition-transform duration-700 group-hover:scale-125"></div>
+          
+          <div class="flex items-center gap-4 z-10">
+            <div id="settings-avatar-letter" class="w-16 h-16 rounded-2xl bg-brand/10 text-brand flex items-center justify-center font-black text-2xl border border-solid border-brand/20 shadow-inner shadow-brand/10">
+              O
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white tracking-wide m-0" id="settings-name">Operator</h3>
+              <span class="text-xs font-semibold text-brand bg-brand/10 px-2.5 py-0.5 rounded-lg inline-block mt-1.5 border border-solid border-brand/20 uppercase tracking-wider" id="settings-role">Operator</span>
+            </div>
+            <div class="ml-auto flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-lg border border-solid border-emerald-500/20 text-[10px] font-bold shadow-sm shadow-emerald-500/5" id="settings-status-badge">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>ONLINE</span>
+            </div>
           </div>
-          <button class="s-btn-add" onclick="document.getElementById('modal-add-sip').style.display='flex'">
-            <span class="material-icons-round">add</span>
-            Liniya qo'shish
-          </button>
-        </div>
-        <div class="s-card" id="sip-accounts-list">
-          <div class="s-empty">
-            <span class="material-icons-round">headset_off</span>
-            <p>SIP liniya qo'shilmagan</p>
-            <small>Yangi liniya qo'shish uchun yuqoridagi tugmani bosing</small>
-          </div>
-        </div>
-      </section>
 
-      <!-- â”€â”€â”€ Call Preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section">
-        <div class="s-section-head">
-          <div class="s-section-title">
-            <span class="material-icons-round">tune</span>
-            <span>Qo'ng'iroq sozlamalari</span>
+          <div class="border-t border-solid border-gray-800/60 pt-4 flex flex-col gap-3.5 z-10">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold flex items-center gap-2"><span class="material-icons-round text-sm text-brand">phone</span> Telefon</span>
+              <span class="text-white font-bold" id="settings-phone">—</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold flex items-center gap-2"><span class="material-icons-round text-sm text-brand">business</span> Kompaniya</span>
+              <span class="text-white font-bold" id="settings-company">—</span>
+            </div>
           </div>
         </div>
-        <div class="s-card">
-          <div class="s-toggle-row">
-            <div class="s-toggle-info">
-              <span class="material-icons-round">phone_callback</span>
-              <div>
-                <strong>Avto-javob</strong>
-                <p>Kiruvchi qo'ng'iroqlarni avtomatik qabul qilish</p>
+
+        <!-- App Info Card -->
+        <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-5 flex flex-col gap-3.5 shadow-lg">
+          <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest m-0 flex items-center gap-2">
+            <span class="material-icons-round text-sm text-brand">info</span> Dastur haqida
+          </h4>
+          <div class="flex flex-col gap-3 pt-1">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Versiya</span>
+              <span class="text-white font-bold bg-gray-800/50 px-2 py-0.5 rounded-md border border-solid border-gray-700/50">2.1.1</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Platforma</span>
+              <span class="text-white font-bold">Electron Desktop</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Ishlab chiquvchi</span>
+              <span class="text-white font-bold">Muminov Jasurbek</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyboard Shortcuts -->
+        <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-5 flex flex-col gap-3.5 shadow-lg">
+          <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest m-0 flex items-center gap-2">
+            <span class="material-icons-round text-sm text-brand">keyboard</span> Tugmalar yorliqlari
+          </h4>
+          <div class="flex flex-col gap-3 pt-1">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Qo'ng'iroq / javob berish</span>
+              <kbd class="bg-gray-950 text-gray-200 border border-solid border-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm">Enter</kbd>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Rad etish / tugatish</span>
+              <kbd class="bg-gray-950 text-gray-200 border border-solid border-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm">Esc</kbd>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Mute (Mikrofonni o'chirish)</span>
+              <kbd class="bg-gray-950 text-gray-200 border border-solid border-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm">Ctrl + M</kbd>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-400 font-semibold">Hold (Kutishga qo'yish)</span>
+              <kbd class="bg-gray-950 text-gray-200 border border-solid border-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm">Ctrl + H</kbd>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE COLUMN: Preferences & Audio Settings -->
+      <div class="flex flex-col gap-6 lg:col-span-2">
+        
+        <!-- Call Preferences & Audio unified wrapper -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Call Preferences -->
+          <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest m-0 flex items-center gap-2">
+              <span class="material-icons-round text-sm text-brand">tune</span> Qo'ng'iroq afzalliklari
+            </h4>
+            
+            <div class="flex flex-col gap-4 pt-1">
+              <!-- Switch Row 1 -->
+              <div class="flex items-center justify-between">
+                <div class="flex-grow pr-4">
+                  <div class="text-xs font-bold text-white">Avto-javob</div>
+                  <div class="text-[10px] text-gray-400 font-semibold mt-1">Kiruvchi qo'ng'iroqlarni avtomatik qabul qilish</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-auto-answer" class="sr-only peer">
+                  <div class="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand peer-checked:shadow-[0_0_10px_rgba(99,102,241,0.4)]"></div>
+                </label>
+              </div>
+
+              <!-- Switch Row 2 -->
+              <div class="flex items-center justify-between border-t border-solid border-gray-800/60 pt-4">
+                <div class="flex-grow pr-4">
+                  <div class="text-xs font-bold text-white">Avto-yozish</div>
+                  <div class="text-[10px] text-gray-400 font-semibold mt-1">Barcha suhbatlarni avtomatik yozib olish</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-auto-record" class="sr-only peer">
+                  <div class="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand peer-checked:shadow-[0_0_10px_rgba(99,102,241,0.4)]"></div>
+                </label>
+              </div>
+
+              <!-- Switch Row 3 -->
+              <div class="flex items-center justify-between border-t border-solid border-gray-800/60 pt-4">
+                <div class="flex-grow pr-4">
+                  <div class="text-xs font-bold text-white">Desktop bildirishnomalar</div>
+                  <div class="text-[10px] text-gray-400 font-semibold mt-1">Kiruvchi qo'ng'iroqlarda bildirishnoma ko'rsatish</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-notifications" class="sr-only peer" checked>
+                  <div class="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand peer-checked:shadow-[0_0_10px_rgba(99,102,241,0.4)]"></div>
+                </label>
               </div>
             </div>
-            <label class="s-switch">
-              <input type="checkbox" id="setting-auto-answer">
-              <span class="s-switch-slider"></span>
-            </label>
           </div>
-          <div class="s-toggle-row">
-            <div class="s-toggle-info">
-              <span class="material-icons-round">fiber_manual_record</span>
-              <div>
-                <strong>Avto-yozish</strong>
-                <p>Barcha qo'ng'iroqlarni avtomatik yozib olish</p>
-              </div>
-            </div>
-            <label class="s-switch">
-              <input type="checkbox" id="setting-auto-record">
-              <span class="s-switch-slider"></span>
-            </label>
-          </div>
-          <div class="s-toggle-row s-toggle-row--last">
-            <div class="s-toggle-info">
-              <span class="material-icons-round">notifications</span>
-              <div>
-                <strong>Desktop bildirishnomalar</strong>
-                <p>Kiruvchi qo'ng'iroqlarda tizim bildirishi</p>
-              </div>
-            </div>
-            <label class="s-switch">
-              <input type="checkbox" id="setting-notifications" checked>
-              <span class="s-switch-slider"></span>
-            </label>
-          </div>
-        </div>
-      </section>
 
-      <!-- â”€â”€â”€ Audio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section">
-        <div class="s-section-head">
-          <div class="s-section-title">
-            <span class="material-icons-round">headphones</span>
-            <span>Audio sozlamalari</span>
+          <!-- Audio Settings -->
+          <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest m-0 flex items-center gap-2">
+              <span class="material-icons-round text-sm text-brand">headphones</span> Ovoz va Qurilmalar
+            </h4>
+
+            <div class="flex flex-col gap-4 pt-1">
+              <!-- Mic -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mikrofon</label>
+                  <button class="bg-[#1b1b36] hover:bg-brand text-gray-300 hover:text-white px-2.5 py-1 rounded-xl text-[10px] font-bold border-0 cursor-pointer flex items-center gap-1.5 transition-all shadow-sm active:scale-95" id="btn-test-mic" onclick="window.Settings.testMic()">
+                    <span class="material-icons-round text-[13px]">graphic_eq</span> Test
+                  </button>
+                </div>
+                <div class="relative">
+                  <select id="audio-input" class="w-full bg-[#0a0a14] border border-solid border-gray-700/80 rounded-xl pl-3 pr-8 py-2.5 text-xs font-semibold text-white focus:border-brand/50 outline-none appearance-none cursor-pointer transition-colors"></select>
+                  <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                    <span class="material-icons-round text-base">expand_more</span>
+                  </div>
+                </div>
+                
+                <!-- Mic Visualizer Bar -->
+                <div class="w-full h-1.5 bg-gray-950 rounded-full mt-2.5 overflow-hidden hidden" id="mic-meter">
+                  <div class="h-full bg-gradient-to-r from-brand to-emerald-400 transition-all duration-75 shadow-[0_0_8px_rgba(99,102,241,0.5)]" id="mic-bar" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <!-- Speaker -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Dinamik</label>
+                  <button class="bg-[#1b1b36] hover:bg-brand text-gray-300 hover:text-white px-2.5 py-1 rounded-xl text-[10px] font-bold border-0 cursor-pointer flex items-center gap-1.5 transition-all shadow-sm active:scale-95" id="btn-test-speaker" onclick="window.Settings.testSpeaker()">
+                    <span class="material-icons-round text-[13px]">play_arrow</span> Test
+                  </button>
+                </div>
+                <div class="relative">
+                  <select id="audio-output" class="w-full bg-[#0a0a14] border border-solid border-gray-700/80 rounded-xl pl-3 pr-8 py-2.5 text-xs font-semibold text-white focus:border-brand/50 outline-none appearance-none cursor-pointer transition-colors"></select>
+                  <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                    <span class="material-icons-round text-base">expand_more</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ring Volume -->
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Ringtone Qurilmasi</label>
+                <div class="relative mb-3">
+                  <select id="audio-ring" class="w-full bg-[#0a0a14] border border-solid border-gray-700/80 rounded-xl pl-3 pr-8 py-2.5 text-xs font-semibold text-white focus:border-brand/50 outline-none appearance-none cursor-pointer transition-colors"></select>
+                  <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                    <span class="material-icons-round text-base">expand_more</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qo'ng'iroq Ovoz Balandligi</label>
+                  <span class="text-xs font-bold text-brand bg-brand/10 px-2 py-0.5 rounded-lg border border-solid border-brand/20" id="ring-volume-label">80%</span>
+                </div>
+                <div class="flex items-center gap-3 bg-[#0a0a14] px-4 py-2.5 rounded-xl border border-solid border-gray-800/40">
+                  <span class="material-icons-round text-sm text-gray-500">volume_down</span>
+                  <input type="range" id="setting-ring-volume" min="0" max="100" value="80" class="flex-grow accent-brand cursor-pointer h-1.5 bg-gray-800 rounded-lg appearance-none">
+                  <span class="material-icons-round text-sm text-gray-500">volume_up</span>
+                </div>
+              </div>
+
+            </div>
           </div>
+
         </div>
-        <div class="s-card">
-          <div class="s-audio-row">
-            <div class="s-audio-icon"><span class="material-icons-round">mic</span></div>
-            <div class="s-audio-body">
-              <div class="s-audio-head">
-                <label class="s-audio-label">Mikrofon</label>
-                <button class="s-test-btn" id="btn-test-mic" onclick="window.Settings.testMic()">
-                  <span class="material-icons-round">graphic_eq</span> Test
+
+        <!-- Bottom row: SIP Lines & Diagnostics & Danger Zone -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- SIP Lines List -->
+          <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest m-0 flex items-center gap-2">
+                <span class="material-icons-round text-sm text-brand">phone_in_talk</span> SIP Liniyalar
+              </h4>
+              <button class="bg-brand/10 hover:bg-brand text-brand hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold border-0 cursor-pointer flex items-center gap-1 transition-all active:scale-95 shadow-sm shadow-brand/5" onclick="window.showAddSipModal()">
+                <span class="material-icons-round text-sm">add</span> Qo'shish
+              </button>
+            </div>
+
+            <div id="sip-accounts-list" class="flex flex-col gap-3 pt-1 max-h-[260px] overflow-y-auto pr-1">
+              <div class="flex flex-col items-center justify-center py-8 text-gray-500 bg-[#0a0a14]/65 rounded-xl border border-dashed border-gray-800/80 text-center">
+                <span class="material-icons-round text-4xl opacity-20 mb-2 text-brand">headset_off</span>
+                <p class="text-xs font-semibold m-0 text-gray-300">SIP liniya topilmadi</p>
+                <span class="text-[10px] text-gray-500 mt-1">Liniya yaratish uchun "Qo'shish" tugmasini bosing</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Network Diagnostics & Danger Zone -->
+          <div class="flex flex-col gap-6">
+            
+            <!-- Diagnostics -->
+            <div class="bg-gray-900/40 backdrop-blur-md border border-solid border-gray-800/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+              <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest m-0 flex items-center gap-2">
+                <span class="material-icons-round text-sm text-brand">wifi</span> Aloqa va Serverlar
+              </h4>
+
+              <div class="flex flex-col gap-2.5 pt-1">
+                <div class="flex items-center justify-between text-xs py-1.5 border-b border-solid border-gray-800/60">
+                  <span class="text-gray-400 font-semibold flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span> Backend API</span>
+                  <span class="text-white font-bold" id="net-api-status">—</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1.5 border-b border-solid border-gray-800/60">
+                  <span class="text-gray-400 font-semibold flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span> WebSocket</span>
+                  <span class="text-white font-bold" id="net-ws-status">—</span>
+                </div>
+                <div class="flex items-center justify-between text-xs py-1.5">
+                  <span class="text-gray-400 font-semibold flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span> PBX Server</span>
+                  <span class="text-white font-bold" id="net-pbx-status">—</span>
+                </div>
+              </div>
+
+              <button class="w-full bg-[#1b1b36] hover:bg-brand text-gray-300 hover:text-white py-2.5 rounded-xl text-xs font-bold border-0 cursor-pointer flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95" id="btn-net-test" onclick="window.Settings.runNetTest()">
+                <span class="material-icons-round text-sm">speed</span> Diagnostika qilish
+              </button>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="bg-red-950/10 border border-solid border-red-900/30 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+              <h4 class="text-xs font-black text-red-400 uppercase tracking-widest m-0 flex items-center gap-2">
+                <span class="material-icons-round text-sm text-red-400">warning</span> Xavfli hudud
+              </h4>
+              
+              <div class="flex gap-3">
+                <button class="flex-grow bg-[#1a0e14] hover:bg-red-600 border border-solid border-red-900/30 text-red-400 hover:text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 active:scale-95" onclick="window.Settings.clearCache()">
+                  <span class="material-icons-round text-sm">delete_sweep</span> Keshni tozalash
+                </button>
+                <button class="flex-grow bg-[#1a0e14] hover:bg-red-600 border border-solid border-red-900/30 text-red-400 hover:text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 active:scale-95" id="btn-logout">
+                  <span class="material-icons-round text-sm">logout</span> Chiqish
                 </button>
               </div>
-              <select id="audio-input" class="s-select"><option>Standart</option></select>
-              <div class="s-mic-meter" id="mic-meter" style="display:none;">
-                <div class="s-mic-bar" id="mic-bar"></div>
-              </div>
             </div>
-          </div>
-          <div class="s-audio-row">
-            <div class="s-audio-icon"><span class="material-icons-round">volume_up</span></div>
-            <div class="s-audio-body">
-              <div class="s-audio-head">
-                <label class="s-audio-label">Dinamik</label>
-                <button class="s-test-btn" id="btn-test-speaker" onclick="window.Settings.testSpeaker()">
-                  <span class="material-icons-round">play_arrow</span> Test
-                </button>
-              </div>
-              <select id="audio-output" class="s-select"><option>Standart</option></select>
-            </div>
-          </div>
-          <div class="s-audio-row s-audio-row--last">
-            <div class="s-audio-icon"><span class="material-icons-round">notifications_active</span></div>
-            <div class="s-audio-body">
-              <label class="s-audio-label">Qo'ng'iroq ovozi balandligi</label>
-              <div class="s-volume-wrap">
-                <span class="material-icons-round s-vol-icon">volume_down</span>
-                <input type="range" id="setting-ring-volume" min="0" max="100" value="80" class="s-range">
-                <span class="material-icons-round s-vol-icon">volume_up</span>
-                <span class="s-vol-label" id="ring-volume-label">80%</span>
-              </div>
-              <select id="audio-ring" class="s-select"><option>Standart</option></select>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- â”€â”€â”€ Network â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section">
-        <div class="s-section-head">
-          <div class="s-section-title">
-            <span class="material-icons-round">wifi</span>
-            <span>Tarmoq diagnostikasi</span>
           </div>
-        </div>
-        <div class="s-card">
-          <div class="s-net-row">
-            <div class="s-net-item">
-              <span class="s-net-label">Backend API</span>
-              <span class="s-net-status" id="net-api-status">â€”</span>
-            </div>
-            <div class="s-net-item">
-              <span class="s-net-label">WebSocket</span>
-              <span class="s-net-status" id="net-ws-status">â€”</span>
-            </div>
-            <div class="s-net-item">
-              <span class="s-net-label">PBX Server</span>
-              <span class="s-net-status" id="net-pbx-status">â€”</span>
-            </div>
-          </div>
-          <div class="s-net-action">
-            <button class="s-btn-add" id="btn-net-test" onclick="window.Settings.runNetTest()">
-              <span class="material-icons-round">speed</span>
-              Ulanishni tekshirish
-            </button>
-          </div>
-        </div>
-      </section>
 
-      <!-- â”€â”€â”€ Keyboard Shortcuts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section">
-        <div class="s-section-head">
-          <div class="s-section-title">
-            <span class="material-icons-round">keyboard</span>
-            <span>Klaviatura yorliqlari</span>
-          </div>
         </div>
-        <div class="s-card">
-          <div class="s-shortcut-row">
-            <span class="s-shortcut-desc">Qo'ng'iroq qilish / javob berish</span>
-            <kbd class="s-kbd">Enter</kbd>
-          </div>
-          <div class="s-shortcut-row">
-            <span class="s-shortcut-desc">Qo'ng'iroqni tugatish / rad etish</span>
-            <kbd class="s-kbd">Esc</kbd>
-          </div>
-          <div class="s-shortcut-row">
-            <span class="s-shortcut-desc">Mikrofonni o'chirish (Mute)</span>
-            <kbd class="s-kbd">Ctrl + M</kbd>
-          </div>
-          <div class="s-shortcut-row s-shortcut-row--last">
-            <span class="s-shortcut-desc">Kutishga qo'yish (Hold)</span>
-            <kbd class="s-kbd">Ctrl + H</kbd>
-          </div>
-        </div>
-      </section>
 
-      <!-- â”€â”€â”€ App Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section">
-        <div class="s-section-head">
-          <div class="s-section-title">
-            <span class="material-icons-round">info</span>
-            <span>Dastur haqida</span>
-          </div>
-        </div>
-        <div class="s-card">
-          <div class="s-info-row">
-            <span>Versiya</span>
-            <span class="s-info-val">2.0.0</span>
-          </div>
-          <div class="s-info-row">
-            <span>Platform</span>
-            <span class="s-info-val">Electron Desktop</span>
-          </div>
-          <div class="s-info-row s-info-row--last">
-            <span>Ishlab chiqaruvchi</span>
-            <span class="s-info-val">Muminov Jasurbek</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- â”€â”€â”€ Danger Zone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <section class="s-section s-danger-zone">
-        <div class="s-section-head">
-          <div class="s-section-title s-section-title--danger">
-            <span class="material-icons-round">warning</span>
-            <span>Xavfli zona</span>
-          </div>
-        </div>
-        <div class="s-card s-card--danger">
-          <div class="s-danger-content">
-            <div class="s-danger-text">
-              <strong>Hisobdan chiqish</strong>
-              <p>Chiqish barcha SIP ulanishlarni uzadi va sessiyani tugatadi.</p>
-            </div>
-            <button class="s-btn-danger" id="btn-logout">
-              <span class="material-icons-round">logout</span>
-              Chiqish
-            </button>
-          </div>
-        </div>
-        <div class="s-card s-card--danger" style="margin-top:8px;">
-          <div class="s-danger-content">
-            <div class="s-danger-text">
-              <strong>Keshni tozalash</strong>
-              <p>Saqlangan sozlamalar, qo'ng'iroq tarixi va SIP hisoblarni o'chiradi.</p>
-            </div>
-            <button class="s-btn-danger" onclick="window.Settings.clearCache()">
-              <span class="material-icons-round">delete_sweep</span>
-              Tozalash
-            </button>
-          </div>
-        </div>
-      </section>
+      </div>
 
     </div>
+
   </div>
 </div>
 
