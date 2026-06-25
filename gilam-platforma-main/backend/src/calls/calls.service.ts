@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Call, CallStatus, CallDirection } from './entities/call.entity';
 import { Customer } from '../customers/entities/customer.entity';
-import { Order } from '../orders/entities/order.entity';
+import { Order, OrderStatus } from '../orders/entities/order.entity';
 import { User } from '../users/entities/user.entity';
 import { CampaignsService } from '../campaigns/campaigns.service';
 import { CallsGateway } from '../gateway/calls.gateway';
@@ -210,25 +210,33 @@ export class CallsService {
       resolvedDriverId = campaign?.driverId;
     }
 
-    if (resolvedDriverId && call.customerId) {
-      const driver = await this.usersRepo.findOne({
-        where: { id: resolvedDriverId, companyId: callCompanyId },
-      });
-      if (driver && !call.orderId) {
-        const order = this.ordersRepo.create({
-          companyId: callCompanyId,
-          customerId: call.customerId,
-          operatorId,
-          driverId: resolvedDriverId,
-          status: 'DRIVER_ASSIGNED' as any,
-          paymentStatus: 'UNPAID' as any,
-          totalAmount: 0,
-          paidAmount: 0,
-          notes: dto.notes || `Qo'ng'iroq: ${call.callerPhone}`,
+    if (call.customerId && !call.orderId) {
+      let status: OrderStatus = OrderStatus.NEW;
+      let driverId: string | undefined = undefined;
+
+      if (resolvedDriverId) {
+        const driver = await this.usersRepo.findOne({
+          where: { id: resolvedDriverId, companyId: callCompanyId },
         });
-        const savedOrder = await this.ordersRepo.save(order);
-        call.orderId = savedOrder.id;
+        if (driver) {
+          driverId = resolvedDriverId;
+          status = OrderStatus.DRIVER_ASSIGNED;
+        }
       }
+
+      const order = this.ordersRepo.create({
+        companyId: callCompanyId,
+        customerId: call.customerId,
+        operatorId,
+        driverId,
+        status,
+        paymentStatus: 'UNPAID' as any,
+        totalAmount: 0,
+        paidAmount: 0,
+        notes: dto.notes || `Qo'ng'iroq: ${call.callerPhone}`,
+      });
+      const savedOrder = await this.ordersRepo.save(order);
+      call.orderId = savedOrder.id;
     }
 
     const updated = await this.callsRepo.save(call);
