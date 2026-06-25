@@ -39,14 +39,24 @@ export class DeadlineCronService {
     for (const order of nearingDeadlineOrders) {
       if (!order.deadlineDate) continue;
 
-      const timeLeftMs = order.deadlineDate.getTime() - new Date().getTime();
-      if (timeLeftMs > 0 && timeLeftMs < 24 * 60 * 60 * 1000) {
-        
-        // Agar huddi shu buyurtmaga oldin xabar yuborilgan bo'lsa (Buni belgilash uchun Notification qidirish ham mumkin, hozircha oddiy har soat jo'natadi)
-        const msgTitle = "Diqqat! Gilam muddati yaqinlashmoqda ⏱";
-        const msgBody = `Buyurtma #${order.id.slice(0,6)} ni qadoqlashga oz vaqt qoldi. Iltimos jarayonni tezlashtiring!`;
+      const now = new Date();
+      const timeLeftMs = order.deadlineDate.getTime() - now.getTime();
+      
+      let msgTitle = "";
+      let msgBody = "";
 
-        this.logger.log(`Ogohlantirish yuborildi: Order=${order.id}`);
+      if (timeLeftMs < 0) {
+        // Overdue order
+        msgTitle = "⚠️ Diqqat! Buyurtma muddati o'tib ketdi!";
+        msgBody = `Buyurtma #${order.id.slice(0,6)} muddati ${order.deadlineDate.toLocaleDateString('uz-UZ')} da tugagan edi! Iltimos, jarayonni zudlik bilan yakunlang!`;
+      } else if (timeLeftMs < 24 * 60 * 60 * 1000) {
+        // Nearing deadline (less than 24 hours left)
+        msgTitle = "Diqqat! Gilam muddati yaqinlashmoqda ⏱";
+        msgBody = `Buyurtma #${order.id.slice(0,6)} ni qadoqlashga oz vaqt qoldi. Iltimos, jarayonni tezlashtiring!`;
+      }
+
+      if (msgTitle) {
+        this.logger.log(`Ogohlantirish yuborildi: Order=${order.id}, Title=${msgTitle}`);
 
         // Platforma orqali notification (Sex va Operatorlarga)
         await this.notificationsService.create({
@@ -59,7 +69,7 @@ export class DeadlineCronService {
         // Haydovchiga ham e'tibor qilish uchun (Balki sexdagilar Push tokenlarini ulasak ularga ham)
         if (order.driver) {
            const driverInfo = await this.orderRepository.manager.findOne(User, { where: {id: order.driverId} });
-           if(driverInfo && driverInfo.expoPushToken) {
+           if (driverInfo && driverInfo.expoPushToken) {
               this.notificationsService.sendPushNotification(driverInfo.expoPushToken, msgTitle, msgBody, { orderId: order.id });
            }
         }

@@ -154,6 +154,9 @@ export class DriversGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
     for (const d of lostDrivers) {
       if (d.lastSeenAt && d.lastSeenAt < threshold) {
+        // Automatically make driver offline in DB & close work session
+        await this.driversService.goOffline(d.id, 'CONNECTION_LOST');
+
         this.server.to(`company:${d.companyId}`).emit('driver.connection.lost', {
           driverId: d.id,
           companyId: d.companyId,
